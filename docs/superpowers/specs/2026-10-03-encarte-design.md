@@ -109,7 +109,7 @@ A single Room table, `cards`. `Card` is both the Room entity and the model passe
 |---|---|---|
 | `id` | `Long` | Auto-generated primary key |
 | `storeName` | `String` | Required, trimmed, non-blank |
-| `cardNumber` | `String?` | Human-readable number shown under the code |
+| `cardNumber` | `String` | Required, trimmed, non-blank. Human-readable number shown under the code. Catima rejects cards without a `cardid`, so it is required here too to keep exports importable |
 | `barcodeValue` | `String?` | Encoded value **if it differs** from `cardNumber`; `null` means the code encodes `cardNumber` |
 | `barcodeFormat` | `BarcodeFormat?` | `null` means no barcode (only the number is displayed) |
 | `note` | `String` | Free text; empty by default |
@@ -157,7 +157,7 @@ Sorting and search run in Kotlin over the full card list. A user has at most hun
 
 - Fields:
   - store name, with autocomplete from `BrandCatalog`;
-  - card number;
+  - card number (required);
   - barcode format (a dropdown that includes "None");
   - an "Encoded value differs from number" advanced toggle, which reveals `barcodeValue`;
   - color (a fixed palette of 12 swatches; no color-picker dependency);
@@ -184,6 +184,7 @@ Sorting and search run in Kotlin over the full card list. A user has at most hun
 ## 8. Barcode handling
 
 - **`BarcodeEncoder`** wraps ZXing's `MultiFormatWriter`, producing a `BitMatrix`, then an `ImageBitmap`. It runs on `Dispatchers.Default` and is cached per (value, format, size). It throws a typed error for invalid input, which `BarcodeValidator` should already have prevented.
+- **Charset policy (2D formats: QR, Aztec, DataMatrix, PDF417):** ASCII content is encoded with ZXing's default charset. Non-ASCII content is encoded as UTF-8 (the `CHARACTER_SET` hint). 1D formats only accept their own character sets, which `BarcodeValidator` enforces. The charset is derived from the content and is not stored.
 - **`BarcodeDecoder`** wraps zxing-cpp for both `ImageProxy` (live camera) and `Bitmap` (picked image), and returns a decoded value with zxing-cpp's format, mapped to `BarcodeFormat?`.
 - **`BarcodeValidator`** is pure Kotlin with no Android dependencies, and is unit-tested.
 
@@ -227,10 +228,16 @@ A ZIP archive containing:
   2. A groups section: header `_id`, then one row per group. Encarté writes the header only.
   3. A cards section with the header `_id, store, note, validfrom, expiry, balance, balancetype, cardid, barcodeid, barcodetype, barcodeencoding, headercolor, starstatus, lastused, archive`.
   4. A card-to-group mapping section: header `cardId, groupId`. Encarté writes the header only.
-- Images named `card_<id>_front.png`, `card_<id>_back.png` (and `card_<id>_icon.png`, which Encarté ignores on import).
+- Images named `card_<id>_front.png`, `card_<id>_back.png` (and `card_<id>_icon.png`, which Encarté ignores on import). Catima's importer accepts only names matching `^card_\d+_(front|back|icon)\.png$`.
+- **No other entries.** Catima's importer rejects any unexpected file in the archive, so Encarté must never add extra entries (such as a sidecar `encarte.json`).
 - With a password, every entry is encrypted with zip4j AES-256. ZIP-AES does not hide entry names; this is acceptable and is stated in the export UI.
 
-The importer also accepts **Catima v1** files (a single cards section without a version line), as Catima does.
+The importer also accepts, as Catima does:
+
+- **Catima v1** files: a single cards section with a header and no version line. The version is the leading run of digits before the first whitespace, or 1 if there is none.
+- A **bare CSV file** (not zipped), from older Catima versions.
+
+Unlike Catima, Encarté's importer ignores (and logs) unexpected ZIP entries instead of failing.
 
 ### 11.2 Field mapping
 
@@ -239,10 +246,10 @@ The importer also accepts **Catima v1** files (a single cards section without a 
 | `_id` | — | Local key used to match image files only | Room `id` |
 | `store` | `storeName` | Required; a row without it is rejected | ✓ |
 | `note` | `note` | ✓ | ✓ |
-| `cardid` | `cardNumber` | ✓ | ✓ |
+| `cardid` | `cardNumber` | Required; a row without it is rejected (same rule as Catima) | ✓ |
 | `barcodeid` | `barcodeValue` | Empty means `null` | `null` is written as empty |
 | `barcodetype` | `barcodeFormat` | ZXing enum name; empty or unknown means `null` (logged) | `name` or empty |
-| `barcodeencoding` | — | Ignored | Written with Catima's default value (to be confirmed against the Catima importer) |
+| `barcodeencoding` | — | Ignored (the charset is derived from the content, §8) | `UTF-8` for a 2D code with non-ASCII content, empty otherwise (Catima then uses its default, ISO-8859-1) |
 | `headercolor` | `color` | Empty means a color is derived from the name | ARGB int |
 | `starstatus` | `isFavorite` | `1` means `true` | `1` / `0` |
 | `lastused` | `lastUsedAt` | **Unix seconds**; `0` means `null` | Unix seconds, `0` if `null` |
@@ -288,7 +295,7 @@ The importer also accepts **Catima v1** files (a single cards section without a 
 - `BarcodeFormat` mapping to and from ZXing.
 - `CatimaCsv`: read v1 and v2, write v2, quoted fields, multi-line notes, empty columns, unknown barcode types, millisecond and second timestamps.
 - `BackupService` round trip: export then import gives identical cards and images, with and without a password. This runs on Robolectric, with a real Room database in memory and a temporary directory for files.
-- Fixtures: real Catima exports (plain and encrypted) generated from the Catima app, stored in `test/resources/`.
+- Fixtures: Catima's own test CSVs (v1 and v2, GPL-3.0 like Encarté, with attribution) copied into `test/resources/catima/`. ZIP archives, plain and encrypted, are built from these CSVs inside the tests with zip4j.
 - `BrandCatalog`: normalization, prefix and alias matching.
 - ViewModels: with fake repositories and `kotlinx-coroutines-test`.
 
@@ -330,6 +337,9 @@ The importer also accepts **Catima v1** files (a single cards section without a 
 
 ## 15. Open points to verify during implementation
 
-- Latest stable versions of every dependency, and the current Navigation 3 and androidx.biometric APIs (e.g. whether `BiometricPrompt` still requires a `FragmentActivity`).
-- The `barcodeencoding` value Catima expects on import (§11.2).
-- Whether Catima ignores unknown ZIP entries. This only matters if a future `encarte.json` sidecar is added; it is not needed in v1.
+- Latest stable versions of every dependency, and the current Navigation 3 and androidx.biometric APIs (e.g. whether `BiometricPrompt` still requires a `FragmentActivity`). Both are being checked while the implementation plan is written.
+- Resolved on 2026-10-03 by reading Catima's `CatimaImporter`:
+  - an empty `barcodeencoding` is accepted;
+  - unknown ZIP entries are rejected;
+  - `cardid` is required;
+  - `validfrom` and `expiry` are read as epoch milliseconds.
