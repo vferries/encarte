@@ -39,7 +39,7 @@ Success criteria:
 
 ## 4. Dependencies
 
-All are Apache-2.0 unless noted, and all are new to the project (which is empty). **Exact versions must be checked against the latest stable releases at implementation time, not taken from memory.**
+All are Apache-2.0 unless noted, and all are new to the project (which is empty). The latest stable versions were checked on 2026-10-03 and are pinned in the implementation plan's version catalog.
 
 | Purpose | Artifact(s) | Note |
 |---|---|---|
@@ -48,14 +48,14 @@ All are Apache-2.0 unless noted, and all are new to the project (which is empty)
 | Lifecycle | `lifecycle-runtime-compose`, `lifecycle-viewmodel-compose`, `lifecycle-process` | `ProcessLifecycleOwner` drives re-locking |
 | Navigation | `navigation3-runtime`, `navigation3-ui`, `lifecycle-viewmodel-navigation3` | Keys must be `@Serializable` |
 | Serialization | `kotlinx-serialization-json` | Nav keys + brand catalog |
-| Persistence | `room-runtime`, `room-ktx`, `room-compiler` (KSP); `datastore-preferences` | Room schema exported from v1 |
+| Persistence | Room 3: `androidx.room3:room3-runtime`, `room3-compiler` (KSP), Gradle plugin `androidx.room3`; `datastore-preferences` | Room schema exported from v1 |
 | Camera | `camera-core`, `camera-camera2`, `camera-lifecycle`, `camera-compose` | Compose-native viewfinder |
 | Barcode decoding | `io.github.zxing-cpp:android` | Native code: adds roughly 1–2 MB per ABI |
 | Barcode encoding | `com.google.zxing:core` | Pure Java |
-| App lock | `androidx.biometric` | |
+| App lock | `androidx.biometric` (1.1.0, the only stable release), plus a direct `androidx.fragment` dependency | biometric 1.1.0 requires a `FragmentActivity` and pulls in an old Fragment version that rejects Activity Result request codes; the direct dependency upgrades it |
 | Backup archive | `net.lingala.zip4j:zip4j` | AES ZIP, required to read encrypted Catima exports |
 | CSV | `org.apache.commons:commons-csv` | RFC 4180, multi-line notes |
-| Tests | JUnit 4, `kotlinx-coroutines-test`, Robolectric (MIT), `androidx.test` (core, ext-junit, runner), `compose-ui-test-junit4`, `room-testing` | |
+| Tests | JUnit 4, `kotlinx-coroutines-test`, Robolectric (MIT), `androidx.test` (core, ext-junit, runner), `compose-ui-test-junit4`, `room3-testing`, `espresso-core` | `espresso-core` is pinned because the version pulled in by ui-test crashes on SDK 37 |
 
 ## 5. Architecture
 
@@ -65,7 +65,7 @@ Single Gradle module `:app`, **package-by-feature**, unidirectional data flow (U
 io.github.vferries.encarte
 ├── EncarteApp.kt            Application; owns the AppContainer
 ├── AppContainer.kt          Manual DI: builds DB, DAOs, repositories, services once
-├── MainActivity.kt          Single activity: edge-to-edge, lock gate, NavDisplay
+├── MainActivity.kt          Single FragmentActivity (needed by BiometricPrompt): edge-to-edge, lock gate, NavDisplay
 ├── navigation/              NavKey definitions, back stack, entry provider
 ├── core/
 │   ├── barcode/             BarcodeFormat, BarcodeValidator, BarcodeEncoder (ZXing), BarcodeDecoder (zxing-cpp)
@@ -200,12 +200,15 @@ Sorting and search run in Kotlin over the full card list. A user has at most hun
 
 - **Lock (opt-in, off by default).**
   - Authentication uses `BiometricPrompt` with `BIOMETRIC_WEAK | DEVICE_CREDENTIAL`. `BIOMETRIC_STRONG | DEVICE_CREDENTIAL` is not supported on API 28–29.
-  - Enabling the lock requires one successful authentication first. The toggle is disabled, with an explanation, when `BiometricManager.canAuthenticate()` reports no device credential.
+  - Enabling the lock requires one successful authentication first. The toggle is disabled, with an explanation, when `KeyguardManager.isDeviceSecure` is false (no PIN, pattern or password). This is the authoritative check because the prompt always offers the device credential as a fallback.
   - `LockManager` keeps the locked/unlocked state in memory:
     - it starts locked whenever `lockEnabled` is true, which covers process death;
     - it records the time on `ProcessLifecycleOwner` `ON_STOP`;
     - it locks again on `ON_START` if more than 60 s have passed.
-  - While locked, `MainActivity` composes only `LockScreen` (an "Unlock" button that re-opens the prompt) and never the navigation content.
+  - While locked (or while the lock state is still loading at startup), `MainActivity` draws an opaque `LockScreen` (an "Unlock" button that re-opens the prompt) **over** the navigation content:
+    - the content underneath has its semantics cleared, so TalkBack cannot read it;
+    - the lock screen consumes all touches.
+    - The navigation content stays composed so that pending activity results (photo capture, file pickers) and the back stack survive a re-lock.
   - **Lockout prevention:** if the lock is enabled but the device no longer has any credential, the lock is disabled automatically and the user is told why.
   - While the lock is enabled, `FLAG_SECURE` is set, which hides the app from the recents preview and blocks screenshots.
   - **Stated limitation:** the lock gates the UI only. Data at rest relies on Android file-based encryption; the database is not encrypted by the app (SQLCipher is out of scope).
@@ -272,7 +275,14 @@ Unlike Catima, Encarté's importer ignores (and logs) unexpected ZIP entries ins
   2. If any entry is encrypted, the user is asked for the password. A wrong password shows an error and asks again.
   3. The CSV and the images are parsed and validated completely before anything is written.
   4. **Merge, not replace:** a card whose normalized `storeName` and `cardNumber` both match an existing card is skipped.
-  5. **All or nothing:** images are first written to a staging directory, cards are inserted in a single Room transaction, and the staged images are then moved into `images/`. Any failure rolls back the transaction and deletes the staging directory.
+  5. **All or nothing:**
+     1. Images are decoded into a staging directory.
+     2. They are moved into `images/`.
+     3. The cards are inserted in a single Room transaction.
+     4. If the transaction fails, the moved images are deleted.
+     5. The staging directory is always cleared.
+     
+     This order guarantees that a card never references a missing image. A single image that cannot be decoded is skipped and logged, and its card is imported without it.
   6. Result summary: "N cards imported, M duplicates skipped".
 - **Guards:** at most 10,000 cards and 500 MB of uncompressed data per archive; anything beyond is rejected as invalid.
 
@@ -320,7 +330,7 @@ Unlike Catima, Encarté's importer ignores (and logs) unexpected ZIP entries ins
 
 ## 14. Build, CI and publishing
 
-- Gradle Kotlin DSL, `gradle/libs.versions.toml`, KSP for Room, Room schema exported to `app/schemas/`.
+- Gradle Kotlin DSL, `gradle/libs.versions.toml`, KSP for Room, Room schema exported to `app/schemas/`. AGP 9's built-in Kotlin support is used (no `org.jetbrains.kotlin.android` plugin).
 - Release builds use R8 minification and resource shrinking. No build timestamps or other non-deterministic values in `BuildConfig` (keeps the door open to F-Droid reproducible builds later).
 - **CI (GitHub Actions, approved):** on push and pull request, run `assembleDebug`, `lint`, `testDebugUnitTest` and `verifyNoNetworkPermission`. Instrumented tests are not run in CI for v1.
 - `fastlane/metadata/android/{en-US,fr-FR}/` directory structure, read by F-Droid. The listing text and screenshots come later.
@@ -337,7 +347,10 @@ Unlike Catima, Encarté's importer ignores (and logs) unexpected ZIP entries ins
 
 ## 15. Open points to verify during implementation
 
-- Latest stable versions of every dependency, and the current Navigation 3 and androidx.biometric APIs (e.g. whether `BiometricPrompt` still requires a `FragmentActivity`). Both are being checked while the implementation plan is written.
+- Resolved on 2026-10-03:
+  - versions were verified by building a throwaway skeleton (compile, unit tests, lint, release build with R8 on an emulator);
+  - `BiometricPrompt` 1.1.0 still requires a `FragmentActivity`;
+  - Navigation 3's reflective `NavKey` serialization survives R8 and process death without extra keep rules.
 - Resolved on 2026-10-03 by reading Catima's `CatimaImporter`:
   - an empty `barcodeencoding` is accepted;
   - unknown ZIP entries are rejected;
