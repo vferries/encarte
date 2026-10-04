@@ -284,7 +284,7 @@ Unlike Catima, Encarté's importer ignores (and logs) unexpected ZIP entries ins
      
      This order guarantees that a card never references a missing image. A single image that cannot be decoded is skipped and logged, and its card is imported without it.
   6. Result summary: "N cards imported, M duplicates skipped".
-- **Guards:** at most 10,000 cards and 500 MB of uncompressed data per archive; anything beyond is rejected as invalid.
+- **Guards:** at most 10,000 cards, 64 MiB per archive entry and 16 MiB for a bare CSV file; anything beyond is rejected as invalid.
 
 ### 11.4 Results
 

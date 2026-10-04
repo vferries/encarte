@@ -11,6 +11,7 @@
 - [ ] Export from Encarté (with and without a password) and import the file into Catima
       (install Catima from F-Droid on an emulator). All cards and photos appear.
 - [ ] Export from Catima (with and without a password) and import into Encarté.
+- [ ] On a device, export and re-import a wallet of at least 150 cards with photos (with and without a password).
 - [ ] App lock: enable, background for more than one minute, come back: the lock screen appears.
 - [ ] Returning to the app after more than one minute shows the lock screen first, with no flash of card content.
 - [ ] After unlocking, the screen you were on is restored.

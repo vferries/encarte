@@ -5,6 +5,7 @@ import net.lingala.zip4j.model.ZipParameters
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -89,11 +90,50 @@ class CatimaArchiveTest {
     }
 
     @Test
-    fun guardsRejectOversizedArchives() {
+    fun guardsRejectTooManyCards() {
         val file = written()
 
         assertThrows(CatimaFormatException::class.java) { CatimaArchive(maxCards = 1).readCards(file, null) }
-        assertThrows(CatimaFormatException::class.java) { CatimaArchive(maxUncompressedBytes = 10).readCards(file, null) }
+    }
+
+    @Test
+    fun entryOverTheLimitIsRejected() {
+        val big = ArchiveImage(CatimaImageRef(2, ImageSide.BACK)) { it.write(ByteArray(600)) }
+        val file = written("secret".toCharArray(), extraImages = listOf(big))
+        val small = CatimaArchive(maxEntryBytes = 500)
+
+        assertEquals(2, small.readCards(file, "secret".toCharArray()).size)
+        val e = assertThrows(CatimaFormatException::class.java) {
+            small.forEachImage(file, "secret".toCharArray()) { _, input -> input.readBytes() }
+        }
+        assertEquals("Archive entry too large", e.message)
+        assertThrows(CatimaFormatException::class.java) {
+            CatimaArchive(maxEntryBytes = 10).readCards(file, "secret".toCharArray())
+        }
+    }
+
+    @Test
+    fun manyEntriesUnderTheLimitAreAcceptedWhateverTheirTotal() {
+        val entries = (2..6).map { id -> ArchiveImage(CatimaImageRef(id, ImageSide.FRONT)) { it.write(ByteArray(600)) } }
+        val file = written(extraImages = entries)
+        val small = CatimaArchive(maxEntryBytes = 1024)
+
+        assertEquals(2, small.readCards(file, null).size)
+        val sizes = mutableListOf<Int>()
+        small.forEachImage(file, null) { _, input -> sizes += input.readBytes().size }
+        assertEquals(listOf(3, 600, 600, 600, 600, 600), sizes)
+        assertTrue(sizes.sum() > 2 * 1024)
+    }
+
+    @Test
+    fun bareCsvOverTheLimitIsRejected() {
+        val file = tmp.newFile("catima.csv").apply { writeText(csv) }
+        val csvSize = file.length()
+
+        assertEquals(2, CatimaArchive(maxCsvBytes = csvSize).readCards(file, null).size)
+        assertThrows(CatimaFormatException::class.java) {
+            CatimaArchive(maxCsvBytes = csvSize - 1).readCards(file, null)
+        }
     }
 
     @Test
