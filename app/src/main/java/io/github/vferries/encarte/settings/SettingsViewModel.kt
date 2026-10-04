@@ -60,8 +60,18 @@ class SettingsViewModel(
     }
 
     fun prepareExport(password: CharArray?) {
+        cancelExport()
         exportPassword = password
         exportPrepared = true
+    }
+
+    fun exportUnavailable() {
+        cancelExport()
+        ui.update { it.copy(message = BackupMessage.ExportFailed) }
+    }
+
+    fun importUnavailable() {
+        ui.update { it.copy(message = BackupMessage.ImportFailed) }
     }
 
     fun exportTo(open: () -> OutputStream) {
@@ -76,13 +86,16 @@ class SettingsViewModel(
         exportPrepared = false
         ui.update { it.copy(busy = true) }
         viewModelScope.launch {
-            val result = backup.export(open, password)
-            password?.fill('\u0000')
-            val message = when (result) {
-                is ExportResult.Success -> BackupMessage.Exported(result.count)
-                ExportResult.IoError -> BackupMessage.ExportFailed
+            try {
+                val message = when (val result = backup.export(open, password)) {
+                    is ExportResult.Success -> BackupMessage.Exported(result.count)
+                    ExportResult.IoError -> BackupMessage.ExportFailed
+                }
+                ui.update { it.copy(message = message) }
+            } finally {
+                password?.fill('\u0000')
+                ui.update { it.copy(busy = false) }
             }
-            ui.update { it.copy(busy = false, message = message) }
         }
     }
 
@@ -111,8 +124,11 @@ class SettingsViewModel(
         val file = importFile ?: return
         ui.update { it.copy(busy = true, passwordPrompt = null) }
         viewModelScope.launch {
-            runImport(file, password)
-            password.fill('\u0000')
+            try {
+                runImport(file, password)
+            } finally {
+                password.fill('\u0000')
+            }
         }
     }
 

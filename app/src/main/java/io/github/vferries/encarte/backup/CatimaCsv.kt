@@ -45,7 +45,7 @@ object CatimaCsv {
     private val readFormat = CSVFormat.RFC4180.builder().setQuoteMode(QuoteMode.ALL_NON_NULL).get()
 
     fun read(text: String): List<CatimaCard> {
-        val content = text.removePrefix("﻿")
+        val content = text.removePrefix("\uFEFF")
         val version = parseVersion(content)
         if (version > MAX_SUPPORTED_VERSION) throw UnsupportedCatimaVersionException(version)
         val sections = sections(parseRecords(content))

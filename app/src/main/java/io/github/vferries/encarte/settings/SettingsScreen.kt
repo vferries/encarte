@@ -2,7 +2,6 @@ package io.github.vferries.encarte.settings
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -18,7 +17,6 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.clearText
-import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -48,6 +46,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -106,7 +105,7 @@ fun SettingsRoute(viewModel: SettingsViewModel, onBack: () -> Unit) {
                 exportLauncher.launch("encarte-backup-${LocalDate.now()}.zip")
             } catch (e: ActivityNotFoundException) {
                 Log.w(TAG, "No document creator available", e)
-                viewModel.cancelExport()
+                viewModel.exportUnavailable()
             }
         },
         onImport = {
@@ -114,6 +113,7 @@ fun SettingsRoute(viewModel: SettingsViewModel, onBack: () -> Unit) {
                 importLauncher.launch(IMPORT_MIME_TYPES)
             } catch (e: ActivityNotFoundException) {
                 Log.w(TAG, "No document picker available", e)
+                viewModel.importUnavailable()
             }
         },
         onImportPassword = viewModel::submitImportPassword,
@@ -121,7 +121,7 @@ fun SettingsRoute(viewModel: SettingsViewModel, onBack: () -> Unit) {
         onMessageShown = viewModel::messageShown,
         onOpenSource = {
             try {
-                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(SOURCE_URL)))
+                context.startActivity(Intent(Intent.ACTION_VIEW, SOURCE_URL.toUri()))
             } catch (e: ActivityNotFoundException) {
                 Log.w(TAG, "No browser available", e)
             }
@@ -263,8 +263,8 @@ private fun SectionTitle(title: Int) {
 
 @Composable
 private fun ExportPasswordDialog(onConfirm: (CharArray?) -> Unit, onDismiss: () -> Unit) {
-    val password = rememberTextFieldState()
-    val confirmation = rememberTextFieldState()
+    val password = remember { TextFieldState() }
+    val confirmation = remember { TextFieldState() }
     val mismatch = password.text.isNotEmpty() && confirmation.text.isNotEmpty() && password.text.toString() != confirmation.text.toString()
     val valid = password.text.isNotEmpty() && password.text.toString() == confirmation.text.toString()
     AlertDialog(
@@ -295,7 +295,7 @@ private fun ExportPasswordDialog(onConfirm: (CharArray?) -> Unit, onDismiss: () 
 
 @Composable
 private fun ImportPasswordDialog(retry: Boolean, onSubmit: (CharArray) -> Unit, onDismiss: () -> Unit) {
-    val password = rememberTextFieldState()
+    val password = remember { TextFieldState() }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.import_password_title)) },

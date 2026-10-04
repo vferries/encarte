@@ -111,4 +111,17 @@ class SettingsViewModelTest {
         assertNull(vm.uiState.first { it.passwordPrompt == null }.passwordPrompt)
         assertTrue(File(tmp.root, "work").listFiles().isNullOrEmpty())
     }
+
+    @Test
+    fun unavailablePickerDropsPreparedPassword() = runTest {
+        val (vm, _) = viewModel()
+        vm.prepareExport("pw".toCharArray())
+
+        vm.exportUnavailable()
+        assertEquals(BackupMessage.ExportFailed, vm.uiState.first { it.message != null }.message)
+        vm.messageShown()
+
+        vm.exportTo { ByteArrayOutputStream() }
+        assertEquals(BackupMessage.ExportFailed, vm.uiState.first { it.message != null }.message)
+    }
 }
