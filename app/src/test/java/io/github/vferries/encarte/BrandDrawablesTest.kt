@@ -54,8 +54,12 @@ class BrandDrawablesTest {
         val icon = render(R.drawable.ic_launcher_monochrome, ICON_PX, ICON_PX)
         // Front card body, left of the bars: solid.
         assertEquals(255, Color.alpha(icon.getPixel(157, 198)))
-        // Inside the bar at x=66, right where the back card's outline passes behind the front card.
+        // Back card's outline inside the middle card, seen through a bar.
         assertEquals(0, Color.alpha(icon.getPixel(277, 254)))
+        // Middle card's outline grazing the top of the last bar: only the front-card clip hides it.
+        assertEquals(0, Color.alpha(icon.getPixel(301, 207)))
+        // Back card's outline inside the hollow middle card, outside the front card: only the middle-card clip hides it.
+        assertEquals(0, Color.alpha(icon.getPixel(140, 169)))
     }
 
     @Test
