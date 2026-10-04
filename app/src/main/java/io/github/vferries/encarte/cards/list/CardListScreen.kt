@@ -199,7 +199,8 @@ private fun EmptyState(onAddCard: () -> Unit, onImport: () -> Unit, modifier: Mo
         Image(
             painter = painterResource(R.drawable.illustration_card_fan),
             contentDescription = null, // decorative: the title right below says the list is empty
-            modifier = Modifier.width(160.dp).aspectRatio(108f / 90f),
+            // The column does not scroll: the illustration shrinks first so the buttons stay on screen in landscape.
+            modifier = Modifier.weight(1f, fill = false).width(160.dp).aspectRatio(108f / 90f),
         )
         Text(stringResource(R.string.empty_title), style = MaterialTheme.typography.headlineSmall)
         Text(stringResource(R.string.empty_body), textAlign = TextAlign.Center)

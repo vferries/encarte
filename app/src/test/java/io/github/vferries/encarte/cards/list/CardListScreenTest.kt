@@ -14,6 +14,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
 class CardListScreenTest {
@@ -46,6 +47,14 @@ class CardListScreenTest {
         composeRule.onNodeWithText("Import").performClick()
 
         assertTrue(imported)
+    }
+
+    @Test
+    @Config(qualifiers = "w891dp-h411dp-land")
+    fun emptyStateKeepsImportOnScreenInLandscape() {
+        setScreen(CardListUiState(isLoading = false, hasCards = false))
+
+        composeRule.onNodeWithText("Import").assertIsDisplayed()
     }
 
     @Test
