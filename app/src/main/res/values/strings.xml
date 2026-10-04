@@ -71,4 +71,48 @@
     <string name="action_unlock">Unlock</string>
     <string name="lock_prompt_title">Unlock Encarté</string>
     <string name="lock_disabled_no_credential">App lock turned off: this device no longer has a screen lock.</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_security">Security</string>
+    <string name="settings_lock">Lock the app</string>
+    <string name="settings_lock_summary">Ask for fingerprint, face or screen lock when opening Encarté</string>
+    <string name="settings_lock_unavailable">Set a screen lock on this device first</string>
+    <string name="lock_enable_prompt_title">Confirm to turn on the lock</string>
+    <string name="settings_backup">Backup</string>
+    <string name="settings_export">Export cards</string>
+    <string name="settings_export_summary">ZIP file compatible with Catima</string>
+    <string name="settings_import">Import cards</string>
+    <string name="settings_import_summary">From an Encarté or Catima backup</string>
+    <string name="settings_about">About</string>
+    <string name="settings_version">Version %1$s</string>
+    <string name="settings_license">License: GPL-3.0-or-later</string>
+    <string name="settings_source_code">Source code</string>
+    <string name="settings_third_party">Open source licenses</string>
+    <string name="export_password_title">Protect with a password?</string>
+    <string name="export_password_body">Optional. The archive is encrypted with AES-256; the names of the files it contains stay visible.</string>
+    <string name="field_password">Password</string>
+    <string name="field_password_confirm">Confirm password</string>
+    <string name="error_passwords_differ">Passwords don\'t match</string>
+    <string name="action_export_without_password">No password</string>
+    <string name="action_export">Export</string>
+    <string name="import_password_title">Password required</string>
+    <string name="import_password_body">This backup is encrypted.</string>
+    <string name="import_wrong_password">Wrong password, try again.</string>
+    <string name="action_import_confirm">Import</string>
+    <string name="import_error_invalid">This file is not a valid Encarté or Catima backup.</string>
+    <string name="import_error_version">This backup comes from a newer version (format %1$d).</string>
+    <string name="import_error_io">The file couldn\'t be read.</string>
+    <string name="export_error_io">The file couldn\'t be written.</string>
+    <plurals name="export_success">
+        <item quantity="one">%d card exported</item>
+        <item quantity="other">%d cards exported</item>
+    </plurals>
+    <plurals name="import_success_imported">
+        <item quantity="one">%d card imported</item>
+        <item quantity="other">%d cards imported</item>
+    </plurals>
+    <plurals name="import_success_skipped">
+        <item quantity="one">%d duplicate skipped</item>
+        <item quantity="other">%d duplicates skipped</item>
+    </plurals>
+    <string name="third_party_licenses" translatable="false">AndroidX (Compose, Room, CameraX, Navigation, Lifecycle, DataStore, Biometric, Fragment) — Apache-2.0\nKotlin, kotlinx.coroutines, kotlinx.serialization — Apache-2.0\nZXing — Apache-2.0\nzxing-cpp — Apache-2.0\nzip4j — Apache-2.0\nApache Commons CSV, IO, Codec — Apache-2.0\nMaterial Symbols — Apache-2.0</string>
 </resources>

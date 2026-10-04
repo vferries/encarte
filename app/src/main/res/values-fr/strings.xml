@@ -70,4 +70,50 @@
     <string name="action_unlock">Déverrouiller</string>
     <string name="lock_prompt_title">Déverrouiller Encarté</string>
     <string name="lock_disabled_no_credential">Verrouillage désactivé : l\'appareil n\'a plus de verrouillage d\'écran.</string>
+    <string name="settings_title">Réglages</string>
+    <string name="settings_security">Sécurité</string>
+    <string name="settings_lock">Verrouiller l\'application</string>
+    <string name="settings_lock_summary">Demander empreinte, visage ou code de l\'appareil à l\'ouverture d\'Encarté</string>
+    <string name="settings_lock_unavailable">Définissez d\'abord un verrouillage d\'écran sur l\'appareil</string>
+    <string name="lock_enable_prompt_title">Confirmez pour activer le verrouillage</string>
+    <string name="settings_backup">Sauvegarde</string>
+    <string name="settings_export">Exporter les cartes</string>
+    <string name="settings_export_summary">Fichier ZIP compatible avec Catima</string>
+    <string name="settings_import">Importer des cartes</string>
+    <string name="settings_import_summary">Depuis une sauvegarde Encarté ou Catima</string>
+    <string name="settings_about">À propos</string>
+    <string name="settings_version">Version %1$s</string>
+    <string name="settings_license">Licence : GPL-3.0 ou ultérieure</string>
+    <string name="settings_source_code">Code source</string>
+    <string name="settings_third_party">Licences open source</string>
+    <string name="export_password_title">Protéger par un mot de passe ?</string>
+    <string name="export_password_body">Facultatif. L\'archive est chiffrée en AES-256 ; les noms des fichiers qu\'elle contient restent visibles.</string>
+    <string name="field_password">Mot de passe</string>
+    <string name="field_password_confirm">Confirmer le mot de passe</string>
+    <string name="error_passwords_differ">Les mots de passe ne correspondent pas</string>
+    <string name="action_export_without_password">Sans mot de passe</string>
+    <string name="action_export">Exporter</string>
+    <string name="import_password_title">Mot de passe requis</string>
+    <string name="import_password_body">Cette sauvegarde est chiffrée.</string>
+    <string name="import_wrong_password">Mot de passe incorrect, réessayez.</string>
+    <string name="action_import_confirm">Importer</string>
+    <string name="import_error_invalid">Ce fichier n\'est pas une sauvegarde Encarté ou Catima valide.</string>
+    <string name="import_error_version">Cette sauvegarde provient d\'une version plus récente (format %1$d).</string>
+    <string name="import_error_io">Impossible de lire le fichier.</string>
+    <string name="export_error_io">Impossible d\'écrire le fichier.</string>
+    <plurals name="export_success">
+        <item quantity="one">%d carte exportée</item>
+        <item quantity="many">%d cartes exportées</item>
+        <item quantity="other">%d cartes exportées</item>
+    </plurals>
+    <plurals name="import_success_imported">
+        <item quantity="one">%d carte importée</item>
+        <item quantity="many">%d cartes importées</item>
+        <item quantity="other">%d cartes importées</item>
+    </plurals>
+    <plurals name="import_success_skipped">
+        <item quantity="one">%d doublon ignoré</item>
+        <item quantity="many">%d doublons ignorés</item>
+        <item quantity="other">%d doublons ignorés</item>
+    </plurals>
 </resources>
