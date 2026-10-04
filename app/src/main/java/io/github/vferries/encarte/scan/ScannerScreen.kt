@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -54,6 +55,9 @@ import io.github.vferries.encarte.R
 import java.io.IOException
 
 private const val TAG = "ScannerScreen"
+
+// Two buttons share one row: Material's 24 dp side padding would wrap longer labels ("Depuis une image").
+private val SideBySideButtonPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
 
 enum class CameraPermission { GRANTED, NOT_GRANTED, PERMANENTLY_DENIED }
 
@@ -202,11 +206,21 @@ fun ScannerScreen(
                 Modifier.fillMaxWidth().padding(16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                OutlinedButton(onClick = onManualEntry, modifier = Modifier.weight(1f), shape = MaterialTheme.shapes.small) {
+                OutlinedButton(
+                    onClick = onManualEntry,
+                    modifier = Modifier.weight(1f),
+                    shape = MaterialTheme.shapes.small,
+                    contentPadding = SideBySideButtonPadding,
+                ) {
                     Icon(painterResource(R.drawable.ic_keyboard), contentDescription = null)
                     Text(stringResource(R.string.action_enter_manually), Modifier.padding(start = 8.dp))
                 }
-                OutlinedButton(onClick = onPickImage, modifier = Modifier.weight(1f), shape = MaterialTheme.shapes.small) {
+                OutlinedButton(
+                    onClick = onPickImage,
+                    modifier = Modifier.weight(1f),
+                    shape = MaterialTheme.shapes.small,
+                    contentPadding = SideBySideButtonPadding,
+                ) {
                     Icon(painterResource(R.drawable.ic_image), contentDescription = null)
                     Text(stringResource(R.string.action_from_image), Modifier.padding(start = 8.dp))
                 }
