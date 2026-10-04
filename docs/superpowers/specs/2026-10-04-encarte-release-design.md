@@ -115,7 +115,7 @@ With no argument, it checks rules 3 and 4 against the current `versionName`. Tha
 4. Decode the keystore into `$RUNNER_TEMP/upload.jks` with `umask 077`.
 5. Run `./gradlew bundleRelease` with the four `ENCARTE_UPLOAD_*` variables.
 6. Verify with `jarsigner -verify` and check the signer certificate's SHA-256 against `vars.UPLOAD_CERT_SHA256`.
-7. Upload `app-release.aab` as the artifact `encarte-<versionName>-aab`, with a 30-day retention. The AAB carries its R8 mapping, so Play can deobfuscate crashes.
+7. Upload `app-release.aab` as the artifact `encarte-<tag>-aab` (for example `encarte-v1.0.0-aab`), with a 30-day retention. The AAB carries its R8 mapping, so Play can deobfuscate crashes.
 8. In an `if: always()` step, delete `$RUNNER_TEMP/upload.jks`.
 
 ## 7. Leak guard in normal CI
