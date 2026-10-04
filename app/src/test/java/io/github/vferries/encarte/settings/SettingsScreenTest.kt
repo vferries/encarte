@@ -83,5 +83,6 @@ class SettingsScreenTest {
         composeRule.onNodeWithText("Open source licenses").performScrollTo().performClick()
 
         composeRule.onNodeWithText("zxing-cpp — Apache-2.0", substring = true).assertIsDisplayed()
+        composeRule.onNodeWithText("Nunito — SIL Open Font License 1.1", substring = true).assertIsDisplayed()
     }
 }

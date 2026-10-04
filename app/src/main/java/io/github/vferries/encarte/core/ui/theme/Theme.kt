@@ -32,5 +32,5 @@ fun EncarteTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composabl
         darkTheme -> DarkColors
         else -> LightColors
     }
-    MaterialTheme(colorScheme = colorScheme, content = content)
+    MaterialTheme(colorScheme = colorScheme, typography = EncarteTypography, content = content)
 }
