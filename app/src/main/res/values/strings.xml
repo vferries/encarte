@@ -63,4 +63,8 @@
     <string name="action_open_settings">Open app settings</string>
     <string name="camera_unavailable">No camera is available. Enter the card manually or use an image.</string>
     <string name="no_barcode_in_image">No barcode found in this image.</string>
+    <string name="import_note_valid_from">Valid from: %1$s</string>
+    <string name="import_note_expires">Expires: %1$s</string>
+    <string name="import_note_balance">Balance: %1$s</string>
+    <string name="import_note_points">%1$s points</string>
 </resources>
