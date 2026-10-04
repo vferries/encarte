@@ -67,4 +67,8 @@
     <string name="import_note_expires">Expires: %1$s</string>
     <string name="import_note_balance">Balance: %1$s</string>
     <string name="import_note_points">%1$s points</string>
+    <string name="lock_title">Encarté is locked</string>
+    <string name="action_unlock">Unlock</string>
+    <string name="lock_prompt_title">Unlock Encarté</string>
+    <string name="lock_disabled_no_credential">App lock turned off: this device no longer has a screen lock.</string>
 </resources>
