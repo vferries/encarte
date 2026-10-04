@@ -1,0 +1,31 @@
+<!doctype html>
+<!-- Fictional card face shown to the emulator camera for store screenshot 3 (spec §7.3).
+     Logo side only, no barcode: the scanner must not decode it and navigate away. -->
+<html>
+<head>
+<meta charset="utf-8">
+<title>Librairie du Coin card face</title>
+<style>
+  @font-face { font-family: Nunito; src: url("../../app/src/main/res/font/nunito.ttf"); font-weight: 200 1000; }
+  html, body { margin: 0; width: 1011px; height: 638px; overflow: hidden; background: #1976D2; }
+  body { position: relative; font-family: Nunito; color: #FFFFFF; }
+  svg { position: absolute; left: 72px; top: 150px; }
+  .name { position: absolute; left: 72px; top: 330px; margin: 0; font-weight: 900; font-size: 92px; line-height: 1; }
+  .tag { position: absolute; left: 76px; top: 450px; margin: 0; font-weight: 700; font-size: 38px; opacity: 0.85; }
+</style>
+</head>
+<body>
+  <!-- An open book. -->
+  <svg width="180" height="130" viewBox="0 0 36 26" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linejoin="round">
+    <path d="M18 5 C13 2 7 2 2 4 V23 C7 21 13 21 18 24 Z"/>
+    <path d="M18 5 C23 2 29 2 34 4 V23 C29 21 23 21 18 24 Z"/>
+  </svg>
+  <p class="name">Librairie du Coin</p>
+  <p class="tag">Carte de fidélité</p>
+  <script>
+    document.fonts.load("900 92px Nunito").then(
+      faces => { document.documentElement.dataset.ready = faces.length > 0 ? "ok" : "missing-font"; },
+      () => { document.documentElement.dataset.ready = "missing-font"; });
+  </script>
+</body>
+</html>

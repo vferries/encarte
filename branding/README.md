@@ -29,3 +29,76 @@ Three files share the launcher art's numbers (spec §4); change them together:
 - `icon.svg`: 512 × 512 store icon, the visible 72 × 72 area of the adaptive icon on full-bleed Cream.
 
 `BrandDrawablesTest` renders both vectors and fails if any pixel leaves the 33 dp safe zone.
+
+## Demo data
+
+- `demo/cards.csv`: a Catima v2 export of 8 fictional stores; Boulangerie Martin and Librairie du Coin are starred.
+  EAN-13 numbers use the in-store prefixes 20–29, so none is a real product code. `DemoCardsTest` checks that it
+  imports and that every code is valid.
+- `demo/card-face.html`: a fictional card face (logo side, no barcode) for the scanner shot.
+
+No real brand may appear in a store asset.
+
+## Capturing the raw screenshots
+
+Needs the Android SDK `emulator` and `adb`, Google Chrome and ImageMagick 7. Captures are taken with the app lock
+**off**: with it on, `FLAG_SECURE` makes `screencap` black (`capture.sh` refuses black captures).
+If a phone is also plugged in, set `ANDROID_SERIAL=emulator-5554` first.
+
+1. Render the card face for the camera poster, then start the emulator read-only (all setup is discarded on exit):
+
+   ```bash
+   P=$(mktemp -d)
+   google-chrome --headless=new --user-data-dir="$P" --disable-gpu --hide-scrollbars --allow-file-access-from-files \
+     --force-device-scale-factor=1 --virtual-time-budget=10000 --window-size=1011,638 \
+     --screenshot="$P/card-face.png" "file://$PWD/branding/demo/card-face.html"
+   emulator -avd Pixel_10 -read-only -no-snapshot -virtualscene-poster wall="$P/card-face.png" &
+   adb wait-for-device shell 'while [ -z "$(getprop sys.boot_completed)" ]; do sleep 1; done'
+   ```
+
+2. SystemUI demo mode (12:00, full battery and signal, no notifications):
+
+   ```bash
+   adb shell settings put global sysui_demo_allowed 1
+   adb shell am broadcast -a com.android.systemui.demo -e command enter
+   adb shell am broadcast -a com.android.systemui.demo -e command clock -e hhmm 1200
+   adb shell am broadcast -a com.android.systemui.demo -e command battery -e level 100 -e plugged false
+   adb shell am broadcast -a com.android.systemui.demo -e command network -e wifi show -e level 4 -e mobile show -e datatype none -e level 4
+   adb shell am broadcast -a com.android.systemui.demo -e command notifications -e visible false
+   ```
+
+3. Solid Teal wallpaper, so Material You derives the app palette from the brand:
+
+   ```bash
+   magick -size 1080x2424 xc:'#2E8C83' "$P/teal.png"
+   adb push "$P/teal.png" /sdcard/Pictures/teal.png
+   ```
+
+   Then set `/sdcard/Pictures/teal.png` as the home and lock screen wallpaper (WALLPAPER_SETUP_STEP).
+
+4. Install and prepare the app (the demo data stays in the emulator; `pm clear` restarts from an empty wallet):
+
+   ```bash
+   ./gradlew installDebug
+   adb push branding/demo/cards.csv /sdcard/Download/cards.csv
+   ```
+
+5. For each locale (`en-US`, then `fr-FR`):
+
+   ```bash
+   L=en-US   # then fr-FR
+   adb shell pm clear io.github.vferries.encarte
+   adb shell pm grant io.github.vferries.encarte android.permission.CAMERA
+   adb shell cmd locale set-app-locales io.github.vferries.encarte --locales "$L"
+   adb shell am start -n io.github.vferries.encarte/.MainActivity
+   ```
+
+   - Shot 5: the empty state, right after launch: `branding/capture.sh $L 5`.
+   - Settings → Import → `Download/cards.csv`.
+   - Shot 1: the card list, with the Favorites section: `branding/capture.sh $L 1`.
+   - Shot 2: open Boulangerie Martin (EAN-13): `branding/capture.sh $L 2`.
+   - Shot 4: Settings, scrolled so the backup and lock sections both show: `branding/capture.sh $L 4`.
+   - Shot 3: + → scanner; aim the virtual camera at the wall poster (CAMERA_AIM_STEP): `branding/capture.sh $L 3`.
+
+The raw captures in `screenshots/raw/` are committed (demo data only), so caption or layout changes never need a
+recapture.

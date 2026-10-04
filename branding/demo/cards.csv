@@ -1,0 +1,15 @@
+2
+
+_id
+
+_id,store,note,validfrom,expiry,balance,balancetype,cardid,barcodeid,barcodetype,barcodeencoding,headercolor,starstatus,lastused,archive
+1,Boulangerie Martin,,,,0,,2000048151625,,EAN_13,,-689152,1,1791100000,0
+2,Librairie du Coin,,,,0,,LDC-2048-7731,,CODE_128,,-15108398,1,1791000000,0
+3,Fromagerie Dupont,,,,0,,2900002718287,,EAN_13,,-415707,0,1790900000,0
+4,Cinéma Lumière,,,,0,,CINE-LUMIERE-000482,,QR_CODE,,-11457112,0,1790800000,0
+5,Jardinerie des Lilas,,,,0,,2400016180334,,EAN_13,,-13070788,0,1790700000,0
+6,Pharmacie du Centre,,,,0,,PDC 0042 9917,,CODE_128,,-16746133,0,1790600000,0
+7,Atelier Vélo,,,,0,,ATELIER-VELO-1207,,QR_CODE,,-2937041,0,1790500000,0
+8,Café des Arts,,,,0,,2700014142137,,EAN_13,,-10665929,0,1790400000,0
+
+cardId,groupId

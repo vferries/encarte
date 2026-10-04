@@ -55,6 +55,8 @@ android {
                 "--add-opens=java.desktop/java.awt.font=ALL-UNNAMED",
                 "--add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
             )
+            // DemoCardsTest reads the store-screenshot wallet: editing it must re-run the tests.
+            it.inputs.file(rootProject.file("branding/demo/cards.csv"))
         }
     }
 }
