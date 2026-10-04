@@ -6,6 +6,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.androidx.room)
 }
 
 android {
@@ -61,6 +63,10 @@ kotlin {
     jvmToolchain(21)
 }
 
+room3 {
+    schemaDirectory("$projectDir/schemas")
+}
+
 dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
@@ -82,6 +88,8 @@ dependencies {
 
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.androidx.room.runtime)
+    ksp(libs.androidx.room.compiler)
 
     implementation(libs.androidx.datastore.preferences)
 
@@ -104,6 +112,7 @@ dependencies {
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.androidx.test.ext.junit)
     testImplementation(libs.androidx.test.runner)
+    testImplementation(libs.androidx.room.testing)
     testImplementation(platform(libs.androidx.compose.bom))
     testImplementation(libs.androidx.compose.ui.test.junit4)
     // ui-test pulls espresso-core 3.5.0, which reflects on InputManager.getInstance() (gone on SDK 37).
@@ -152,6 +161,11 @@ val verifyNoNetworkPermission = tasks.register<VerifyNoNetworkPermissionTask>("v
 }
 
 androidComponents {
+    // Robolectric reads the tested variant's merged assets, and Room's plugin only feeds schemas to
+    // androidTest. Exposing them to debug lets MigrationTestHelper run in unit tests (never in release).
+    onVariants(selector().withBuildType("debug")) { variant ->
+        variant.sources.assets?.addStaticSourceDirectory("$projectDir/schemas")
+    }
     onVariants(selector().withBuildType("release")) { variant ->
         verifyNoNetworkPermission.configure {
             mergedManifest.set(variant.artifacts.get(SingleArtifact.MERGED_MANIFEST))
