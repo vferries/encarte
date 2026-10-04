@@ -52,9 +52,15 @@ If a phone is also plugged in, set `ANDROID_SERIAL=emulator-5554` first.
    google-chrome --headless=new --user-data-dir="$P" --disable-gpu --hide-scrollbars --allow-file-access-from-files \
      --force-device-scale-factor=1 --virtual-time-budget=10000 --window-size=1011,638 \
      --screenshot="$P/card-face.png" "file://$PWD/branding/demo/card-face.html"
-   emulator -avd Pixel_10 -read-only -no-snapshot -virtualscene-poster wall="$P/card-face.png" &
+   __NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia \
+     emulator -avd Pixel_10 -read-only -no-snapshot -gpu host -virtualscene-poster wall="$P/card-face.png" &
    adb wait-for-device shell 'while [ -z "$(getprop sys.boot_completed)" ]; do sleep 1; done'
+   adb shell svc power stayon true
    ```
+
+   `-gpu host` matters: with the default `auto`, the emulator distrusts the hybrid NVIDIA + AMD drivers, falls back
+   to software rendering ("Switching to software rendering" in its log) and crawls. The two variables put it on the
+   NVIDIA GPU; drop them on a single-GPU machine.
 
 2. SystemUI demo mode (12:00, full battery and signal, no notifications):
 
@@ -74,7 +80,23 @@ If a phone is also plugged in, set `ANDROID_SERIAL=emulator-5554` first.
    adb push "$P/teal.png" /sdcard/Pictures/teal.png
    ```
 
-   Then set `/sdcard/Pictures/teal.png` as the home and lock screen wallpaper (WALLPAPER_SETUP_STEP).
+   There is no shell command to set a wallpaper: index the image, then hand it to the system's "Use as" chooser.
+
+   ```bash
+   adb shell am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file:///sdcard/Pictures/teal.png
+   adb shell content query --uri content://media/external/images/media --projection _id:_data   # note teal.png's _id
+   adb shell am start -a android.intent.action.ATTACH_DATA -t image/png --grant-read-uri-permission \
+     -d content://media/external/images/media/<_id>
+   ```
+
+   In the chooser, tap **Wallpaper** → **Just once** → **SET WALLPAPER**.
+
+   Also give the device a screen lock (`adb shell locksettings set-pin 1234`). Without one, Settings shows "Lock the
+   app" disabled with "Set a screen lock on this device first" instead of its normal summary. The app lock itself
+   stays off.
+
+   Clear any notification left in the status bar before each capture (pull down the shade → **Clear all**). The
+   ongoing "New ads privacy features" one only goes away when you open it and tap **Got it**.
 
 4. Install and prepare the app (the demo data stays in the emulator; `pm clear` restarts from an empty wallet):
 
@@ -94,11 +116,17 @@ If a phone is also plugged in, set `ANDROID_SERIAL=emulator-5554` first.
    ```
 
    - Shot 5: the empty state, right after launch: `branding/capture.sh $L 5`.
-   - Settings → Import → `Download/cards.csv`.
-   - Shot 1: the card list, with the Favorites section: `branding/capture.sh $L 1`.
+   - Import (empty state) → Import cards → ☰ roots → Downloads → `cards.csv`.
+   - Shot 4: Settings, once the "8 cards imported" snackbar has gone (backup and lock sections both show):
+     `branding/capture.sh $L 4`.
+   - Shot 1: back to the card list, with the Favorites section: `branding/capture.sh $L 1`.
    - Shot 2: open Boulangerie Martin (EAN-13): `branding/capture.sh $L 2`.
-   - Shot 4: Settings, scrolled so the backup and lock sections both show: `branding/capture.sh $L 4`.
-   - Shot 3: + → scanner; aim the virtual camera at the wall poster (CAMERA_AIM_STEP): `branding/capture.sh $L 3`.
+   - Shot 3: back, + → scanner: `branding/capture.sh $L 3`.
+
+   For shot 3, aim the virtual camera at the wall poster once, in the emulator window, before the first locale:
+   click into the screen, hold **Alt** and move the mouse to look around, and use **Alt + W/A/S/D** to move. Frame the
+   blue "Librairie du Coin" card large and roughly square in the viewfinder. The pose persists while the emulator
+   runs, so the second locale reuses it. No console command sets this pose.
 
 The raw captures in `screenshots/raw/` are committed (demo data only), so caption or layout changes never need a
 recapture.
