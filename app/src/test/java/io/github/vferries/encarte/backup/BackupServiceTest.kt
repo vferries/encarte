@@ -1,8 +1,11 @@
 package io.github.vferries.encarte.backup
 
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import androidx.room3.useWriterConnection
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.github.vferries.encarte.core.barcode.BarcodeFormat
+import io.github.vferries.encarte.core.data.Card
 import io.github.vferries.encarte.core.data.EncarteDatabase
 import io.github.vferries.encarte.core.data.ImageStore
 import io.github.vferries.encarte.testing.inMemoryDatabase
@@ -27,6 +30,7 @@ import java.io.FileOutputStream
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
+import java.time.temporal.ChronoUnit
 import java.util.Locale
 
 @RunWith(AndroidJUnit4::class)
@@ -59,8 +63,8 @@ class BackupServiceTest {
 
     private fun fixture(name: String) = javaClass.getResource("/catima/$name")!!.readText()
 
-    private fun png() = ByteArrayOutputStream().also {
-        Bitmap.createBitmap(4, 4, Bitmap.Config.ARGB_8888).compress(Bitmap.CompressFormat.PNG, 100, it)
+    private fun png(width: Int = 4, height: Int = 4) = ByteArrayOutputStream().also {
+        Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).compress(Bitmap.CompressFormat.PNG, 100, it)
     }.toByteArray()
 
     @Test
@@ -135,24 +139,57 @@ class BackupServiceTest {
     }
 
     @Test
-    fun exportThenImportIntoEmptyDatabaseRoundTrips() = runTest {
-        val front = images.save { png().inputStream() }
-        db.cardDao().insert(testCard("Fnac", cardNumber = "4006381333931", frontImage = front, isFavorite = true))
-        db.cardDao().insert(testCard("Käse", cardNumber = "Käseschnitte"))
+    fun encryptedExportThenImportIntoEmptyDatabaseRoundTrips() = runTest { assertRoundTrip("pw".toCharArray()) }
+
+    @Test
+    fun plainExportThenImportIntoEmptyDatabaseRoundTrips() = runTest { assertRoundTrip(password = null) }
+
+    private suspend fun assertRoundTrip(password: CharArray?) {
+        val front = images.save { png(width = 8, height = 4).inputStream() }
+        val back = images.save { png(width = 4, height = 8).inputStream() }
+        val originals = listOf(
+            testCard(
+                "Fnac", cardNumber = "4006381333931", barcodeFormat = BarcodeFormat.EAN_13, isFavorite = true,
+                frontImage = front, backImage = back, lastUsedAt = Instant.parse("2026-09-30T08:15:42.123Z"),
+            ).copy(note = "Gold member\nsince 2020, \"VIP\"", color = 0xFF123456.toInt()),
+            testCard("Decathlon", cardNumber = "1234 5678", barcodeFormat = BarcodeFormat.CODE_128)
+                .copy(barcodeValue = "X-12345678"),
+            testCard("Käse", cardNumber = "Käseschnitte", barcodeFormat = BarcodeFormat.QR_CODE)
+                .copy(note = "Crème brûlée ☕"),
+        )
+        originals.forEach { db.cardDao().insert(it) }
         val exported = ByteArrayOutputStream()
 
-        assertEquals(ExportResult.Success(2), service.export({ exported }, "pw".toCharArray()))
+        assertEquals(ExportResult.Success(3), service.export({ exported }, password?.copyOf()))
 
         val otherDb = inMemoryDatabase()
-        val otherImages = ImageStore(File(tmp.root, "images2"), File(tmp.root, "staging2"))
-        val other = serviceFor(otherDb, otherImages)
-        val file = File(tmp.root, "exported.zip").apply { writeBytes(exported.toByteArray()) }
-        assertEquals(ImportResult.Success(2, 0), other.import(file, "pw".toCharArray()))
-        val fnac = otherDb.cardDao().getAll().single { it.storeName == "Fnac" }
-        assertEquals("4006381333931", fnac.cardNumber)
-        assertTrue(fnac.isFavorite)
-        assertTrue(otherImages.exists(fnac.frontImage!!))
-        otherDb.close()
+        try {
+            val otherImages = ImageStore(File(tmp.root, "images2"), File(tmp.root, "staging2"))
+            val file = File(tmp.root, "exported.zip").apply { writeBytes(exported.toByteArray()) }
+            assertEquals(ImportResult.Success(3, 0), serviceFor(otherDb, otherImages).import(file, password))
+            val imported = otherDb.cardDao().getAll().associateBy { it.storeName }
+            for (original in originals) {
+                val copy = imported.getValue(original.storeName)
+                assertEquals(original.comparable(), copy.comparable())
+            }
+            val fnac = imported.getValue("Fnac")
+            assertEquals(8 to 4, otherImages.size(fnac.frontImage!!))
+            assertEquals(4 to 8, otherImages.size(fnac.backImage!!))
+        } finally {
+            otherDb.close()
+        }
+    }
+
+    /** What a backup must preserve: ids, creation dates and image file names are the importer's own. */
+    private fun Card.comparable() = copy(
+        id = 0, createdAt = Instant.EPOCH, frontImage = null, backImage = null,
+        lastUsedAt = lastUsedAt?.truncatedTo(ChronoUnit.SECONDS),
+    )
+
+    private fun ImageStore.size(name: String): Pair<Int, Int> {
+        assertTrue("image $name exists", exists(name))
+        val bitmap = BitmapFactory.decodeFile(file(name).path)
+        return bitmap.width to bitmap.height
     }
 
     @Test
