@@ -10,12 +10,26 @@ locales=(fr-FR en-US)
 profile=$(mktemp -d)
 trap 'rm -rf "$profile"' EXIT
 
-fail() { echo "render.sh: $*" >&2; exit 1; }
+chrome_bin=${CHROME:-google-chrome}
+
+# Chrome's stderr goes to a log so a failure can show its cause instead of vanishing.
+fail() {
+  echo "render.sh: $*" >&2
+  if [[ -s $profile/chrome.log ]]; then
+    echo "render.sh: last lines of Chrome's log:" >&2
+    tail -n 20 "$profile/chrome.log" >&2
+  fi
+  exit 1
+}
+
+for tool in "$chrome_bin" magick; do
+  command -v "$tool" >/dev/null || fail "'$tool' not found in PATH (see branding/README.md)"
+done
 
 # A throwaway profile keeps the user's own Chrome session out of it; file access lets templates load the font.
 chrome() {
-  google-chrome --headless=new --user-data-dir="$profile" --disable-gpu --hide-scrollbars \
-    --allow-file-access-from-files --force-device-scale-factor=1 --virtual-time-budget=10000 "$@" 2>/dev/null
+  "$chrome_bin" --headless=new --user-data-dir="$profile" --disable-gpu --hide-scrollbars \
+    --allow-file-access-from-files --force-device-scale-factor=1 --virtual-time-budget=10000 "$@" 2>>"$profile/chrome.log"
 }
 
 # Templates set data-ready="ok" only once Nunito and their images loaded; Chrome would otherwise fall back silently.

@@ -140,4 +140,4 @@ of the two HTML templates.
 
 It uses headless Google Chrome (with a throwaway profile) and ImageMagick 7. It fails if a template could not load
 the bundled Nunito or its capture, if an image has the wrong size, or if it still has an alpha channel.
-Neither the app build nor CI runs it.
+Neither the app build nor CI runs it. Set `CHROME=chromium` (or any path) if `google-chrome` is not installed.
