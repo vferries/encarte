@@ -1,14 +1,17 @@
 package io.github.vferries.encarte.cards.list
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridScope
@@ -193,6 +196,11 @@ private fun EmptyState(onAddCard: () -> Unit, onImport: () -> Unit, modifier: Mo
         verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        Image(
+            painter = painterResource(R.drawable.illustration_card_fan),
+            contentDescription = null, // decorative: the title right below says the list is empty
+            modifier = Modifier.width(160.dp).aspectRatio(108f / 90f),
+        )
         Text(stringResource(R.string.empty_title), style = MaterialTheme.typography.headlineSmall)
         Text(stringResource(R.string.empty_body), textAlign = TextAlign.Center)
         Button(onClick = onAddCard, shape = MaterialTheme.shapes.small) { Text(stringResource(R.string.action_add_card)) }

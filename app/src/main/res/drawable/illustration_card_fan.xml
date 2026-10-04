@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Empty-state illustration: the launcher's fan of cards, moved up 10 units into a 108 × 90 viewport.
+     Brand colors are fixed so it looks the same in light and dark themes. Same geometry as the fan in
+     branding/feature-graphic.html: change both together. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="90dp"
+    android:viewportWidth="108"
+    android:viewportHeight="90">
+    <group
+        android:pivotX="54"
+        android:pivotY="60"
+        android:rotation="-16">
+        <path
+            android:fillColor="#2E8C83"
+            android:pathData="M35,24H73A5,5 0 0 1 78,29V51A5,5 0 0 1 73,56H35A5,5 0 0 1 30,51V29A5,5 0 0 1 35,24Z" />
+    </group>
+    <group
+        android:pivotX="54"
+        android:pivotY="60"
+        android:rotation="-2">
+        <path
+            android:fillColor="#F2A93B"
+            android:pathData="M35,24H73A5,5 0 0 1 78,29V51A5,5 0 0 1 73,56H35A5,5 0 0 1 30,51V29A5,5 0 0 1 35,24Z" />
+    </group>
+    <group
+        android:pivotX="54"
+        android:pivotY="60"
+        android:rotation="12">
+        <path
+            android:fillColor="#FFFFFF"
+            android:strokeColor="#1D2440"
+            android:strokeWidth="2.5"
+            android:pathData="M35,24H73A5,5 0 0 1 78,29V51A5,5 0 0 1 73,56H35A5,5 0 0 1 30,51V29A5,5 0 0 1 35,24Z" />
+        <path
+            android:fillColor="#1D2440"
+            android:pathData="M36,34h2v15h-2z M40,34h1v15h-1z M43,34h3v15h-3z M48,34h1v15h-1z M51,34h2v15h-2z M55,34h1v15h-1z M58,34h3v15h-3z M63,34h1v15h-1z M66,34h2v15h-2z M70,34h1v15h-1z" />
+    </group>
+</vector>

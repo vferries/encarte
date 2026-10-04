@@ -58,6 +58,17 @@ class BrandDrawablesTest {
         assertEquals(0, Color.alpha(icon.getPixel(277, 254)))
     }
 
+    @Test
+    fun emptyStateIllustrationKeepsBrandColors() {
+        val drawable = context.getDrawable(R.drawable.illustration_card_fan)!!
+        assertEquals(108f / 90f, drawable.intrinsicWidth.toFloat() / drawable.intrinsicHeight, 0.01f)
+        // Fixed colors, not theme attributes: the illustration must look the same in light and dark themes.
+        val art = render(R.drawable.illustration_card_fan, 108 * SCALE, 90 * SCALE)
+        assertEquals(Color.WHITE, art.getPixel(150, 144)) // front card, left of the bars
+        assertEquals(0xFF2E8C83.toInt(), art.getPixel(130, 231)) // back card, below the middle one
+        assertEquals(0xFFF2A93B.toInt(), art.getPixel(126, 211)) // middle card, below the front one
+    }
+
     private companion object {
         const val SCALE = 4
         const val ICON_PX = 108 * SCALE
