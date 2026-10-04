@@ -7,10 +7,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.SavedStateHandle
 import androidx.navigation3.runtime.NavEntry
@@ -87,6 +89,21 @@ class CardEditScreenTest {
         composeRule.setContent { CardEditScreen(vm, onClose = {}, onPickImage = {}, onTakePhoto = {}) }
 
         composeRule.onNodeWithText("Invalid check digit").assertIsDisplayed()
+    }
+
+    @Test
+    fun emptyEncodedValueSaysItIsRequired() {
+        val vm = viewModel("1234", BarcodeFormat.CODE_128)
+        composeRule.setContent { CardEditScreen(vm, onClose = {}, onPickImage = {}, onTakePhoto = {}) }
+        composeRule.onNodeWithText("Store").performTextInput("Shop")
+        composeRule.onNodeWithText("Required").assertDoesNotExist()
+
+        composeRule.onNode(isToggleable()).performClick()
+
+        composeRule.onNodeWithText("Required").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithText("Save").assertIsNotEnabled()
+        composeRule.onNodeWithText("Encoded value").performTextInput("X-1234")
+        composeRule.onNodeWithText("Required").assertDoesNotExist()
     }
 
     @Test

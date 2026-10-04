@@ -294,7 +294,9 @@ private fun Form(
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text(stringResource(R.string.field_encoded_value)) },
                 isError = error != null,
-                supportingText = supportingText(error?.message),
+                supportingText = supportingText(
+                    error?.message ?: R.string.field_required_hint.takeIf { viewModel.barcodeValue.text.isBlank() }
+                ),
                 lineLimits = TextFieldLineLimits.SingleLine,
             )
         }
