@@ -8,6 +8,7 @@ automatically (`UpdateCheckMode: Tags`, `AutoUpdateMode: Version`), so later rel
 
 - `v1.0.0` is tagged and pushed, and the `Release` workflow passed on it.
 - The repository has `fastlane/metadata/android/en-US/` (title, short and full description), which F-Droid requires.
+- `https://encarte.fr` is live (the metadata's `WebSite` points to it).
 
 ## Merge request
 
@@ -26,7 +27,8 @@ automatically (`UpdateCheckMode: Tags`, `AutoUpdateMode: Version`), so later rel
 
 ## Known facts for reviewers
 
-- The build is a plain Gradle build of `app/`, with no flavors, no `sudo:` and no prebuilt binaries in the repository.
+- The build is a plain Gradle build of `app/`, with no flavors, no `sudo:` and no prebuilt binaries in the repository apart from `gradle/wrapper/gradle-wrapper.jar`, which F-Droid replaces with
+  its own Gradle.
 - `io.github.zxing-cpp:android` comes from Maven Central. Other apps in fdroiddata use it as is (Solid Share 3.1.1,
   Chompass 3.1.0).
 - The release build is unsigned when no `ENCARTE_UPLOAD_*` variable is set, which is the case on F-Droid's build server.

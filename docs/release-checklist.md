@@ -18,6 +18,7 @@ F-Droid in `docs/release/fdroid/README.md`.
 - [ ] Secret scanning and push protection enabled (`setup.md` §3).
 - [ ] `https://encarte.fr` and `https://encarte.fr/privacy.html` live over HTTPS, domain verified (`setup.md` §4).
 - [ ] Play Console app created, listing and App content complete (`play-console.md` §1–5).
+- [ ] After `v1.0.0`: open the F-Droid merge request (`docs/release/fdroid/README.md`).
 
 ## Every release
 
@@ -42,7 +43,11 @@ F-Droid in `docs/release/fdroid/README.md`.
 - [ ] Write `fastlane/metadata/android/{fr-FR,en-US}/changelogs/<versionCode>.txt` (500 characters max).
 - [ ] `scripts/check-release.sh vX.Y.Z` passes.
 - [ ] Commit, then `git tag vX.Y.Z && git push origin main vX.Y.Z`.
-- [ ] Approve the `Release` run on GitHub (environment `release`); it must end green.
+- [ ] Approve the `Release` run on GitHub (environment `release`) only if its commit is the tagged commit on `main` and
+      CI on `main` is green for it; the run must end green.
+- [ ] If the run fails: fix on `main` and push a new patch version. Never move or re-push a tag that F-Droid may
+      already have built. Before F-Droid inclusion and before any upload to Play, deleting and re-creating the same
+      tag is acceptable.
 - [ ] Download the `encarte-vX.Y.Z-aab` artifact; upload it to the Play internal testing track; install and smoke-test;
       promote to production (`play-console.md` §6).
 - [ ] F-Droid (once included): check a few days later that the new version built on f-droid.org

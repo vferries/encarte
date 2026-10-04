@@ -38,6 +38,8 @@ Contact details: an email address you are willing to show publicly (required); w
 
 - **Privacy policy:** `https://encarte.fr/privacy.html`
 - **Ads:** No, the app contains no ads.
+- **Advertising ID:** No, the app does not use an advertising ID. The declaration is required for apps targeting
+  API 33 or higher, and the merged manifest has no `AD_ID` permission.
 - **App access:** All functionality is available without special access (no login).
 - **Content rating:** start the questionnaire, category **Utility, Productivity, Communication or Other**.
   Answer **No** to every question (no violence, sexual content, profanity, drugs, gambling, user-generated content,

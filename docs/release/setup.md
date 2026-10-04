@@ -10,7 +10,7 @@ With Play App Signing, Google holds the app signing key; this key only authentic
 can reset it if it is lost or leaked.
 
 ```bash
-keytool -genkeypair -v -keystore ~/encarte-upload.jks -storetype PKCS12 -alias upload \
+keytool -genkeypair -v -keystore ~/encarte-upload.jks -storetype PKCS12 -alias encarte-upload \
   -keyalg RSA -keysize 4096 -validity 10000 -dname "CN=Vincent Ferries, O=Encarte"
 ```
 
@@ -19,7 +19,7 @@ keytool -genkeypair -v -keystore ~/encarte-upload.jks -storetype PKCS12 -alias u
 Record the certificate fingerprint (public, not a secret):
 
 ```bash
-keytool -J-Duser.language=en -J-Duser.country=US -list -v -keystore ~/encarte-upload.jks -alias upload | sed -n 's/^[[:space:]]*SHA256: //p'
+keytool -J-Duser.language=en -J-Duser.country=US -list -v -keystore ~/encarte-upload.jks -alias encarte-upload | sed -n 's/^[[:space:]]*SHA256: //p'
 ```
 
 The `-J-Duser.language=en -J-Duser.country=US` flags ensure the output is in English regardless of your system language, keeping it parseable.
@@ -34,9 +34,11 @@ reads it from a pipe:
 base64 -w0 ~/encarte-upload.jks | gh secret set UPLOAD_KEYSTORE_BASE64 --env release --repo vferries/encarte
 gh secret set UPLOAD_KEYSTORE_PASSWORD --env release --repo vferries/encarte   # prompts
 gh secret set UPLOAD_KEY_PASSWORD --env release --repo vferries/encarte        # prompts (same as above with PKCS12)
-gh secret set UPLOAD_KEY_ALIAS --env release --repo vferries/encarte --body upload
+gh secret set UPLOAD_KEY_ALIAS --env release --repo vferries/encarte --body encarte-upload
 gh variable set UPLOAD_CERT_SHA256 --repo vferries/encarte --body "<fingerprint from step 1>"
 ```
+
+The alias is stored as a secret and GitHub masks secret values in logs, so a distinctive alias avoids masking the common word "upload" everywhere.
 
 ## 3. Secret scanning and push protection
 
@@ -48,8 +50,9 @@ The controller can do it with `gh api` once you agree.
 1. The controller enables Pages with the **GitHub Actions** source and sets the custom domain `encarte.fr`
    once you agree. The `Pages` workflow then deploys `site/`.
 2. **Verify the domain** in your account (prevents anyone else from claiming it on Pages): github.com →
-   Settings (your profile) → Pages → Add a domain → `encarte.fr`. GitHub shows a `TXT` record named
-   `_github-pages-challenge-vferries.encarte.fr`: add it at your registrar, then click Verify.
+   Settings (your profile) → Pages → Add a domain → `encarte.fr`. GitHub shows a `TXT` record: add it at your registrar with the host name
+   `_github-pages-challenge-vferries` (relative, like the other records; registrars append the domain themselves),
+   then click Verify.
 3. At your registrar, add the site records:
 
    | Name | Type | Value |
