@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name" translatable="false">Encarté</string>
+    <string name="barcode_description">%1$s barcode: %2$s</string>
+    <string name="navigate_back">Back</string>
 </resources>
