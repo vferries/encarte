@@ -130,3 +130,14 @@ If a phone is also plugged in, set `ANDROID_SERIAL=emulator-5554` first.
 
 The raw captures in `screenshots/raw/` are committed (demo data only), so caption or layout changes never need a
 recapture.
+
+## Rendering the store graphics
+
+`branding/render.sh` regenerates all 14 PNGs in `fastlane/metadata/android/<fr-FR|en-US>/images/` (icon 512 × 512,
+`featureGraphic.png` 1024 × 500, `phoneScreenshots/1..5.png` 1080 × 1920) from `icon.svg`, `feature-graphic.html`,
+`screenshot.html` and the raw captures. Captions, colors and feature-graphic texts live in the tables at the bottom
+of the two HTML templates.
+
+It uses headless Google Chrome (with a throwaway profile) and ImageMagick 7. It fails if a template could not load
+the bundled Nunito or its capture, if an image has the wrong size, or if it still has an alpha channel.
+Neither the app build nor CI runs it.

@@ -1,0 +1,50 @@
+<!doctype html>
+<!-- Play/F-Droid feature graphic, 1024 × 500 (visual identity spec §7.1).
+     render.sh opens it as feature-graphic.html?locale=fr-FR (or en-US). -->
+<html>
+<head>
+<meta charset="utf-8">
+<title>Encarté feature graphic</title>
+<style>
+  /* The app's own font file: no network access, no system font. */
+  @font-face { font-family: Nunito; src: url("../app/src/main/res/font/nunito.ttf"); font-weight: 200 1000; }
+  html, body { margin: 0; width: 1024px; height: 500px; overflow: hidden; background: #FFF6E8; }
+  svg { display: block; }
+  text { font-family: Nunito; }
+</style>
+</head>
+<body>
+<svg width="1024" height="500" viewBox="0 0 1024 500">
+  <rect width="1024" height="500" fill="#FFF6E8"/>
+  <text id="line1" x="64" y="205" font-weight="900" font-size="54" fill="#1D2440"></text>
+  <text id="line2" x="64" y="270" font-weight="900" font-size="54" fill="#1D2440"></text>
+  <text id="subtitle" x="66" y="330" font-weight="700" font-size="24" fill="#2E8C83"></text>
+  <!-- Same geometry as app/src/main/res/drawable/illustration_card_fan.xml: change both together. -->
+  <svg x="610" y="40" width="400" height="420" viewBox="0 0 108 90">
+    <rect x="30" y="24" width="48" height="32" rx="5" fill="#2E8C83" transform="rotate(-16 54 60)"/>
+    <rect x="30" y="24" width="48" height="32" rx="5" fill="#F2A93B" transform="rotate(-2 54 60)"/>
+    <g transform="rotate(12 54 60)">
+      <rect x="30" y="24" width="48" height="32" rx="5" fill="#FFFFFF" stroke="#1D2440" stroke-width="2.5"/>
+      <path fill="#1D2440" d="M36,34h2v15h-2z M40,34h1v15h-1z M43,34h3v15h-3z M48,34h1v15h-1z M51,34h2v15h-2z M55,34h1v15h-1z M58,34h3v15h-3z M63,34h1v15h-1z M66,34h2v15h-2z M70,34h1v15h-1z"/>
+    </g>
+  </svg>
+</svg>
+<script>
+  const TEXTS = {
+    "fr-FR": ["Vos cartes de fidélité.", "Rien d'autre.", "Hors-ligne · Sans compte · Libre"],
+    "en-US": ["Your loyalty cards.", "Nothing else.", "Offline · No account · Open source"],
+  };
+  const root = document.documentElement;
+  const texts = TEXTS[new URLSearchParams(location.search).get("locale")];
+  if (!texts) {
+    root.dataset.ready = "unknown-locale";
+  } else {
+    ["line1", "line2", "subtitle"].forEach((id, i) => { document.getElementById(id).textContent = texts[i]; });
+    // render.sh refuses the image unless the bundled font really loaded: a fallback font would pass silently.
+    Promise.all([document.fonts.load("900 54px Nunito"), document.fonts.load("700 24px Nunito")]).then(
+      sets => { root.dataset.ready = sets.every(faces => faces.length > 0) ? "ok" : "missing-font"; },
+      () => { root.dataset.ready = "missing-font"; });
+  }
+</script>
+</body>
+</html>

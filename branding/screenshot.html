@@ -1,0 +1,55 @@
+<!doctype html>
+<!-- Store phone screenshot, 1080 × 1920 (visual identity spec §7.2): caption above a generic phone frame
+     that runs off the bottom edge. render.sh opens it as screenshot.html?locale=fr-FR&n=1 (n = 1..5). -->
+<html>
+<head>
+<meta charset="utf-8">
+<title>Encarté store screenshot</title>
+<style>
+  @font-face { font-family: Nunito; src: url("../app/src/main/res/font/nunito.ttf"); font-weight: 200 1000; }
+  html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; }
+  body { position: relative; }
+  .caption { position: absolute; top: 150px; left: 0; width: 1080px; margin: 0; text-align: center;
+             font: 900 76px/1.12 Nunito; }
+  /* 800 px body: a 764 px screen plus an 18 px bezel on each side. */
+  .phone { position: absolute; left: 140px; top: 470px; padding: 18px; border-radius: 72px; background: #111111; }
+  .phone img { display: block; width: 764px; border-radius: 54px; }
+</style>
+</head>
+<body>
+<p class="caption" id="caption"></p>
+<div class="phone"><img id="screen" alt=""></div>
+<script>
+  // Background, caption color and caption per shot; " / " marks the caption's line break.
+  const SHOTS = {
+    1: { bg: "#2E8C83", fg: "#FFFFFF", "fr-FR": "Toutes vos cartes, / au même endroit", "en-US": "All your cards, / in one place" },
+    2: { bg: "#F2A93B", fg: "#1D2440", "fr-FR": "Présentez-la en caisse, / luminosité au max", "en-US": "Show it at checkout, / at full brightness" },
+    3: { bg: "#FFF6E8", fg: "#1D2440", "fr-FR": "Scannez une carte / en un instant", "en-US": "Scan a card / in seconds" },
+    4: { bg: "#1D2440", fg: "#FFFFFF", "fr-FR": "Sauvegarde chiffrée, / compatible Catima", "en-US": "Encrypted backups, / Catima-compatible" },
+    5: { bg: "#2E8C83", fg: "#FFFFFF", "fr-FR": "Hors-ligne. / Aucun compte.", "en-US": "Offline. / No account." },
+  };
+  const root = document.documentElement;
+  const params = new URLSearchParams(location.search);
+  const locale = params.get("locale"), n = params.get("n");
+  const shot = SHOTS[n];
+  if (!shot || !shot[locale]) {
+    root.dataset.ready = "unknown-shot";
+  } else {
+    document.body.style.background = shot.bg;
+    const caption = document.getElementById("caption");
+    caption.style.color = shot.fg;
+    shot[locale].split(" / ").forEach((line, i) => {
+      if (i > 0) caption.append(document.createElement("br"));
+      caption.append(line);
+    });
+    const screen = document.getElementById("screen");
+    const captured = new Promise((resolve, reject) => { screen.onload = resolve; screen.onerror = reject; });
+    screen.src = `screenshots/raw/${locale}/${n}.png`;
+    // render.sh refuses the image unless both the bundled font and the raw capture really loaded.
+    Promise.all([document.fonts.load("900 76px Nunito"), captured]).then(
+      ([faces]) => { root.dataset.ready = faces.length > 0 ? "ok" : "missing-font"; },
+      () => { root.dataset.ready = "missing-font-or-capture"; });
+  }
+</script>
+</body>
+</html>
