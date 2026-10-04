@@ -1,6 +1,7 @@
 package io.github.vferries.encarte
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -15,6 +16,9 @@ class MainActivityTest {
 
     @Test
     fun showsAppName() {
+        composeRule.waitUntil(5_000) {
+            composeRule.onAllNodes(hasText("Encarté")).fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.onNodeWithText("Encarté").assertIsDisplayed()
     }
 }
