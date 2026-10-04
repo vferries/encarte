@@ -1,0 +1,206 @@
+package io.github.vferries.encarte.cards.display
+
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.keepScreenOn
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.vferries.encarte.R
+import io.github.vferries.encarte.core.data.Card
+import io.github.vferries.encarte.core.data.encodedValue
+import io.github.vferries.encarte.core.ui.BarcodeImage
+import io.github.vferries.encarte.core.ui.CARD_ASPECT_RATIO
+import io.github.vferries.encarte.core.ui.MaxBrightnessEffect
+import io.github.vferries.encarte.core.ui.rememberImageBitmap
+import java.io.File
+
+private const val THUMBNAIL_MAX_SIDE = 480
+private const val FULL_SCREEN_MAX_SIDE = 2048
+
+@Composable
+fun CardDisplayRoute(viewModel: CardDisplayViewModel, onBack: () -> Unit, onEdit: (Long) -> Unit) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    LaunchedEffect(state.isDeleted) {
+        if (state.isDeleted) onBack()
+    }
+    CardDisplayScreen(
+        state = state,
+        onBack = onBack,
+        onEdit = { state.card?.let { onEdit(it.id) } },
+        onToggleFavorite = viewModel::toggleFavorite,
+        onDelete = viewModel::delete,
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CardDisplayScreen(
+    state: CardDisplayUiState,
+    onBack: () -> Unit,
+    onEdit: () -> Unit,
+    onToggleFavorite: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    val card = state.card
+    var confirmDelete by rememberSaveable { mutableStateOf(false) }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(card?.storeName.orEmpty()) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(painterResource(R.drawable.ic_arrow_back), stringResource(R.string.navigate_back))
+                    }
+                },
+                actions = {
+                    if (card != null) {
+                        IconButton(onClick = onToggleFavorite) {
+                            Icon(
+                                painterResource(if (card.isFavorite) R.drawable.ic_star_filled else R.drawable.ic_star),
+                                stringResource(if (card.isFavorite) R.string.action_unfavorite else R.string.action_favorite),
+                            )
+                        }
+                        IconButton(onClick = onEdit) {
+                            Icon(painterResource(R.drawable.ic_edit), stringResource(R.string.action_edit))
+                        }
+                        IconButton(onClick = { confirmDelete = true }) {
+                            Icon(painterResource(R.drawable.ic_delete), stringResource(R.string.action_delete))
+                        }
+                    }
+                },
+            )
+        },
+    ) { padding ->
+        when {
+            state.isLoading -> Box(Modifier.padding(padding))
+            card == null -> Text(
+                stringResource(R.string.card_not_found),
+                modifier = Modifier.padding(padding).padding(24.dp),
+            )
+            else -> CardContent(state, card, Modifier.padding(padding))
+        }
+    }
+    if (confirmDelete && card != null) {
+        AlertDialog(
+            onDismissRequest = { confirmDelete = false },
+            title = { Text(stringResource(R.string.delete_confirm_title)) },
+            text = { Text(stringResource(R.string.delete_confirm_body, card.storeName)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmDelete = false
+                    onDelete()
+                }) { Text(stringResource(R.string.action_delete)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.cancel)) }
+            },
+        )
+    }
+}
+
+@Composable
+private fun CardContent(state: CardDisplayUiState, card: Card, modifier: Modifier = Modifier) {
+    MaxBrightnessEffect()
+    var fullScreenImage by remember { mutableStateOf<File?>(null) }
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            // Large screens: cap the content width instead of stretching the layout.
+            .wrapContentWidth()
+            .widthIn(max = 640.dp)
+            .keepScreenOn()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        val format = card.barcodeFormat
+        if (format != null) {
+            BarcodeImage(card.encodedValue, format, Modifier.fillMaxWidth())
+        }
+        SelectionContainer {
+            Text(
+                text = card.cardNumber,
+                style = if (format == null) MaterialTheme.typography.displaySmall else MaterialTheme.typography.titleLarge,
+                textAlign = TextAlign.Center,
+            )
+        }
+        if (card.note.isNotBlank()) {
+            Text(card.note, modifier = Modifier.fillMaxWidth())
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            state.frontImage?.let { file ->
+                Thumbnail(file, stringResource(R.string.photo_front), Modifier.weight(1f)) { fullScreenImage = file }
+            }
+            state.backImage?.let { file ->
+                Thumbnail(file, stringResource(R.string.photo_back), Modifier.weight(1f)) { fullScreenImage = file }
+            }
+        }
+    }
+    fullScreenImage?.let { file -> FullScreenImage(file) { fullScreenImage = null } }
+}
+
+@Composable
+private fun Thumbnail(file: File, description: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    val image = rememberImageBitmap(file, THUMBNAIL_MAX_SIDE) ?: return
+    Image(
+        bitmap = image,
+        contentDescription = description,
+        contentScale = ContentScale.Crop,
+        modifier = modifier
+            .aspectRatio(CARD_ASPECT_RATIO)
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(onClick = onClick),
+    )
+}
+
+@Composable
+private fun FullScreenImage(file: File, onDismiss: () -> Unit) {
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        val image = rememberImageBitmap(file, FULL_SCREEN_MAX_SIDE)
+        Box(Modifier.fillMaxSize().clickable(onClick = onDismiss), contentAlignment = Alignment.Center) {
+            if (image != null) {
+                Image(image, contentDescription = stringResource(R.string.close), modifier = Modifier.fillMaxWidth())
+            }
+        }
+    }
+}

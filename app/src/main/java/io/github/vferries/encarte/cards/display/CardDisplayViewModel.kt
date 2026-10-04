@@ -1,0 +1,53 @@
+package io.github.vferries.encarte.cards.display
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import io.github.vferries.encarte.core.data.Card
+import io.github.vferries.encarte.core.data.CardRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import java.io.File
+
+data class CardDisplayUiState(
+    val isLoading: Boolean = true,
+    val card: Card? = null,
+    val frontImage: File? = null,
+    val backImage: File? = null,
+    val isDeleted: Boolean = false,
+)
+
+class CardDisplayViewModel(private val cardId: Long, private val cards: CardRepository) : ViewModel() {
+
+    private val deleted = MutableStateFlow(false)
+
+    val uiState: StateFlow<CardDisplayUiState> = combine(cards.observeCard(cardId), deleted) { card, isDeleted ->
+        CardDisplayUiState(
+            isLoading = false,
+            card = card,
+            frontImage = card?.frontImage?.let(cards::imageFile),
+            backImage = card?.backImage?.let(cards::imageFile),
+            isDeleted = isDeleted,
+        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CardDisplayUiState())
+
+    init {
+        // Once per screen entry (the ViewModel survives rotation): feeds the "recently used" sort.
+        viewModelScope.launch { cards.markUsed(cardId) }
+    }
+
+    fun toggleFavorite() {
+        val card = uiState.value.card ?: return
+        viewModelScope.launch { cards.setFavorite(cardId, !card.isFavorite) }
+    }
+
+    fun delete() {
+        viewModelScope.launch {
+            cards.delete(cardId)
+            deleted.value = true
+        }
+    }
+}

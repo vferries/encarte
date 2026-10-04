@@ -14,4 +14,15 @@
     <string name="empty_title">Aucune carte pour l\'instant</string>
     <string name="empty_body">Scannez une carte de fidélité, ou importez une sauvegarde Catima ou Encarté.</string>
     <string name="no_search_results">Aucune carte ne correspond à votre recherche.</string>
+    <string name="action_edit">Modifier</string>
+    <string name="action_delete">Supprimer</string>
+    <string name="action_favorite">Ajouter aux favorites</string>
+    <string name="action_unfavorite">Retirer des favorites</string>
+    <string name="delete_confirm_title">Supprimer cette carte ?</string>
+    <string name="delete_confirm_body">%1$s sera supprimée de cet appareil.</string>
+    <string name="cancel">Annuler</string>
+    <string name="photo_front">Recto</string>
+    <string name="photo_back">Verso</string>
+    <string name="close">Fermer</string>
+    <string name="card_not_found">Cette carte n\'existe plus.</string>
 </resources>

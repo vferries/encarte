@@ -15,4 +15,15 @@
     <string name="empty_title">No cards yet</string>
     <string name="empty_body">Scan a loyalty card, or import a Catima or Encarté backup.</string>
     <string name="no_search_results">No card matches your search.</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_favorite">Add to favorites</string>
+    <string name="action_unfavorite">Remove from favorites</string>
+    <string name="delete_confirm_title">Delete this card?</string>
+    <string name="delete_confirm_body">%1$s will be removed from this device.</string>
+    <string name="cancel">Cancel</string>
+    <string name="photo_front">Front</string>
+    <string name="photo_back">Back of the card</string>
+    <string name="close">Close</string>
+    <string name="card_not_found">This card no longer exists.</string>
 </resources>
