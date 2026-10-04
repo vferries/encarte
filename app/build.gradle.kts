@@ -10,6 +10,20 @@ plugins {
     alias(libs.plugins.androidx.room)
 }
 
+// Release signing comes only from the environment (the CI `release` environment, release spec §4), never from
+// files in the repo. Without it the release build stays unsigned, which is what CI and F-Droid expect.
+val uploadSigningEnv = listOf(
+    "ENCARTE_UPLOAD_KEYSTORE",
+    "ENCARTE_UPLOAD_KEYSTORE_PASSWORD",
+    "ENCARTE_UPLOAD_KEY_ALIAS",
+    "ENCARTE_UPLOAD_KEY_PASSWORD",
+).associateWith { providers.environmentVariable(it).orNull }
+val missingUploadSigning = uploadSigningEnv.filterValues { it.isNullOrEmpty() }.keys
+// A half-set environment must never fall back to an unsigned bundle that looks like a release.
+if (missingUploadSigning.isNotEmpty() && missingUploadSigning.size < uploadSigningEnv.size) {
+    throw GradleException("Release signing is half-configured; missing: ${missingUploadSigning.joinToString()}")
+}
+
 android {
     namespace = "io.github.vferries.encarte"
     compileSdk = 37
@@ -23,8 +37,20 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (missingUploadSigning.isEmpty()) {
+            create("upload") {
+                storeFile = file(uploadSigningEnv.getValue("ENCARTE_UPLOAD_KEYSTORE")!!)
+                storePassword = uploadSigningEnv.getValue("ENCARTE_UPLOAD_KEYSTORE_PASSWORD")
+                keyAlias = uploadSigningEnv.getValue("ENCARTE_UPLOAD_KEY_ALIAS")
+                keyPassword = uploadSigningEnv.getValue("ENCARTE_UPLOAD_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.findByName("upload")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
