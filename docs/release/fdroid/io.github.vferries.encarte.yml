@@ -1,0 +1,25 @@
+Categories:
+  - Pass Wallet
+License: GPL-3.0-or-later
+AuthorName: Vincent Ferries
+WebSite: https://encarte.fr
+SourceCode: https://github.com/vferries/encarte
+IssueTracker: https://github.com/vferries/encarte/issues
+
+AutoName: Encarté
+
+RepoType: git
+Repo: https://github.com/vferries/encarte.git
+
+Builds:
+  - versionName: 1.0.0
+    versionCode: 10000
+    commit: FULL_COMMIT_HASH_OF_TAG_v1.0.0
+    subdir: app
+    gradle:
+      - yes
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags ^v\d+\.\d+\.\d+$
+CurrentVersion: 1.0.0
+CurrentVersionCode: 10000
