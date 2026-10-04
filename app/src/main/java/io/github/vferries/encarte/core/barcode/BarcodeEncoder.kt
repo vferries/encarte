@@ -1,5 +1,6 @@
 package io.github.vferries.encarte.core.barcode
 
+import android.util.Log
 import com.google.zxing.EncodeHintType
 import com.google.zxing.MultiFormatWriter
 import com.google.zxing.WriterException
@@ -9,6 +10,7 @@ import com.google.zxing.common.BitMatrix
 class BarcodeEncodingException(message: String, cause: Throwable) : Exception(message, cause)
 
 object BarcodeEncoder {
+    private const val TAG = "BarcodeEncoder"
     /**
      * Encodes at natural size: one pixel per module, one pixel tall for 1D formats.
      * Callers scale by an integer factor so every bar keeps the same width.
@@ -17,8 +19,10 @@ object BarcodeEncoder {
         try {
             return MultiFormatWriter().encode(value, format.toZxing(), 0, 0, hintsFor(value, format))
         } catch (e: WriterException) {
+            Log.w(TAG, "Cannot encode ${format.name}: ${e.javaClass.simpleName}")
             throw BarcodeEncodingException("Cannot encode ${format.name}", e)
         } catch (e: IllegalArgumentException) {
+            Log.w(TAG, "Cannot encode ${format.name}: ${e.javaClass.simpleName}")
             throw BarcodeEncodingException("Invalid content for ${format.name}", e)
         }
     }
