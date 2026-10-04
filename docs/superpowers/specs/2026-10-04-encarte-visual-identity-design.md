@@ -1,7 +1,7 @@
 # Encarté — Visual Identity Design Spec
 
 - **Date:** 2026-10-04
-- **Status:** Draft, pending review
+- **Status:** Approved, implemented 2026-10-04
 - **Parent spec:** `docs/superpowers/specs/2026-10-03-encarte-design.md`
 
 ## 1. Context and goals

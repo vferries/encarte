@@ -21,7 +21,7 @@
 - Store PNGs have no alpha: icon 512 × 512, feature graphic 1024 × 500, phone screenshots 1080 × 1920, in `fastlane/metadata/android/<fr-FR|en-US>/images/`.
 - No real brand appears in any store asset.
 - `branding/` tools (Google Chrome, ImageMagick 7, adb) are dev-only: the app build and CI never run them.
-- The Compose font API needs no `@OptIn` (checked against ui-text 1.12.1: `Font(resId, weight)` defaults `variationSettings` to `FontVariation.Settings(weight, style)`, no experimental marker). Never add `@OptIn` for it.
+- The Compose font API needs no `@OptIn`; never add one. Correction found in Task 1: the short `Font(resId, weight)` overload leaves `variationSettings` empty, so `Type.kt` passes `variationSettings = FontVariation.Settings(weight, FontStyle.Normal)` explicitly through a private `nunitoFont(weight)` helper.
 - Commit directly on `main` (personal project), conventional prefixes (`feat:`, `fix:`, `docs:`, `chore:`), **no `Co-Authored-By` trailer**.
 - Comments explain why, not what; match the surrounding code's density and idiom.
 

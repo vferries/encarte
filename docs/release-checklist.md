@@ -25,8 +25,9 @@
 - [ ] Trademark search for "Encarté" at INPI and EUIPO (classes 9 and 42).
 - [ ] Check that `io.github.vferries.encarte` is free on Google Play and F-Droid.
 - [ ] Create the GitHub repository `vferries/encarte` (the About screen links to it).
-- [ ] Final app icon (replace the placeholder adaptive icon).
+- [x] Final app icon (replace the placeholder adaptive icon).
 - [ ] Privacy policy page (Play requires one because of the CAMERA permission): "no data is collected".
 - [ ] Play Data safety form: no data collected or shared.
 - [ ] Play signing key, kept outside the repository.
-- [ ] Store screenshots in `fastlane/metadata/android/*/images/phoneScreenshots/`.
+- [x] Store screenshots in `fastlane/metadata/android/*/images/phoneScreenshots/` (regenerate with `branding/render.sh`).
+- [x] Feature graphic and store icon in `fastlane/metadata/android/*/images/` (same script).
