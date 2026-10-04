@@ -4,11 +4,14 @@ set -euo pipefail
 
 script="$(cd "$(dirname "$0")" && pwd)/check-release.sh"
 failures=0
+# make_root runs in a subshell, so cleanup lives here at script level.
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
 
 # make_root <versionName> <versionCode> <fr changelog> <en changelog>; "-" means "no file".
 make_root() {
   local root
-  root=$(mktemp -d)
+  root=$(mktemp -d -p "$tmp")
   mkdir -p "$root/app"
   printf '    defaultConfig {\n        versionCode = %s\n        versionName = "%s"\n    }\n' "$2" "$1" > "$root/app/build.gradle.kts"
   local locale text
