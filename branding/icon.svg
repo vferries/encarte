@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="18 18 72 72">
+  <!-- Store icon: the visible 72 × 72 area of the adaptive icon, full-bleed Cream, no baked-in corners
+       (Play applies its own mask). Same numbers as app/src/main/res/drawable/ic_launcher_foreground.xml
+       and ic_launcher_monochrome.xml: change all three together. -->
+  <rect x="0" y="0" width="108" height="108" fill="#FFF6E8"/>
+  <g transform="translate(54.85 57.07) scale(0.95) translate(-54 -54)">
+    <rect x="30" y="34" width="48" height="32" rx="5" fill="#2E8C83" transform="rotate(-16 54 70)"/>
+    <rect x="30" y="34" width="48" height="32" rx="5" fill="#F2A93B" transform="rotate(-2 54 70)"/>
+    <g transform="rotate(12 54 70)">
+      <rect x="30" y="34" width="48" height="32" rx="5" fill="#FFFFFF" stroke="#1D2440" stroke-width="2.5"/>
+      <path fill="#1D2440" d="M36,44h2v15h-2z M40,44h1v15h-1z M43,44h3v15h-3z M48,44h1v15h-1z M51,44h2v15h-2z M55,44h1v15h-1z M58,44h3v15h-3z M63,44h1v15h-1z M66,44h2v15h-2z M70,44h1v15h-1z"/>
+    </g>
+  </g>
+</svg>

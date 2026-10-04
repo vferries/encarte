@@ -19,3 +19,13 @@ from `github.com/google/fonts`, commit `8b0a1d0f5983c89bc2b93f1b5fb55f9e252744b5
 (SHA-256 `bb55a5ca5c2042335b3991af27c4d0705d0ef41cac6164ac737fd8f2a1e85207`).
 It is licensed under the SIL Open Font License 1.1: see `fonts/Nunito-OFL.txt`.
 The store templates load the same file, so the app and its graphics never drift apart.
+
+## Icon
+
+Three files share the launcher art's numbers (spec §4); change them together:
+
+- `app/src/main/res/drawable/ic_launcher_foreground.xml`: color foreground of the adaptive icon (background `#FFF6E8`).
+- `app/src/main/res/drawable/ic_launcher_monochrome.xml`: themed icon, one color; outlines behind the front cards are clipped.
+- `icon.svg`: 512 × 512 store icon, the visible 72 × 72 area of the adaptive icon on full-bleed Cream.
+
+`BrandDrawablesTest` renders both vectors and fails if any pixel leaves the 33 dp safe zone.

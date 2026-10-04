@@ -1,13 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Launcher art "C3c", a fan of cards. Same numbers as ic_launcher_monochrome.xml and branding/icon.svg:
+     change all three together. The outer group centers the art and scales it so it stays inside the
+     66 dp safe zone of adaptive icons (visual identity spec §4.1). -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M30,38h48a4,4 0 0 1 4,4v24a4,4 0 0 1 -4,4h-48a4,4 0 0 1 -4,-4v-24a4,4 0 0 1 4,-4z" />
-    <path
-        android:fillColor="#1F6F5C"
-        android:pathData="M34,48h2v14h-2z M38,48h1v14h-1z M41,48h3v14h-3z M46,48h1v14h-1z M49,48h2v14h-2z M53,48h1v14h-1z M56,48h3v14h-3z M61,48h1v14h-1z M64,48h2v14h-2z M68,48h1v14h-1z M71,48h3v14h-3z" />
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="0.95"
+        android:scaleY="0.95"
+        android:translateX="0.85"
+        android:translateY="3.07">
+        <group
+            android:pivotX="54"
+            android:pivotY="70"
+            android:rotation="-16">
+            <path
+                android:fillColor="#2E8C83"
+                android:pathData="M35,34H73A5,5 0 0 1 78,39V61A5,5 0 0 1 73,66H35A5,5 0 0 1 30,61V39A5,5 0 0 1 35,34Z" />
+        </group>
+        <group
+            android:pivotX="54"
+            android:pivotY="70"
+            android:rotation="-2">
+            <path
+                android:fillColor="#F2A93B"
+                android:pathData="M35,34H73A5,5 0 0 1 78,39V61A5,5 0 0 1 73,66H35A5,5 0 0 1 30,61V39A5,5 0 0 1 35,34Z" />
+        </group>
+        <group
+            android:pivotX="54"
+            android:pivotY="70"
+            android:rotation="12">
+            <path
+                android:fillColor="#FFFFFF"
+                android:strokeColor="#1D2440"
+                android:strokeWidth="2.5"
+                android:pathData="M35,34H73A5,5 0 0 1 78,39V61A5,5 0 0 1 73,66H35A5,5 0 0 1 30,61V39A5,5 0 0 1 35,34Z" />
+            <path
+                android:fillColor="#1D2440"
+                android:pathData="M36,44h2v15h-2z M40,44h1v15h-1z M43,44h3v15h-3z M48,44h1v15h-1z M51,44h2v15h-2z M55,44h1v15h-1z M58,44h3v15h-3z M63,44h1v15h-1z M66,44h2v15h-2z M70,44h1v15h-1z" />
+        </group>
+    </group>
 </vector>

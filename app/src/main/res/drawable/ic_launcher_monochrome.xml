@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Themed-icon version of ic_launcher_foreground.xml: same numbers as that file and branding/icon.svg.
+     The system tints it, so only the shape matters. Cards behind are outlines clipped where a card in
+     front covers them, as in the color icon; otherwise the back card's outline shows through the bars. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="0.95"
+        android:scaleY="0.95"
+        android:translateX="0.85"
+        android:translateY="3.07">
+        <group>
+            <!-- Everything but the front card. -->
+            <clip-path android:pathData="M0,0H108V108H0Z M42.9,30.84A5,5 0 0 0 36.97,34.69L32.4,56.21A5,5 0 0 0 36.25,62.14L73.42,70.04A5,5 0 0 0 79.35,66.19L83.92,44.67A5,5 0 0 0 80.07,38.74Z" />
+            <group>
+                <!-- Everything but the middle card. -->
+                <clip-path android:pathData="M0,0H108V108H0Z M33.76,34.69A5,5 0 0 0 28.93,39.86L29.7,61.84A5,5 0 0 0 34.87,66.67L72.85,65.34A5,5 0 0 0 77.67,60.17L76.9,38.18A5,5 0 0 0 71.73,33.36Z" />
+                <group
+                    android:pivotX="54"
+                    android:pivotY="70"
+                    android:rotation="-16">
+                    <path
+                        android:fillColor="#00000000"
+                        android:strokeColor="#FF000000"
+                        android:strokeWidth="4"
+                        android:pathData="M35,34H73A5,5 0 0 1 78,39V61A5,5 0 0 1 73,66H35A5,5 0 0 1 30,61V39A5,5 0 0 1 35,34Z" />
+                </group>
+            </group>
+            <group
+                android:pivotX="54"
+                android:pivotY="70"
+                android:rotation="-2">
+                <path
+                    android:fillColor="#00000000"
+                    android:strokeColor="#FF000000"
+                    android:strokeWidth="4"
+                    android:pathData="M35,34H73A5,5 0 0 1 78,39V61A5,5 0 0 1 73,66H35A5,5 0 0 1 30,61V39A5,5 0 0 1 35,34Z" />
+            </group>
+        </group>
+        <group
+            android:pivotX="54"
+            android:pivotY="70"
+            android:rotation="12">
+            <path
+                android:fillColor="#FF000000"
+                android:fillType="evenOdd"
+                android:pathData="M35,34H73A5,5 0 0 1 78,39V61A5,5 0 0 1 73,66H35A5,5 0 0 1 30,61V39A5,5 0 0 1 35,34Z M36,44h2v15h-2z M40,44h1v15h-1z M43,44h3v15h-3z M48,44h1v15h-1z M51,44h2v15h-2z M55,44h1v15h-1z M58,44h3v15h-3z M63,44h1v15h-1z M66,44h2v15h-2z M70,44h1v15h-1z" />
+        </group>
+    </group>
+</vector>
