@@ -1,0 +1,6 @@
+Première version publique.
+
+• Rangez vos cartes de fidélité hors-ligne et présentez-les en caisse, luminosité au maximum.
+• Scannez une carte avec l'appareil photo ou depuis une image, ou saisissez son numéro.
+• Sauvegardes compatibles Catima, chiffrées si vous le souhaitez.
+• Verrouillage facultatif de l'application.

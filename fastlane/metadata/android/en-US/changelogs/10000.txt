@@ -1,0 +1,6 @@
+First public release.
+
+• Keep your loyalty cards offline and show them at checkout at full brightness.
+• Scan a card with the camera or from an image, or type its number.
+• Catima-compatible backups, encrypted if you want.
+• Optional app lock.
