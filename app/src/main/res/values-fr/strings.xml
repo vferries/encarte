@@ -67,7 +67,7 @@
     <string name="import_note_expires">Expire le : %1$s</string>
     <string name="import_note_balance">Solde : %1$s</string>
     <string name="import_note_points">%1$s points</string>
-    <string name="lock_title">Encarté est verrouillée</string>
+    <string name="lock_title">Encarté est verrouillé</string>
     <string name="action_unlock">Déverrouiller</string>
     <string name="lock_prompt_title">Déverrouiller Encarté</string>
     <string name="lock_disabled_no_credential">Verrouillage désactivé : l\'appareil n\'a plus de verrouillage d\'écran.</string>
