@@ -15,11 +15,16 @@ cp app/src/main/res/font/nunito.ttf "$out/fonts/nunito.ttf"
 cp branding/icon.svg "$out/icon.svg"
 echo "encarte.fr" > "$out/CNAME"
 
-# Pages may link out (source code, issues) but must never load a resource from another origin.
-if grep -rnE 'src="(https?:)?//|<link[^>]*href="(https?:)?//|url\(.?(https?:)?//|@import' \
-    --include='*.html' --include='*.css' "$out"; then
-  fail "external resource found (above)"
-fi
+# Only <a> tags may point elsewhere (source code, issues). Anything left once they are removed would be loaded by the
+# browser, so no URL with a scheme or a leading // may remain, whatever the quoting or line layout. A URL in visible
+# text fails loudly too, which is acceptable.
+external=0
+while IFS= read -r -d '' file; do
+  hits=$(tr '\n' ' ' < "$file" | sed -E 's/<a[[:space:]][^>]*>//gI' \
+    | grep -oiE "([a-z][a-z0-9+.-]*:)?//[^[:space:])>\"']+" || true)
+  [[ -z $hits ]] || { echo "build-site: external resource in $file:" >&2; echo "$hits" >&2; external=1; }
+done < <(find "$out" -type f \( -name '*.html' -o -name '*.css' \) -print0)
+(( external == 0 )) || fail "external resource found (above)"
 
 broken=0
 while IFS= read -r match; do
