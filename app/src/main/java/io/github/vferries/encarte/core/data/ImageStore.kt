@@ -3,7 +3,8 @@ package io.github.vferries.encarte.core.data
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
-import android.media.ExifInterface
+import androidx.core.graphics.scale
+import androidx.exifinterface.media.ExifInterface
 import android.util.Log
 import java.io.File
 import java.io.FileOutputStream
@@ -107,7 +108,7 @@ class ImageStore(private val imagesDir: File, private val stagingDir: File) {
         val longest = max(width, height)
         if (longest <= maxSide) return this
         val ratio = maxSide.toFloat() / longest
-        return Bitmap.createScaledBitmap(this, (width * ratio).roundToInt(), (height * ratio).roundToInt(), true)
+        return scale((width * ratio).roundToInt(), (height * ratio).roundToInt(), true)
     }
 
     private fun Bitmap.rotatedFor(orientation: Int): Bitmap {
