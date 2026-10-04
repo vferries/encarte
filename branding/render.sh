@@ -28,7 +28,8 @@ check_ready() {
 # Play and F-Droid want opaque PNGs at exact sizes.
 flatten_and_verify() {
   local file=$1 width=$2 height=$3 actual
-  magick "$file" -background white -alpha remove -alpha off "PNG24:$file"
+  # Without the date chunks every run changes the bytes of every PNG, which hides real changes from the diff.
+  magick "$file" -background white -alpha remove -alpha off -define png:exclude-chunk=date,time "PNG24:$file"
   actual=$(magick identify -format '%w %h %[channels]' "$file")
   [[ $actual == "$width $height srgb "* ]] || fail "$file is '$actual', expected ${width}x${height} sRGB without alpha"
 }
