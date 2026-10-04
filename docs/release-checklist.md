@@ -11,10 +11,9 @@
 - [ ] Export from Encarté (with and without a password) and import the file into Catima
       (install Catima from F-Droid on an emulator). All cards and photos appear.
 - [ ] Export from Catima (with and without a password) and import into Encarté.
-- [ ] App lock: enable, background for more than one minute, come back: the lock screen appears
-      and the screen you were on is restored after unlocking. After unlocking, the screen you were
-      on is shown immediately, with no flash of card content before the lock screen appears when
-      returning to the app.
+- [ ] App lock: enable, background for more than one minute, come back: the lock screen appears.
+- [ ] Returning to the app after more than one minute shows the lock screen first, with no flash of card content.
+- [ ] After unlocking, the screen you were on is restored.
 - [ ] Remove the device screen lock while the app lock is on: the app turns its lock off and says so.
 - [ ] Rotate on every screen; "Don't keep activities" round-trip on the card display and the editor.
 - [ ] Bump `versionCode` and `versionName` in `app/build.gradle.kts`.

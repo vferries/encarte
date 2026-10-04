@@ -21,8 +21,8 @@ jobs:
         with:
           path: ~/.m2/repository/org/robolectric
           key: robolectric-4.17-sdk37
-      - name: Build, lint, unit tests, offline guardrail
-        run: ./gradlew assembleDebug lintDebug testDebugUnitTest verifyNoNetworkPermission
+      - name: Build (debug + release), lint, unit tests, offline guardrail
+        run: ./gradlew assembleDebug assembleRelease lintDebug testDebugUnitTest verifyNoNetworkPermission
       - name: Upload reports on failure
         if: failure()
         uses: actions/upload-artifact@v7
