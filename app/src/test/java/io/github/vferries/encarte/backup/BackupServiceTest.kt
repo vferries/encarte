@@ -193,6 +193,20 @@ class BackupServiceTest {
     }
 
     @Test
+    fun revokedDestinationIsAnExportError() = runTest {
+        db.cardDao().insert(testCard("Fnac"))
+
+        assertEquals(ExportResult.IoError, service.export({ throw SecurityException("permission revoked") }, null))
+    }
+
+    @Test
+    fun databaseFailureIsAnExportError() = runTest {
+        db.useWriterConnection { connection -> connection.usePrepared("DROP TABLE cards") { it.step() } }
+
+        assertEquals(ExportResult.IoError, service.export({ ByteArrayOutputStream() }, null))
+    }
+
+    @Test
     fun exportContainsOnlyCatimaEntries() = runTest {
         val front = images.save { png().inputStream() }
         val id = db.cardDao().insert(testCard("Fnac", frontImage = front))

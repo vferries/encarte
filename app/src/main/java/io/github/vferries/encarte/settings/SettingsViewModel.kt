@@ -114,6 +114,10 @@ class SettingsViewModel(
                 Log.e(TAG, "Cannot copy the picked backup", e)
                 ui.update { it.copy(busy = false, message = BackupMessage.ImportFailed) }
                 return@launch
+            } catch (e: SecurityException) {
+                Log.e(TAG, "The picked backup is no longer readable", e)
+                ui.update { it.copy(busy = false, message = BackupMessage.ImportFailed) }
+                return@launch
             }
             importFile = file
             runImport(file, password = null)

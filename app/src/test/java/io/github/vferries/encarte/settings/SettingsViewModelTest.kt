@@ -15,6 +15,7 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -110,6 +111,17 @@ class SettingsViewModelTest {
 
         assertNull(vm.uiState.first { it.passwordPrompt == null }.passwordPrompt)
         assertTrue(File(tmp.root, "work").listFiles().isNullOrEmpty())
+    }
+
+    @Test
+    fun revokedAccessToThePickedBackupIsReported() = runTest {
+        val (vm, _) = viewModel()
+
+        vm.startImport { throw SecurityException("permission revoked") }
+
+        val state = vm.uiState.first { it.message != null }
+        assertEquals(BackupMessage.ImportFailed, state.message)
+        assertFalse(state.busy)
     }
 
     @Test

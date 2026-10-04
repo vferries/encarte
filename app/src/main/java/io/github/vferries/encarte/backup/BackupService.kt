@@ -140,6 +140,13 @@ class BackupService(
         } catch (e: IOException) {
             Log.e(TAG, "Export failed", e)
             ExportResult.IoError
+        } catch (e: SQLiteException) {
+            Log.e(TAG, "Export failed in the database", e)
+            ExportResult.IoError
+        } catch (e: SecurityException) {
+            // The destination's grant can be revoked between the picker and the write.
+            Log.e(TAG, "Export destination is not writable", e)
+            ExportResult.IoError
         } finally {
             temp.delete()
         }
