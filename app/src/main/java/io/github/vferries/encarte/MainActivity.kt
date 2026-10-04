@@ -22,6 +22,7 @@ import io.github.vferries.encarte.lock.LockGate
 import io.github.vferries.encarte.lock.isDeviceSecure
 import io.github.vferries.encarte.navigation.EncarteNavHost
 import kotlinx.coroutines.launch
+import java.io.IOException
 
 private const val TAG = "MainActivity"
 
@@ -48,7 +49,14 @@ class MainActivity : FragmentActivity() {
                     onUnlockRequest = { authenticator.authenticate(promptTitle, onSuccess = container.lockManager::unlock) },
                     onLockUnavailable = {
                         Log.w(TAG, "Lock enabled without a device credential: turning it off")
-                        scope.launch { container.settingsRepository.setLockEnabled(false) }
+                        scope.launch {
+                            try {
+                                container.settingsRepository.setLockEnabled(false)
+                            } catch (e: IOException) {
+                                // Must not crash at every launch: the next launch detects it and tries again.
+                                Log.e(TAG, "Cannot turn the lock off", e)
+                            }
+                        }
                         Toast.makeText(this, R.string.lock_disabled_no_credential, Toast.LENGTH_LONG).show()
                     },
                 ) {
