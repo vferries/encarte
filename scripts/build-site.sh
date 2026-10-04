@@ -15,6 +15,10 @@ cp app/src/main/res/font/nunito.ttf "$out/fonts/nunito.ttf"
 cp branding/icon.svg "$out/icon.svg"
 echo "encarte.fr" > "$out/CNAME"
 
+# The site promises no JavaScript; an inline or external <script> would break it without any URL check noticing.
+scripts_found=$(grep -rliE '<script' --include='*.html' "$out" || true)
+[[ -z $scripts_found ]] || fail "script found in: $scripts_found"
+
 # Only <a> tags may point elsewhere (source code, issues). Anything left once they are removed would be loaded by the
 # browser, so no URL with a scheme or a leading // may remain, whatever the quoting or line layout. A URL in visible
 # text fails loudly too, which is acceptable.
