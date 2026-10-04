@@ -15,6 +15,7 @@
 - [ ] App lock: enable, background for more than one minute, come back: the lock screen appears.
 - [ ] Returning to the app after more than one minute shows the lock screen first, with no flash of card content.
 - [ ] After unlocking, the screen you were on is restored.
+- [ ] Relock while the full-screen photo or a dialog is open: nothing of the card shows above the lock screen, and Back leaves the app.
 - [ ] Remove the device screen lock while the app lock is on: the app turns its lock off and says so.
 - [ ] Rotate on every screen; "Don't keep activities" round-trip on the card display and the editor.
 - [ ] Bump `versionCode` and `versionName` in `app/build.gradle.kts`.

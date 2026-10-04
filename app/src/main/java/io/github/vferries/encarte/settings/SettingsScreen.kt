@@ -54,6 +54,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.vferries.encarte.BuildConfig
 import io.github.vferries.encarte.R
 import io.github.vferries.encarte.lock.DeviceAuthenticator
+import io.github.vferries.encarte.lock.LocalContentCovered
 import io.github.vferries.encarte.lock.isDeviceSecure
 import java.io.IOException
 import java.time.LocalDate
@@ -216,7 +217,8 @@ fun SettingsScreen(
         }
     }
 
-    if (askExportPassword) {
+    val covered = LocalContentCovered.current
+    if (askExportPassword && !covered) {
         ExportPasswordDialog(
             onConfirm = { password ->
                 askExportPassword = false
@@ -225,10 +227,11 @@ fun SettingsScreen(
             onDismiss = { askExportPassword = false },
         )
     }
-    state.passwordPrompt?.let { prompt ->
+    val prompt = state.passwordPrompt
+    if (prompt != null && !covered) {
         ImportPasswordDialog(retry = prompt == PasswordPrompt.RETRY, onSubmit = onImportPassword, onDismiss = onImportCancelled)
     }
-    if (showLicenses) {
+    if (showLicenses && !covered) {
         AlertDialog(
             onDismissRequest = { showLicenses = false },
             title = { Text(stringResource(R.string.settings_third_party)) },

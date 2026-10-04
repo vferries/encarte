@@ -80,6 +80,7 @@ import io.github.vferries.encarte.core.data.CardSide
 import io.github.vferries.encarte.core.ui.BarcodeImage
 import io.github.vferries.encarte.core.ui.CARD_ASPECT_RATIO
 import io.github.vferries.encarte.core.ui.rememberImageBitmap
+import io.github.vferries.encarte.lock.LocalContentCovered
 import java.io.File
 import java.io.IOException
 
@@ -207,7 +208,7 @@ fun CardEditScreen(
         }
     }
 
-    if (confirmDiscard) {
+    if (confirmDiscard && !LocalContentCovered.current) {
         AlertDialog(
             onDismissRequest = { confirmDiscard = false },
             title = { Text(stringResource(R.string.discard_title)) },
@@ -341,15 +342,17 @@ private fun FormatField(selected: BarcodeFormat?, onSelect: (BarcodeFormat?) -> 
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
         )
-        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            (listOf<BarcodeFormat?>(null) + BarcodeFormat.entries).forEach { format ->
-                DropdownMenuItem(
-                    text = { Text(format?.label ?: noneLabel) },
-                    onClick = {
-                        expanded = false
-                        onSelect(format)
-                    },
-                )
+        if (!LocalContentCovered.current) {
+            ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                (listOf<BarcodeFormat?>(null) + BarcodeFormat.entries).forEach { format ->
+                    DropdownMenuItem(
+                        text = { Text(format?.label ?: noneLabel) },
+                        onClick = {
+                            expanded = false
+                            onSelect(format)
+                        },
+                    )
+                }
             }
         }
     }

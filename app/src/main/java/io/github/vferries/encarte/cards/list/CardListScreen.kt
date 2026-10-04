@@ -45,6 +45,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.vferries.encarte.R
 import io.github.vferries.encarte.core.prefs.SortOrder
 import io.github.vferries.encarte.core.ui.CardTile
+import io.github.vferries.encarte.lock.LocalContentCovered
 
 @Composable
 fun CardListRoute(
@@ -112,19 +113,21 @@ private fun SortMenu(current: SortOrder, onSortOrderChange: (SortOrder) -> Unit)
         IconButton(onClick = { expanded = true }) {
             Icon(painterResource(R.drawable.ic_sort), stringResource(R.string.action_sort))
         }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            for ((order, label) in listOf(
-                SortOrder.NAME to R.string.sort_by_name,
-                SortOrder.RECENTLY_USED to R.string.sort_recently_used,
-            )) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(label)) },
-                    leadingIcon = { RadioButton(selected = order == current, onClick = null) },
-                    onClick = {
-                        expanded = false
-                        onSortOrderChange(order)
-                    },
-                )
+        if (!LocalContentCovered.current) {
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                for ((order, label) in listOf(
+                    SortOrder.NAME to R.string.sort_by_name,
+                    SortOrder.RECENTLY_USED to R.string.sort_recently_used,
+                )) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(label)) },
+                        leadingIcon = { RadioButton(selected = order == current, onClick = null) },
+                        onClick = {
+                            expanded = false
+                            onSortOrderChange(order)
+                        },
+                    )
+                }
             }
         }
     }

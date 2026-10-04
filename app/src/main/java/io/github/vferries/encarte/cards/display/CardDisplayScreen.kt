@@ -51,6 +51,7 @@ import io.github.vferries.encarte.core.ui.BarcodeImage
 import io.github.vferries.encarte.core.ui.CARD_ASPECT_RATIO
 import io.github.vferries.encarte.core.ui.MaxBrightnessEffect
 import io.github.vferries.encarte.core.ui.rememberImageBitmap
+import io.github.vferries.encarte.lock.LocalContentCovered
 import java.io.File
 
 private const val THUMBNAIL_MAX_SIDE = 480
@@ -119,7 +120,7 @@ fun CardDisplayScreen(
             else -> CardContent(state, card, Modifier.padding(padding))
         }
     }
-    if (confirmDelete && card != null) {
+    if (confirmDelete && card != null && !LocalContentCovered.current) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
             title = { Text(stringResource(R.string.delete_confirm_title)) },
@@ -176,7 +177,8 @@ private fun CardContent(state: CardDisplayUiState, card: Card, modifier: Modifie
             }
         }
     }
-    fullScreenImage?.let { file -> FullScreenImage(file) { fullScreenImage = null } }
+    val shownImage = fullScreenImage
+    if (shownImage != null && !LocalContentCovered.current) FullScreenImage(shownImage) { fullScreenImage = null }
 }
 
 @Composable
