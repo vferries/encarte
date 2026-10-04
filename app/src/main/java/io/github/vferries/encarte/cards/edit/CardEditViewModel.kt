@@ -1,11 +1,13 @@
 package io.github.vferries.encarte.cards.edit
 
+import android.os.Bundle
 import android.util.Log
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.vferries.encarte.brands.Brand
@@ -25,6 +27,18 @@ import java.io.InputStream
 import java.time.Instant
 
 private const val TAG = "CardEditViewModel"
+private const val SAVED_STATE_KEY = "card_edit_form"
+private const val KEY_LOADED = "loaded"
+private const val KEY_STORE_NAME = "store_name"
+private const val KEY_CARD_NUMBER = "card_number"
+private const val KEY_DIFFERENT_ENCODED_VALUE = "different_encoded_value"
+private const val KEY_BARCODE_VALUE = "barcode_value"
+private const val KEY_BARCODE_FORMAT = "barcode_format"
+private const val KEY_NOTE = "note"
+private const val KEY_COLOR = "color"
+private const val KEY_FRONT_IMAGE = "front_image"
+private const val KEY_BACK_IMAGE = "back_image"
+private const val KEY_CREATED_IMAGES = "created_images"
 
 class CardEditViewModel(
     private val cardId: Long?,
@@ -33,6 +47,7 @@ class CardEditViewModel(
     val showUnsupportedFormatNotice: Boolean,
     private val cards: CardRepository,
     private val brands: BrandCatalog,
+    savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
     val storeName = TextFieldState()
@@ -103,33 +118,82 @@ class CardEditViewModel(
 
     init {
         viewModelScope.launch(Dispatchers.Default) { brands.preload() }
+        // The process can die while the camera app is in front: the form survives it.
+        val restored = savedStateHandle.get<Bundle>(SAVED_STATE_KEY)?.takeIf { it.getBoolean(KEY_LOADED) }
         if (cardId == null) {
             initialForm = snapshot()
+            restored?.let(::restore)
         } else {
-            viewModelScope.launch { load(cardId) }
+            viewModelScope.launch { load(cardId, restored) }
         }
+        savedStateHandle.setSavedStateProvider(SAVED_STATE_KEY, ::saveState)
     }
 
-    private suspend fun load(id: Long) {
+    /** With [restored] edits, the card is read again only for what the form doesn't hold (id, dates, favorite). */
+    private suspend fun load(id: Long, restored: Bundle?) {
         val card = cards.get(id)
         if (card == null) {
             Log.w(TAG, "Card $id not found for editing")
             notFound = true
+            initialForm = snapshot()
         } else {
             original = card
-            storeName.setTextAndPlaceCursorAtEnd(card.storeName)
-            cardNumber.setTextAndPlaceCursorAtEnd(card.cardNumber)
-            differentEncodedValueState = card.barcodeValue != null
-            barcodeValue.setTextAndPlaceCursorAtEnd(card.barcodeValue.orEmpty())
-            barcodeFormat = card.barcodeFormat
-            note.setTextAndPlaceCursorAtEnd(card.note)
-            manualColor = card.color
-            frontImage = card.frontImage
-            backImage = card.backImage
+            val loaded = card.toForm()
+            initialForm = loaded
+            if (restored != null) restore(restored) else fill(loaded)
         }
-        initialForm = snapshot()
         isLoading = false
     }
+
+    private fun fill(form: FormSnapshot) {
+        storeName.setTextAndPlaceCursorAtEnd(form.storeName)
+        cardNumber.setTextAndPlaceCursorAtEnd(form.cardNumber)
+        differentEncodedValueState = form.differentEncodedValue
+        barcodeValue.setTextAndPlaceCursorAtEnd(form.barcodeValue)
+        barcodeFormat = form.barcodeFormat
+        note.setTextAndPlaceCursorAtEnd(form.note)
+        manualColor = form.color
+        frontImage = form.frontImage
+        backImage = form.backImage
+    }
+
+    /** Saved only once the form is filled: an editor that died while loading simply loads the card again. */
+    private fun saveState(): Bundle = Bundle().apply {
+        if (isLoading || notFound) return@apply
+        val form = snapshot()
+        putBoolean(KEY_LOADED, true)
+        putString(KEY_STORE_NAME, form.storeName)
+        putString(KEY_CARD_NUMBER, form.cardNumber)
+        putBoolean(KEY_DIFFERENT_ENCODED_VALUE, form.differentEncodedValue)
+        putString(KEY_BARCODE_VALUE, form.barcodeValue)
+        putString(KEY_BARCODE_FORMAT, form.barcodeFormat?.name)
+        putString(KEY_NOTE, form.note)
+        form.color?.let { putInt(KEY_COLOR, it) }
+        putString(KEY_FRONT_IMAGE, form.frontImage)
+        putString(KEY_BACK_IMAGE, form.backImage)
+        putStringArrayList(KEY_CREATED_IMAGES, ArrayList(createdImages))
+    }
+
+    private fun restore(state: Bundle) {
+        fill(
+            FormSnapshot(
+                storeName = state.getString(KEY_STORE_NAME).orEmpty(),
+                cardNumber = state.getString(KEY_CARD_NUMBER).orEmpty(),
+                differentEncodedValue = state.getBoolean(KEY_DIFFERENT_ENCODED_VALUE),
+                barcodeValue = state.getString(KEY_BARCODE_VALUE).orEmpty(),
+                barcodeFormat = state.getString(KEY_BARCODE_FORMAT)?.let(BarcodeFormat::valueOf),
+                note = state.getString(KEY_NOTE).orEmpty(),
+                color = if (state.containsKey(KEY_COLOR)) state.getInt(KEY_COLOR) else null,
+                frontImage = state.getString(KEY_FRONT_IMAGE)?.takeIf(::imageStillExists),
+                backImage = state.getString(KEY_BACK_IMAGE)?.takeIf(::imageStillExists),
+            )
+        )
+        state.getStringArrayList(KEY_CREATED_IMAGES)?.filterTo(createdImages, ::imageStillExists)
+    }
+
+    /** The startup sweep deletes the photos an unsaved editor had picked before the process died. */
+    private fun imageStillExists(name: String): Boolean =
+        cards.imageFile(name).isFile.also { exists -> if (!exists) Log.w(TAG, "Restored image $name is gone") }
 
     fun selectFormat(format: BarcodeFormat?) {
         barcodeFormat = format
@@ -214,6 +278,18 @@ class CardEditViewModel(
             lastUsedAt = original?.lastUsedAt,
         )
     }
+
+    private fun Card.toForm() = FormSnapshot(
+        storeName = storeName,
+        cardNumber = cardNumber,
+        differentEncodedValue = barcodeValue != null,
+        barcodeValue = barcodeValue.orEmpty(),
+        barcodeFormat = barcodeFormat,
+        note = note,
+        color = color,
+        frontImage = frontImage,
+        backImage = backImage,
+    )
 
     private fun snapshot() = FormSnapshot(
         storeName = storeName.text.toString(),

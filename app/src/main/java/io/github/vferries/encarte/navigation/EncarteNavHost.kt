@@ -1,6 +1,7 @@
 package io.github.vferries.encarte.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavKey
@@ -79,6 +80,7 @@ fun EncarteNavHost(container: AppContainer) {
                             showUnsupportedFormatNotice = key.unsupportedFormat,
                             cards = container.cardRepository,
                             brands = container.brandCatalog,
+                            savedStateHandle = createSavedStateHandle(),
                         )
                     },
                     onSaved = { id, isNew ->

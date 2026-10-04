@@ -1,7 +1,25 @@
 package io.github.vferries.encarte.cards.edit
 
 import android.graphics.Bitmap
+import android.os.Bundle
+import android.os.Parcel
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.SAVED_STATE_REGISTRY_OWNER_KEY
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.VIEW_MODEL_STORE_OWNER_KEY
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.createSavedStateHandle
+import androidx.lifecycle.enableSavedStateHandles
+import androidx.lifecycle.viewmodel.MutableCreationExtras
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.savedstate.SavedStateRegistry
+import androidx.savedstate.SavedStateRegistryController
+import androidx.savedstate.SavedStateRegistryOwner
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.vferries.encarte.brands.BrandCatalog
 import io.github.vferries.encarte.core.barcode.BarcodeError
@@ -52,8 +70,10 @@ class CardEditViewModelTest {
     @After
     fun tearDown() = db.close()
 
-    private fun newCard(value: String? = null, format: BarcodeFormat? = null) =
-        CardEditViewModel(null, value, format, showUnsupportedFormatNotice = false, cards = cards, brands = brands)
+    private fun newCard(value: String? = null, format: BarcodeFormat? = null) = CardEditViewModel(
+        null, value, format, showUnsupportedFormatNotice = false, cards = cards, brands = brands,
+        savedStateHandle = SavedStateHandle(),
+    )
 
     @Test
     fun prefilledScanNeedsStoreNameBeforeSaving() = runTest {
@@ -144,7 +164,7 @@ class CardEditViewModelTest {
     @Test
     fun editingLoadsCardAndTracksChanges() = runTest {
         val id = cards.save(testCard("Fnac", cardNumber = "42", barcodeFormat = BarcodeFormat.QR_CODE, isFavorite = true))
-        val vm = CardEditViewModel(id, null, null, false, cards, brands)
+        val vm = CardEditViewModel(id, null, null, false, cards, brands, SavedStateHandle())
         eventually { !vm.isLoading }
 
         assertEquals("Fnac", vm.storeName.text.toString())
@@ -164,7 +184,7 @@ class CardEditViewModelTest {
 
     @Test
     fun missingCardIsNotFound() = runTest {
-        val vm = CardEditViewModel(404, null, null, false, cards, brands)
+        val vm = CardEditViewModel(404, null, null, false, cards, brands, SavedStateHandle())
 
         eventually { !vm.isLoading }
 
@@ -198,6 +218,124 @@ class CardEditViewModelTest {
         assertNull(vm.backImage)
         vm.dismissImageError()
         assertFalse(vm.imageError)
+    }
+
+    @Test
+    fun newCardEditsSurviveProcessDeath() = runTest {
+        val before = ScreenWithSavedState(restored = null)
+        val vm = before.editor(cardId = null, prefillValue = "123", prefillFormat = BarcodeFormat.CODE_128)
+        vm.storeName.setTextAndPlaceCursorAtEnd("Fnac")
+        vm.cardNumber.setTextAndPlaceCursorAtEnd("4006381333931")
+        vm.selectFormat(BarcodeFormat.EAN_13)
+        vm.setDifferentEncodedValue(true)
+        vm.barcodeValue.setTextAndPlaceCursorAtEnd("4006381333948")
+        vm.note.setTextAndPlaceCursorAtEnd("Gold member")
+        vm.selectColor(CardPalette.swatches[2])
+        vm.onImagePicked(CardSide.FRONT) { jpeg() }
+        eventually { vm.frontImage != null }
+        val picked = vm.frontImage!!
+
+        val restored = ScreenWithSavedState(before.processDeath())
+            .editor(cardId = null, prefillValue = "123", prefillFormat = BarcodeFormat.CODE_128)
+
+        assertEquals("Fnac", restored.storeName.text.toString())
+        assertEquals("4006381333931", restored.cardNumber.text.toString())
+        assertEquals(BarcodeFormat.EAN_13, restored.barcodeFormat)
+        assertTrue(restored.differentEncodedValue)
+        assertEquals("4006381333948", restored.barcodeValue.text.toString())
+        assertEquals("Gold member", restored.note.text.toString())
+        assertEquals(CardPalette.swatches[2], restored.color)
+        assertEquals(picked, restored.frontImage)
+        assertNull(restored.backImage)
+        assertTrue(restored.hasChanges)
+        restored.discard()
+        eventually { !images.exists(picked) }
+    }
+
+    @Test
+    fun restoredEditorDropsPhotosDeletedSinceTheProcessDied() = runTest {
+        val before = ScreenWithSavedState(restored = null)
+        val vm = before.editor(cardId = null)
+        vm.onImagePicked(CardSide.BACK) { jpeg() }
+        eventually { vm.backImage != null }
+        val state = before.processDeath()
+        // The startup sweep deletes images no saved card references.
+        cards.deleteOrphanImages()
+
+        val restored = ScreenWithSavedState(state).editor(cardId = null)
+
+        assertNull(restored.backImage)
+        assertFalse(restored.hasChanges)
+    }
+
+    @Test
+    fun editedCardIsNotReloadedOverRestoredEdits() = runTest {
+        val id = cards.save(testCard("Fnac", cardNumber = "42", isFavorite = true).copy(note = "old"))
+        val before = ScreenWithSavedState(restored = null)
+        val vm = before.editor(cardId = id)
+        eventually { !vm.isLoading }
+        vm.note.setTextAndPlaceCursorAtEnd("new")
+
+        val restored = ScreenWithSavedState(before.processDeath()).editor(cardId = id)
+        eventually { !restored.isLoading }
+
+        assertEquals("new", restored.note.text.toString())
+        assertEquals("Fnac", restored.storeName.text.toString())
+        assertTrue(restored.hasChanges)
+        restored.note.setTextAndPlaceCursorAtEnd("old")
+        assertFalse("the restored editor still knows the card as loaded", restored.hasChanges)
+        restored.note.setTextAndPlaceCursorAtEnd("new")
+        restored.save()
+        eventually { restored.savedCardId != null }
+        assertEquals(id, restored.savedCardId)
+        val saved = cards.get(id)!!
+        assertEquals("new", saved.note)
+        assertTrue("favorite flag is preserved", saved.isFavorite)
+    }
+
+    /**
+     * A screen's saved-state owner: [processDeath] saves its state the way the activity does and
+     * passes it through a Parcel; a new instance built from it restores it into new ViewModels.
+     */
+    private inner class ScreenWithSavedState(restored: Bundle?) : SavedStateRegistryOwner, ViewModelStoreOwner {
+        private val lifecycleRegistry = LifecycleRegistry.createUnsafe(this)
+        private val savedState = SavedStateRegistryController.create(this)
+        override val lifecycle: Lifecycle get() = lifecycleRegistry
+        override val savedStateRegistry: SavedStateRegistry get() = savedState.savedStateRegistry
+        override val viewModelStore = ViewModelStore()
+
+        init {
+            savedState.performAttach()
+            enableSavedStateHandles()
+            savedState.performRestore(restored)
+            lifecycleRegistry.currentState = Lifecycle.State.RESUMED
+        }
+
+        fun editor(cardId: Long?, prefillValue: String? = null, prefillFormat: BarcodeFormat? = null): CardEditViewModel {
+            val factory = viewModelFactory {
+                initializer {
+                    CardEditViewModel(cardId, prefillValue, prefillFormat, false, cards, brands, createSavedStateHandle())
+                }
+            }
+            val extras = MutableCreationExtras().apply {
+                set(SAVED_STATE_REGISTRY_OWNER_KEY, this@ScreenWithSavedState)
+                set(VIEW_MODEL_STORE_OWNER_KEY, this@ScreenWithSavedState)
+            }
+            return ViewModelProvider.create(viewModelStore, factory, extras)[CardEditViewModel::class]
+        }
+
+        fun processDeath(): Bundle {
+            val state = Bundle().also(savedState::performSave)
+            viewModelStore.clear()
+            val parcel = Parcel.obtain()
+            try {
+                parcel.writeBundle(state)
+                parcel.setDataPosition(0)
+                return parcel.readBundle(javaClass.classLoader)!!
+            } finally {
+                parcel.recycle()
+            }
+        }
     }
 
     private fun jpeg() = ByteArrayOutputStream().also {

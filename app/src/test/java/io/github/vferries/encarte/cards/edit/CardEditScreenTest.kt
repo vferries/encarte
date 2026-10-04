@@ -12,6 +12,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.lifecycle.SavedStateHandle
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.ui.NavDisplay
 import androidx.test.espresso.Espresso
@@ -54,6 +55,7 @@ class CardEditScreenTest {
             showUnsupportedFormatNotice = unsupported,
             cards = CardRepository(db.cardDao(), ImageStore(File(tmp.root, "i"), File(tmp.root, "s")), Clock.systemUTC()),
             brands = brands,
+            savedStateHandle = SavedStateHandle(),
         )
 
     @Test
