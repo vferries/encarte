@@ -1,0 +1,12 @@
+Encarté keeps your loyalty cards on your phone and shows their barcode at checkout. Nothing else.
+
+• Works fully offline: the app has no Internet permission.
+• Scan a card with the camera, pick a screenshot, or type the number.
+• QR, EAN, UPC, Code 128/39/93, Codabar, ITF, Aztec, Data Matrix and PDF417.
+• Full brightness while a card is shown.
+• Photos of the front and back of your cards.
+• Favorites, search and sorting.
+• Backups in Catima's format, optionally encrypted (AES-256): move to or from Catima at any time.
+• Optional lock with fingerprint, face or screen lock.
+
+Free software (GPL-3.0-or-later). No ads, no tracking, no account.

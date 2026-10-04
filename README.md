@@ -13,6 +13,16 @@ Requires JDK 21 and the Android SDK (API 37).
 
     ./gradlew assembleDebug testDebugUnitTest lintDebug verifyNoNetworkPermission
 
+## Development
+
+- Unit and Robolectric tests: `./gradlew testDebugUnitTest`
+- Instrumented tests (zxing-cpp decoding), with an emulator running: `./gradlew connectedDebugAndroidTest`
+- Offline guardrail: `./gradlew verifyNoNetworkPermission` fails if any dependency adds a network permission.
+- Design: `docs/superpowers/specs/2026-10-03-encarte-design.md`. Release steps: `docs/release-checklist.md`.
+
+Backups use Catima's export format, so you can move between Encarté and
+[Catima](https://catima.app) at any time.
+
 ## License
 
 GPL-3.0-or-later. See [LICENSE](LICENSE).

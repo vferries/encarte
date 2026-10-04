@@ -1,0 +1,1 @@
+Offline loyalty card wallet: scan, store and show your cards. No network.

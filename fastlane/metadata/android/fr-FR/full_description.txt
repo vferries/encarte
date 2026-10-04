@@ -1,0 +1,12 @@
+Encarté range vos cartes de fidélité sur votre téléphone et affiche leur code-barres en caisse. Rien de plus.
+
+• Fonctionne entièrement hors-ligne : l'application n'a pas la permission Internet.
+• Scannez une carte avec l'appareil photo, depuis une capture d'écran, ou saisissez le numéro.
+• QR, EAN, UPC, Code 128/39/93, Codabar, ITF, Aztec, Data Matrix et PDF417.
+• Luminosité maximale pendant l'affichage d'une carte.
+• Photos du recto et du verso de vos cartes.
+• Favorites, recherche et tri.
+• Sauvegardes au format Catima, chiffrées si vous le souhaitez (AES-256) : passez de Catima à Encarté, ou l'inverse, quand vous voulez.
+• Verrouillage facultatif par empreinte, visage ou code de l'appareil.
+
+Logiciel libre (GPL-3.0 ou ultérieure). Sans publicité, sans pistage, sans compte.
