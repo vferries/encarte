@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="barcode_description">Code-barres %1$s : %2$s</string>
+    <string name="barcode_unavailable">Ce code ne peut pas être affiché. Vérifiez le numéro et le type de code-barres de la carte.</string>
     <string name="navigate_back">Retour</string>
     <string name="search_hint">Rechercher une carte</string>
     <string name="action_sort">Trier</string>

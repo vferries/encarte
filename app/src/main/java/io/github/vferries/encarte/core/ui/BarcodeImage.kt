@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
@@ -20,6 +22,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -40,18 +43,19 @@ private const val TAG = "BarcodeImage"
 @Composable
 fun BarcodeImage(code: String, format: BarcodeFormat, modifier: Modifier = Modifier) {
     val description = stringResource(R.string.barcode_description, format.label, code)
-    val matrix by produceState<BitMatrix?>(initialValue = null, code, format) {
+    // Null until encoded: only a failed encoding shows the explanation.
+    val encoded by produceState<Result<BitMatrix>?>(initialValue = null, code, format) {
         value = withContext(Dispatchers.Default) {
             try {
-                BarcodeEncoder.encode(code, format)
+                Result.success(BarcodeEncoder.encode(code, format))
             } catch (e: BarcodeEncodingException) {
                 // The exception chain may contain the value (a card number): log the type only.
                 Log.w(TAG, "Cannot render ${format.name}: ${e.cause?.javaClass?.simpleName}")
-                null
+                Result.failure(e)
             }
         }
     }
-    val bitmap = remember(matrix) { matrix?.toBitmap()?.asImageBitmap() }
+    val bitmap = remember(encoded) { encoded?.getOrNull()?.toBitmap()?.asImageBitmap() }
     Box(
         modifier
             .aspectRatio(format.displayAspectRatio)
@@ -75,6 +79,13 @@ fun BarcodeImage(code: String, format: BarcodeFormat, modifier: Modifier = Modif
                     filterQuality = FilterQuality.None,
                 )
             }
+        } else if (encoded?.isFailure == true) {
+            Text(
+                stringResource(R.string.barcode_unavailable),
+                color = Color.Black,
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
+            )
         }
     }
 }

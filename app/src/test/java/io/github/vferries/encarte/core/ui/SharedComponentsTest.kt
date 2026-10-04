@@ -2,6 +2,7 @@ package io.github.vferries.encarte.core.ui
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -25,6 +26,16 @@ class SharedComponentsTest {
         composeRule.setContent { BarcodeImage("4006381333931", BarcodeFormat.EAN_13) }
 
         composeRule.onNodeWithContentDescription("EAN-13 barcode: 4006381333931").assertIsDisplayed()
+    }
+
+    @Test
+    fun undisplayableCodeExplainsWhyInsteadOfAnEmptyBox() {
+        val message = "This code can't be displayed. Check the card's number and barcode type."
+        composeRule.setContent { BarcodeImage("4006381333932", BarcodeFormat.EAN_13) }
+
+        composeRule.waitUntil(5_000) { composeRule.onAllNodesWithText(message).fetchSemanticsNodes().isNotEmpty() }
+        composeRule.onNodeWithText(message).assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("EAN-13 barcode: 4006381333932").assertIsDisplayed()
     }
 
     @Test

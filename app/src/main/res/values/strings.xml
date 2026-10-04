@@ -2,6 +2,7 @@
 <resources>
     <string name="app_name" translatable="false">Encarté</string>
     <string name="barcode_description">%1$s barcode: %2$s</string>
+    <string name="barcode_unavailable">This code can\'t be displayed. Check the card\'s number and barcode type.</string>
     <string name="navigate_back">Back</string>
     <string name="search_hint">Search cards</string>
     <string name="action_sort">Sort</string>
