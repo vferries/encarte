@@ -2,4 +2,16 @@
 <resources>
     <string name="barcode_description">Code-barres %1$s : %2$s</string>
     <string name="navigate_back">Retour</string>
+    <string name="search_hint">Rechercher une carte</string>
+    <string name="action_sort">Trier</string>
+    <string name="sort_by_name">Par nom</string>
+    <string name="sort_recently_used">Utilisées récemment</string>
+    <string name="action_settings">Réglages</string>
+    <string name="action_add_card">Ajouter une carte</string>
+    <string name="action_import">Importer</string>
+    <string name="section_favorites">Favorites</string>
+    <string name="section_all_cards">Toutes les cartes</string>
+    <string name="empty_title">Aucune carte pour l\'instant</string>
+    <string name="empty_body">Scannez une carte de fidélité, ou importez une sauvegarde Catima ou Encarté.</string>
+    <string name="no_search_results">Aucune carte ne correspond à votre recherche.</string>
 </resources>
