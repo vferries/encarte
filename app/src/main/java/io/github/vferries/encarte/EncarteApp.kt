@@ -1,11 +1,15 @@
 package io.github.vferries.encarte
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
+import kotlin.coroutines.cancellation.CancellationException
+
+private const val TAG = "EncarteApp"
 
 class EncarteApp : Application() {
     lateinit var container: AppContainer
@@ -19,6 +23,15 @@ class EncarteApp : Application() {
 
             override fun onStop(owner: LifecycleOwner) = container.lockManager.onBackground()
         })
-        MainScope().launch { container.cleanUpLeftovers() }
+        MainScope().launch {
+            // Best-effort housekeeping: a failure must not crash the app at every launch.
+            try {
+                container.cleanUpLeftovers()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.e(TAG, "Startup cleanup failed", e)
+            }
+        }
     }
 }

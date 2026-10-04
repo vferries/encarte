@@ -20,13 +20,17 @@ import io.github.vferries.encarte.scan.ScannerRoute
 import io.github.vferries.encarte.scan.ScannerViewModel
 import io.github.vferries.encarte.settings.SettingsRoute
 import io.github.vferries.encarte.settings.SettingsViewModel
+import kotlin.reflect.KClass
 
 @Composable
 fun EncarteNavHost(container: AppContainer) {
     val backStack = rememberNavBackStack(CardListKey)
-    // Never called on the root entry: NavDisplay requires a non-empty back stack.
-    val pop: () -> Unit = { backStack.removeLastOrNull() }
-    val replaceTop: (NavKey) -> Unit = { key -> backStack[backStack.lastIndex] = key }
+    // NavDisplay requires a non-empty back stack: never pop the root entry.
+    val pop: () -> Unit = { if (backStack.size > 1) backStack.removeLastOrNull() }
+    // Idempotent: a repeated callback (double tap, late result) must not replace another screen.
+    fun replaceTopIf(expected: KClass<out NavKey>, key: NavKey) {
+        if (expected.isInstance(backStack.lastOrNull())) backStack[backStack.lastIndex] = key
+    }
 
     NavDisplay(
         backStack = backStack,
@@ -60,9 +64,9 @@ fun EncarteNavHost(container: AppContainer) {
                     viewModel = viewModel { ScannerViewModel() },
                     onBack = pop,
                     onScanned = { code ->
-                        replaceTop(CardEditKey(barcodeValue = code.value, barcodeFormat = code.format, unsupportedFormat = code.format == null))
+                        replaceTopIf(ScannerKey::class, CardEditKey(barcodeValue = code.value, barcodeFormat = code.format, unsupportedFormat = code.format == null))
                     },
-                    onManualEntry = { replaceTop(CardEditKey()) },
+                    onManualEntry = { replaceTopIf(ScannerKey::class, CardEditKey()) },
                 )
             }
             entry<CardEditKey> { key ->
@@ -77,7 +81,11 @@ fun EncarteNavHost(container: AppContainer) {
                             brands = container.brandCatalog,
                         )
                     },
-                    onSaved = { id, isNew -> if (isNew) replaceTop(CardDisplayKey(id)) else pop() },
+                    onSaved = { id, isNew ->
+                        if (backStack.lastOrNull() is CardEditKey) {
+                            if (isNew) replaceTopIf(CardEditKey::class, CardDisplayKey(id)) else pop()
+                        }
+                    },
                     onClose = pop,
                 )
             }

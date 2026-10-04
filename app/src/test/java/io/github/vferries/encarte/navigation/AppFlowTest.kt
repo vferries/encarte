@@ -63,4 +63,19 @@ class AppFlowTest {
         waitForText("Export cards")
         composeRule.onNodeWithText("Lock the app").assertIsDisplayed()
     }
+
+    @Test
+    fun repeatedBackPressesNeverPopTheListRoot() {
+        waitForText("No cards yet")
+        composeRule.onNodeWithContentDescription("Settings").performClick()
+        waitForText("Export cards")
+
+        composeRule.runOnUiThread {
+            composeRule.activity.onBackPressedDispatcher.onBackPressed()
+            composeRule.activity.onBackPressedDispatcher.onBackPressed()
+        }
+
+        waitForText("No cards yet")
+        composeRule.onNodeWithText("No cards yet").assertIsDisplayed()
+    }
 }
