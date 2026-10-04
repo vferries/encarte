@@ -1,0 +1,872 @@
+[
+  {
+    "name": "Alain Afflelou",
+    "aliases": [
+      "Afflelou"
+    ],
+    "color": "#C70C0F"
+  },
+  {
+    "name": "Aldi",
+    "aliases": [
+      "Aldi Nord"
+    ],
+    "color": "#001E78"
+  },
+  {
+    "name": "ALL Accor",
+    "aliases": [
+      "Accor",
+      "Accor Live Limitless",
+      "AccorHotels",
+      "Ibis",
+      "Novotel",
+      "Mercure"
+    ],
+    "color": "#12283B"
+  },
+  {
+    "name": "Animalis",
+    "aliases": [],
+    "color": "#FB0000"
+  },
+  {
+    "name": "Aprium",
+    "aliases": [
+      "Aprium Pharmacie"
+    ],
+    "color": "#00C3A0"
+  },
+  {
+    "name": "Atol",
+    "aliases": [
+      "Atol les Opticiens",
+      "Atol Mon Opticien"
+    ],
+    "color": "#1F226B"
+  },
+  {
+    "name": "Auchan",
+    "aliases": [
+      "Auchan Supermarché",
+      "Auchan Hypermarché",
+      "My Auchan",
+      "Auchan Piéton",
+      "Auchan Drive"
+    ],
+    "color": "#D6180B"
+  },
+  {
+    "name": "Au Vieux Campeur",
+    "aliases": [
+      "Vieux Campeur"
+    ],
+    "color": "#01972B"
+  },
+  {
+    "name": "Basic-Fit",
+    "aliases": [],
+    "color": "#EB6800"
+  },
+  {
+    "name": "Beauty Success",
+    "aliases": [],
+    "color": "#DC161C"
+  },
+  {
+    "name": "Besson Chaussures",
+    "aliases": [
+      "Besson",
+      "Besson Shoes"
+    ],
+    "color": "#1A1A1A"
+  },
+  {
+    "name": "Bio c' Bon",
+    "aliases": [
+      "Bio c'est Bon"
+    ],
+    "color": "#006133"
+  },
+  {
+    "name": "Biocoop",
+    "aliases": [],
+    "color": "#05509F"
+  },
+  {
+    "name": "Botanic",
+    "aliases": [],
+    "color": "#00634C"
+  },
+  {
+    "name": "Boulanger",
+    "aliases": [],
+    "color": "#FD5300"
+  },
+  {
+    "name": "Brico Dépôt",
+    "aliases": [],
+    "color": "#E30613"
+  },
+  {
+    "name": "Bricomarché",
+    "aliases": [],
+    "color": "#ED1D24"
+  },
+  {
+    "name": "Brioche Dorée",
+    "aliases": [],
+    "color": "#D90F16"
+  },
+  {
+    "name": "Buffalo Grill",
+    "aliases": [],
+    "color": "#E2001A"
+  },
+  {
+    "name": "Bureau Vallée",
+    "aliases": [],
+    "color": "#173D6C"
+  },
+  {
+    "name": "Burger King",
+    "aliases": [
+      "BK"
+    ],
+    "color": "#D62300"
+  },
+  {
+    "name": "BUT",
+    "aliases": [],
+    "color": "#ED1C24"
+  },
+  {
+    "name": "C&A",
+    "aliases": [
+      "C et A",
+      "C and A"
+    ],
+    "color": "#000000"
+  },
+  {
+    "name": "Carrefour",
+    "aliases": [
+      "Carrefour Market",
+      "Carrefour City",
+      "Carrefour Express",
+      "Carrefour Contact",
+      "Carrefour Montagne",
+      "Carrefour Drive",
+      "Proxi"
+    ],
+    "color": "#254F9B"
+  },
+  {
+    "name": "Casino",
+    "aliases": [
+      "Petit Casino",
+      "Casino Shop",
+      "Casino Proximité",
+      "Casino Max"
+    ],
+    "color": "#E1002B"
+  },
+  {
+    "name": "Castorama",
+    "aliases": [
+      "Casto"
+    ],
+    "color": "#0071B9"
+  },
+  {
+    "name": "Celio",
+    "aliases": [],
+    "color": "#DA1F3D"
+  },
+  {
+    "name": "CGR",
+    "aliases": [
+      "CGR Cinémas",
+      "Méga CGR"
+    ],
+    "color": "#E0081B"
+  },
+  {
+    "name": "Chaussea",
+    "aliases": [],
+    "color": "#21201E"
+  },
+  {
+    "name": "Columbus Café",
+    "aliases": [
+      "Columbus Café & Co",
+      "Columbus"
+    ],
+    "color": "#1F1617"
+  },
+  {
+    "name": "Conforama",
+    "aliases": [],
+    "color": "#E30613"
+  },
+  {
+    "name": "Costco",
+    "aliases": [
+      "Costco Wholesale"
+    ],
+    "color": "#E31837"
+  },
+  {
+    "name": "Courir",
+    "aliases": [],
+    "color": "#EA580C"
+  },
+  {
+    "name": "Cultura",
+    "aliases": [],
+    "color": "#25327B"
+  },
+  {
+    "name": "Darty",
+    "aliases": [
+      "Darty Max"
+    ],
+    "color": "#E30613"
+  },
+  {
+    "name": "Decathlon",
+    "aliases": [],
+    "color": "#3642B8"
+  },
+  {
+    "name": "Del Arte",
+    "aliases": [],
+    "color": "#C8102E"
+  },
+  {
+    "name": "Domino's",
+    "aliases": [
+      "Domino's Pizza"
+    ],
+    "color": "#0090E2"
+  },
+  {
+    "name": "E.Leclerc",
+    "aliases": [
+      "Leclerc",
+      "Centre E.Leclerc",
+      "E.Leclerc Drive",
+      "E.Leclerc Express",
+      "Espace Culturel E.Leclerc"
+    ],
+    "color": "#0B70B5"
+  },
+  {
+    "name": "Eram",
+    "aliases": [],
+    "color": "#14141C"
+  },
+  {
+    "name": "Esso",
+    "aliases": [
+      "Esso Express"
+    ],
+    "color": "#0E52A5"
+  },
+  {
+    "name": "Etam",
+    "aliases": [],
+    "color": "#0B1215"
+  },
+  {
+    "name": "Europcar",
+    "aliases": [
+      "Europcar Privilege"
+    ],
+    "color": "#009900"
+  },
+  {
+    "name": "Eurostar",
+    "aliases": [
+      "Eurostar Club",
+      "Club Eurostar",
+      "Thalys"
+    ],
+    "color": "#116BFE"
+  },
+  {
+    "name": "Feu Vert",
+    "aliases": [],
+    "color": "#008457"
+  },
+  {
+    "name": "Fitness Park",
+    "aliases": [],
+    "color": "#FFD600"
+  },
+  {
+    "name": "Flunch",
+    "aliases": [],
+    "color": "#DF2211"
+  },
+  {
+    "name": "Flying Blue",
+    "aliases": [
+      "Air France",
+      "KLM",
+      "Transavia",
+      "Air France KLM"
+    ],
+    "color": "#0800B9"
+  },
+  {
+    "name": "Fnac",
+    "aliases": [],
+    "color": "#EBB300"
+  },
+  {
+    "name": "Foot Locker",
+    "aliases": [],
+    "color": "#0E1111"
+  },
+  {
+    "name": "Franprix",
+    "aliases": [],
+    "color": "#EC6237"
+  },
+  {
+    "name": "Furet du Nord",
+    "aliases": [
+      "Le Furet du Nord",
+      "Le Furet"
+    ],
+    "color": "#E30613"
+  },
+  {
+    "name": "Galeries Lafayette",
+    "aliases": [
+      "Les Galeries Lafayette",
+      "Galeries Lafayette Haussmann"
+    ],
+    "color": "#000000"
+  },
+  {
+    "name": "Gamm vert",
+    "aliases": [],
+    "color": "#6FA291"
+  },
+  {
+    "name": "Gémo",
+    "aliases": [],
+    "color": "#2D2825"
+  },
+  {
+    "name": "Gibert Joseph",
+    "aliases": [
+      "Gibert"
+    ],
+    "color": "#1D1D1B"
+  },
+  {
+    "name": "Gifi",
+    "aliases": [],
+    "color": "#E5004B"
+  },
+  {
+    "name": "Giphar",
+    "aliases": [
+      "Pharmacien Giphar"
+    ],
+    "color": "#00442A"
+  },
+  {
+    "name": "Hippopotamus",
+    "aliases": [
+      "Hippo"
+    ],
+    "color": "#9A1411"
+  },
+  {
+    "name": "H&M",
+    "aliases": [
+      "H et M",
+      "Hennes & Mauritz"
+    ],
+    "color": "#CC071E"
+  },
+  {
+    "name": "IKEA",
+    "aliases": [
+      "IKEA Family"
+    ],
+    "color": "#0058A3"
+  },
+  {
+    "name": "Intermarché",
+    "aliases": [
+      "Intermarché Super",
+      "Intermarché Hyper",
+      "Intermarché Contact",
+      "Intermarché Express",
+      "Inter"
+    ],
+    "color": "#E4001B"
+  },
+  {
+    "name": "Intersport",
+    "aliases": [],
+    "color": "#11448F"
+  },
+  {
+    "name": "Jardiland",
+    "aliases": [],
+    "color": "#FF3D00"
+  },
+  {
+    "name": "Jeff de Bruges",
+    "aliases": [],
+    "color": "#2D190D"
+  },
+  {
+    "name": "JouéClub",
+    "aliases": [],
+    "color": "#244296"
+  },
+  {
+    "name": "Jules",
+    "aliases": [],
+    "color": "#006451"
+  },
+  {
+    "name": "KFC",
+    "aliases": [
+      "Kentucky Fried Chicken"
+    ],
+    "color": "#F5002B"
+  },
+  {
+    "name": "Kiabi",
+    "aliases": [],
+    "color": "#111532"
+  },
+  {
+    "name": "Kiko Milano",
+    "aliases": [
+      "Kiko"
+    ],
+    "color": "#1A1A1A"
+  },
+  {
+    "name": "Kinepolis",
+    "aliases": [],
+    "color": "#BF1522"
+  },
+  {
+    "name": "King Jouet",
+    "aliases": [
+      "Maxi Toys"
+    ],
+    "color": "#E30613"
+  },
+  {
+    "name": "Krys",
+    "aliases": [],
+    "color": "#1B64D7"
+  },
+  {
+    "name": "La Foir'Fouille",
+    "aliases": [
+      "Foir'Fouille"
+    ],
+    "color": "#B6171E"
+  },
+  {
+    "name": "La Grande Récré",
+    "aliases": [
+      "Grande Récré"
+    ],
+    "color": "#0D4884"
+  },
+  {
+    "name": "La Halle",
+    "aliases": [
+      "La Halle aux Vêtements",
+      "La Halle aux Chaussures"
+    ],
+    "color": "#000000"
+  },
+  {
+    "name": "La Vie Claire",
+    "aliases": [],
+    "color": "#378472"
+  },
+  {
+    "name": "Leroy Merlin",
+    "aliases": [],
+    "color": "#7BB51C"
+  },
+  {
+    "name": "Lidl",
+    "aliases": [
+      "Lidl Plus"
+    ],
+    "color": "#0050AA"
+  },
+  {
+    "name": "Lissac",
+    "aliases": [
+      "Lissac Opticien"
+    ],
+    "color": "#E4002B"
+  },
+  {
+    "name": "L'Occitane",
+    "aliases": [
+      "L'Occitane en Provence",
+      "Occitane"
+    ],
+    "color": "#001868"
+  },
+  {
+    "name": "L'Orange Bleue",
+    "aliases": [
+      "Orange Bleue"
+    ],
+    "color": "#EA5839"
+  },
+  {
+    "name": "Maisons du Monde",
+    "aliases": [],
+    "color": "#2B2B2B"
+  },
+  {
+    "name": "Mango",
+    "aliases": [],
+    "color": "#000000"
+  },
+  {
+    "name": "Marionnaud",
+    "aliases": [],
+    "color": "#631B4B"
+  },
+  {
+    "name": "Maxi Zoo",
+    "aliases": [
+      "Fressnapf"
+    ],
+    "color": "#196428"
+  },
+  {
+    "name": "McDonald's",
+    "aliases": [
+      "McDo",
+      "Macdo"
+    ],
+    "color": "#DB0007"
+  },
+  {
+    "name": "Metro",
+    "aliases": [
+      "Metro Cash & Carry"
+    ],
+    "color": "#163D7D"
+  },
+  {
+    "name": "Micromania",
+    "aliases": [
+      "Micromania-Zing",
+      "Zing"
+    ],
+    "color": "#164194"
+  },
+  {
+    "name": "Midas",
+    "aliases": [],
+    "color": "#FDB016"
+  },
+  {
+    "name": "Migros",
+    "aliases": [
+      "Migros France"
+    ],
+    "color": "#FF6600"
+  },
+  {
+    "name": "Miles & More",
+    "aliases": [
+      "Lufthansa",
+      "Swiss",
+      "Austrian Airlines",
+      "Brussels Airlines"
+    ],
+    "color": "#0C2058"
+  },
+  {
+    "name": "MK2",
+    "aliases": [
+      "MK2 Illimité"
+    ],
+    "color": "#E20D13"
+  },
+  {
+    "name": "Monoprix",
+    "aliases": [
+      "Monop'"
+    ],
+    "color": "#E30613"
+  },
+  {
+    "name": "Mr.Bricolage",
+    "aliases": [
+      "Monsieur Bricolage",
+      "Mister Bricolage"
+    ],
+    "color": "#EB0029"
+  },
+  {
+    "name": "Naturalia",
+    "aliases": [],
+    "color": "#BD2B0B"
+  },
+  {
+    "name": "Nature & Découvertes",
+    "aliases": [
+      "Nature et Découvertes"
+    ],
+    "color": "#215331"
+  },
+  {
+    "name": "Netto",
+    "aliases": [],
+    "color": "#E00018"
+  },
+  {
+    "name": "Nicolas",
+    "aliases": [],
+    "color": "#962F34"
+  },
+  {
+    "name": "Nocibé",
+    "aliases": [],
+    "color": "#E10054"
+  },
+  {
+    "name": "Norauto",
+    "aliases": [],
+    "color": "#002B6F"
+  },
+  {
+    "name": "Okaïdi",
+    "aliases": [
+      "Obaïbi",
+      "IDKids",
+      "Oxybul"
+    ],
+    "color": "#022169"
+  },
+  {
+    "name": "Optic 2000",
+    "aliases": [],
+    "color": "#9CA3D6"
+  },
+  {
+    "name": "Optical Center",
+    "aliases": [],
+    "color": "#DA2621"
+  },
+  {
+    "name": "Pathé",
+    "aliases": [
+      "Gaumont",
+      "Pathé Gaumont",
+      "Pathé Cinémas",
+      "Cinépass"
+    ],
+    "color": "#FBBC09"
+  },
+  {
+    "name": "Paul",
+    "aliases": [
+      "Boulangerie Paul"
+    ],
+    "color": "#22221E"
+  },
+  {
+    "name": "Pharmacie Lafayette",
+    "aliases": [
+      "Pharmacies Lafayette"
+    ],
+    "color": "#74CFA3"
+  },
+  {
+    "name": "Picard",
+    "aliases": [
+      "Picard Surgelés"
+    ],
+    "color": "#000BF7"
+  },
+  {
+    "name": "Pimkie",
+    "aliases": [],
+    "color": "#000000"
+  },
+  {
+    "name": "Pizza Hut",
+    "aliases": [],
+    "color": "#EA1C24"
+  },
+  {
+    "name": "Point S",
+    "aliases": [],
+    "color": "#2566AF"
+  },
+  {
+    "name": "Printemps",
+    "aliases": [
+      "Printemps Haussmann"
+    ],
+    "color": "#2D4F9E"
+  },
+  {
+    "name": "Promod",
+    "aliases": [],
+    "color": "#CC0066"
+  },
+  {
+    "name": "Quick",
+    "aliases": [],
+    "color": "#D2082A"
+  },
+  {
+    "name": "Rituals",
+    "aliases": [
+      "Rituals Cosmetics",
+      "My Rituals"
+    ],
+    "color": "#796F63"
+  },
+  {
+    "name": "Sephora",
+    "aliases": [],
+    "color": "#000000"
+  },
+  {
+    "name": "Shell",
+    "aliases": [],
+    "color": "#DD1D21"
+  },
+  {
+    "name": "SNCF",
+    "aliases": [
+      "SNCF Connect",
+      "SNCF Voyageurs",
+      "Carte Avantage",
+      "Carte Liberté",
+      "TGV inOui",
+      "Grand Voyageur",
+      "Max Jeune",
+      "Max Actif"
+    ],
+    "color": "#A42B8F"
+  },
+  {
+    "name": "Spar",
+    "aliases": [],
+    "color": "#EC1B24"
+  },
+  {
+    "name": "Speedy",
+    "aliases": [],
+    "color": "#2F3490"
+  },
+  {
+    "name": "Sport 2000",
+    "aliases": [],
+    "color": "#D2091E"
+  },
+  {
+    "name": "Starbucks",
+    "aliases": [
+      "Starbucks Rewards"
+    ],
+    "color": "#006241"
+  },
+  {
+    "name": "Subway",
+    "aliases": [],
+    "color": "#008938"
+  },
+  {
+    "name": "Super U",
+    "aliases": [
+      "U",
+      "Hyper U",
+      "U Express",
+      "Utile",
+      "Coopérative U",
+      "Système U",
+      "Magasins U",
+      "Drive U",
+      "Marché U"
+    ],
+    "color": "#007AB0"
+  },
+  {
+    "name": "Tape à l'œil",
+    "aliases": [
+      "TAO",
+      "TAO Kids"
+    ],
+    "color": "#FF4040"
+  },
+  {
+    "name": "Thiriet",
+    "aliases": [],
+    "color": "#DA291C"
+  },
+  {
+    "name": "Tom&Co",
+    "aliases": [
+      "Tom and Co"
+    ],
+    "color": "#66B193"
+  },
+  {
+    "name": "TotalEnergies",
+    "aliases": [
+      "Total",
+      "Total Access"
+    ],
+    "color": "#FF0000"
+  },
+  {
+    "name": "Truffaut",
+    "aliases": [],
+    "color": "#014E37"
+  },
+  {
+    "name": "UGC",
+    "aliases": [
+      "UGC Illimité",
+      "UGC Ciné Cité"
+    ],
+    "color": "#00ADFF"
+  },
+  {
+    "name": "V and B",
+    "aliases": [
+      "V&B"
+    ],
+    "color": "#E96029"
+  },
+  {
+    "name": "Weldom",
+    "aliases": [],
+    "color": "#F25C19"
+  },
+  {
+    "name": "Yves Rocher",
+    "aliases": [],
+    "color": "#8A9738"
+  }
+]
