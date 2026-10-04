@@ -143,7 +143,7 @@ With no argument, it checks rules 3 and 4 against the current `versionName`. Tha
 - Contact: the GitHub issue tracker.
 - Effective date.
 
-**Legal notice:** a short publisher and host section on the home page. The host is GitHub, Inc., with its postal address. The publisher identity is confirmed with the user during review.
+**Legal notice:** a short section on the home page. The publisher is **Vincent Ferries**, with the GitHub issue tracker as contact. The host is GitHub, Inc., with its postal address.
 
 **Constraints:**
 - No JavaScript.
