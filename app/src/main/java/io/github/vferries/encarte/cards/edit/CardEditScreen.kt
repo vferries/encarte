@@ -412,7 +412,7 @@ private fun PhotoSlot(
             IconButton(onClick = { onTakePhoto(side) }) {
                 Icon(painterResource(R.drawable.ic_photo_camera), stringResource(R.string.photo_take))
             }
-            OutlinedButton(onClick = { onPickImage(side) }) {
+            OutlinedButton(onClick = { onPickImage(side) }, shape = MaterialTheme.shapes.small) {
                 Icon(painterResource(R.drawable.ic_image), contentDescription = null)
                 Text(stringResource(R.string.photo_pick), Modifier.padding(start = 8.dp))
             }

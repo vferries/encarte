@@ -31,7 +31,7 @@ fun LockScreen(onUnlock: () -> Unit, modifier: Modifier = Modifier) {
         ) {
             Icon(painterResource(R.drawable.ic_lock), contentDescription = null, modifier = Modifier.size(48.dp))
             Text(stringResource(R.string.lock_title), style = MaterialTheme.typography.headlineSmall)
-            Button(onClick = onUnlock) { Text(stringResource(R.string.action_unlock)) }
+            Button(onClick = onUnlock, shape = MaterialTheme.shapes.small) { Text(stringResource(R.string.action_unlock)) }
         }
     }
 }

@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -31,7 +30,7 @@ fun CardTile(card: Card, imageFile: File?, onClick: () -> Unit, modifier: Modifi
     Surface(
         onClick = onClick,
         modifier = modifier.aspectRatio(CARD_ASPECT_RATIO),
-        shape = RoundedCornerShape(12.dp),
+        shape = MaterialTheme.shapes.medium,
         color = Color(card.color),
         contentColor = Color(CardPalette.contentColorFor(card.color)),
         shadowElevation = 2.dp,

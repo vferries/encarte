@@ -202,11 +202,11 @@ fun ScannerScreen(
                 Modifier.fillMaxWidth().padding(16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                OutlinedButton(onClick = onManualEntry, modifier = Modifier.weight(1f)) {
+                OutlinedButton(onClick = onManualEntry, modifier = Modifier.weight(1f), shape = MaterialTheme.shapes.small) {
                     Icon(painterResource(R.drawable.ic_keyboard), contentDescription = null)
                     Text(stringResource(R.string.action_enter_manually), Modifier.padding(start = 8.dp))
                 }
-                OutlinedButton(onClick = onPickImage, modifier = Modifier.weight(1f)) {
+                OutlinedButton(onClick = onPickImage, modifier = Modifier.weight(1f), shape = MaterialTheme.shapes.small) {
                     Icon(painterResource(R.drawable.ic_image), contentDescription = null)
                     Text(stringResource(R.string.action_from_image), Modifier.padding(start = 8.dp))
                 }
@@ -223,6 +223,6 @@ private fun PermissionMessage(action: Int, onAction: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(stringResource(R.string.camera_permission_rationale), color = Color.White, textAlign = TextAlign.Center)
-        Button(onClick = onAction) { Text(stringResource(action)) }
+        Button(onClick = onAction, shape = MaterialTheme.shapes.small) { Text(stringResource(action)) }
     }
 }

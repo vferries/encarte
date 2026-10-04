@@ -195,7 +195,7 @@ private fun EmptyState(onAddCard: () -> Unit, onImport: () -> Unit, modifier: Mo
     ) {
         Text(stringResource(R.string.empty_title), style = MaterialTheme.typography.headlineSmall)
         Text(stringResource(R.string.empty_body), textAlign = TextAlign.Center)
-        Button(onClick = onAddCard) { Text(stringResource(R.string.action_add_card)) }
-        OutlinedButton(onClick = onImport) { Text(stringResource(R.string.action_import)) }
+        Button(onClick = onAddCard, shape = MaterialTheme.shapes.small) { Text(stringResource(R.string.action_add_card)) }
+        OutlinedButton(onClick = onImport, shape = MaterialTheme.shapes.small) { Text(stringResource(R.string.action_import)) }
     }
 }
