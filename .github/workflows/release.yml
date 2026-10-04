@@ -1,0 +1,62 @@
+name: Release
+
+# Builds the Play bundle from a vX.Y.Z tag, signed with the upload key held in the protected `release`
+# environment (release spec §6). The AAB is uploaded to the Play Console by hand; F-Droid builds the tag itself.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: release
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: 21
+      # Tag builds only read Gradle caches, so no cache entry is written while signing secrets are in the environment.
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          cache-read-only: true
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.m2/repository/org/robolectric
+          key: robolectric-4.17-sdk37
+      - name: Release consistency
+        run: scripts/check-release.sh "$GITHUB_REF_NAME"
+      - name: Lint, unit tests, offline guardrail
+        run: ./gradlew lintDebug testDebugUnitTest verifyNoNetworkPermission
+      - name: Decode the upload keystore
+        env:
+          UPLOAD_KEYSTORE_BASE64: ${{ secrets.UPLOAD_KEYSTORE_BASE64 }}
+        run: |
+          umask 077
+          printf '%s' "$UPLOAD_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/upload.jks"
+      - name: Build the signed bundle
+        env:
+          ENCARTE_UPLOAD_KEYSTORE: ${{ runner.temp }}/upload.jks
+          ENCARTE_UPLOAD_KEYSTORE_PASSWORD: ${{ secrets.UPLOAD_KEYSTORE_PASSWORD }}
+          ENCARTE_UPLOAD_KEY_ALIAS: ${{ secrets.UPLOAD_KEY_ALIAS }}
+          ENCARTE_UPLOAD_KEY_PASSWORD: ${{ secrets.UPLOAD_KEY_PASSWORD }}
+        run: ./gradlew bundleRelease
+      - name: Check the bundle's signer
+        env:
+          UPLOAD_CERT_SHA256: ${{ vars.UPLOAD_CERT_SHA256 }}
+        run: scripts/check-signer.sh app/build/outputs/bundle/release/app-release.aab "$UPLOAD_CERT_SHA256"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: encarte-${{ github.ref_name }}-aab
+          path: app/build/outputs/bundle/release/app-release.aab
+          retention-days: 30
+          if-no-files-found: error
+      - name: Remove the keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/upload.jks"
