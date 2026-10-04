@@ -6,3 +6,4 @@ local.properties
 *.iml
 captures/
 .DS_Store
+.superpowers/
