@@ -56,7 +56,9 @@ android {
                 "--add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
             )
             // DemoCardsTest reads the store-screenshot wallet: editing it must re-run the tests.
-            it.inputs.file(rootProject.file("branding/demo/cards.csv"))
+            val demoCards = rootProject.file("branding/demo/cards.csv")
+            it.inputs.file(demoCards)
+            it.systemProperty("encarte.demoCards", demoCards.absolutePath)
         }
     }
 }

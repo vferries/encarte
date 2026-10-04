@@ -12,8 +12,13 @@ import java.io.File
 
 /** The store screenshots show branding/demo/cards.csv: it must import cleanly and every code must display. */
 class DemoCardsTest {
-    // Gradle runs unit tests from the app module directory.
-    private val cards = CatimaCsv.read(File("../branding/demo/cards.csv").readText())
+    private val cards = CatimaCsv.read(
+        File(
+            checkNotNull(System.getProperty("encarte.demoCards")) {
+                "run through Gradle: encarte.demoCards is set in app/build.gradle.kts"
+            },
+        ).readText(),
+    )
 
     @Test
     fun holdsTheEightFictionalStores() {
