@@ -14,7 +14,7 @@ jobs:
       # .gitignore keeps keystores out by accident; this catches a forced add.
       - name: Refuse tracked keystores and keys
         run: |
-          tracked=$(git ls-files -- '*.jks' '*.keystore' '*.p12' '*.pem')
+          tracked=$(git ls-files -- ':(icase)*.jks' ':(icase)*.keystore' ':(icase)*.p12' ':(icase)*.pem')
           if [ -n "$tracked" ]; then
             echo "::error::Keystore or key files must never be committed: $tracked"
             exit 1
