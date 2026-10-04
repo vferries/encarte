@@ -214,7 +214,8 @@ class CardEditViewModel(
 
     fun imageFile(name: String): File = cards.imageFile(name)
 
-    fun onImagePicked(side: CardSide, open: () -> InputStream) {
+    /** [onFinished] runs once the import is over, successful or not, e.g. to delete a temporary source. */
+    fun onImagePicked(side: CardSide, onFinished: () -> Unit = {}, open: () -> InputStream) {
         viewModelScope.launch {
             try {
                 val name = cards.saveImage(open)
@@ -223,6 +224,8 @@ class CardEditViewModel(
             } catch (e: IOException) {
                 Log.w(TAG, "Cannot import picked image", e)
                 imageError = true
+            } finally {
+                onFinished()
             }
         }
     }

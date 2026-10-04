@@ -106,7 +106,10 @@ fun CardEditRoute(viewModel: CardEditViewModel, onSaved: (cardId: Long, isNew: B
     val takePicture = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
         val side = pendingSide
         pendingSide = null
-        if (success && side != null) viewModel.onImagePicked(side) { captureFile.inputStream() }
+        if (success && side != null) {
+            // The capture is a copy of the photo outside the image store: don't leave it behind.
+            viewModel.onImagePicked(side, onFinished = { deleteCapture(captureFile) }) { captureFile.inputStream() }
+        }
     }
     val launchCamera = {
         launchSafely({ photoNotice = R.string.photo_error }) { takePicture.launch(captureUri(context, captureFile)) }
@@ -148,6 +151,10 @@ fun CardEditRoute(viewModel: CardEditViewModel, onSaved: (cardId: Long, isNew: B
 private fun captureUri(context: Context, file: File): Uri {
     file.parentFile?.mkdirs()
     return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+}
+
+private fun deleteCapture(file: File) {
+    if (!file.delete() && file.exists()) Log.w(TAG, "Cannot delete the camera capture")
 }
 
 private inline fun launchSafely(onFailure: () -> Unit, launch: () -> Unit) {

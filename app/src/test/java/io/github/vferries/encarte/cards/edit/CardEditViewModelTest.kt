@@ -36,6 +36,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -206,6 +207,20 @@ class CardEditViewModelTest {
 
         vm.discard()
         eventually { !images.exists(second) }
+    }
+
+    @Test
+    fun imagePickReportsWhenItIsOverWhateverTheOutcome() = runTest {
+        val vm = newCard("123")
+        var finished = 0
+
+        vm.onImagePicked(CardSide.FRONT, onFinished = { finished++ }) { jpeg() }
+        eventually { finished == 1 }
+        assertNotNull(vm.frontImage)
+
+        vm.onImagePicked(CardSide.BACK, onFinished = { finished++ }) { "not an image".byteInputStream() }
+        eventually { finished == 2 }
+        assertTrue(vm.imageError)
     }
 
     @Test
