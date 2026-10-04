@@ -45,6 +45,13 @@ Needs the Android SDK `emulator` and `adb`, Google Chrome and ImageMagick 7. Cap
 **off**: with it on, `FLAG_SECURE` makes `screencap` black (`capture.sh` refuses black captures).
 If a phone is also plugged in, set `ANDROID_SERIAL=emulator-5554` first.
 
+Prerequisites: the `Pixel_10` AVD is a Pixel 10 device profile with the system image
+`system-images;android-37.1;google_apis_playstore_ps16k;x86_64`, created in Android Studio's Device Manager (this
+SDK has no cmdline-tools, so no `avdmanager`). Its `~/.android/avd/Pixel_10.avd/config.ini` must contain
+`hw.camera.back=virtualscene`, which `-virtualscene-poster` needs.
+
+Run the commands from the repository root, in a single shell: `$P` is shared across the steps.
+
 1. Render the card face for the camera poster, then start the emulator read-only (all setup is discarded on exit):
 
    ```bash
@@ -52,6 +59,10 @@ If a phone is also plugged in, set `ANDROID_SERIAL=emulator-5554` first.
    google-chrome --headless=new --user-data-dir="$P" --disable-gpu --hide-scrollbars --allow-file-access-from-files \
      --force-device-scale-factor=1 --virtual-time-budget=10000 --window-size=1011,638 \
      --screenshot="$P/card-face.png" "file://$PWD/branding/demo/card-face.html"
+   # The card face must have loaded its font: expect data-ready="ok".
+   google-chrome --headless=new --user-data-dir="$P" --disable-gpu --hide-scrollbars --allow-file-access-from-files \
+     --force-device-scale-factor=1 --virtual-time-budget=10000 --window-size=1011,638 \
+     --dump-dom "file://$PWD/branding/demo/card-face.html" | grep -o 'data-ready="[^"]*"'
    __NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia \
      emulator -avd Pixel_10 -read-only -no-snapshot -gpu host -virtualscene-poster wall="$P/card-face.png" &
    adb wait-for-device shell 'while [ -z "$(getprop sys.boot_completed)" ]; do sleep 1; done'
@@ -95,9 +106,6 @@ If a phone is also plugged in, set `ANDROID_SERIAL=emulator-5554` first.
    app" disabled with "Set a screen lock on this device first" instead of its normal summary. The app lock itself
    stays off.
 
-   Clear any notification left in the status bar before each capture (pull down the shade → **Clear all**). The
-   ongoing "New ads privacy features" one only goes away when you open it and tap **Got it**.
-
 4. Install and prepare the app (the demo data stays in the emulator; `pm clear` restarts from an empty wallet):
 
    ```bash
@@ -114,6 +122,9 @@ If a phone is also plugged in, set `ANDROID_SERIAL=emulator-5554` first.
    adb shell cmd locale set-app-locales io.github.vferries.encarte --locales "$L"
    adb shell am start -n io.github.vferries.encarte/.MainActivity
    ```
+
+   Clear any notification left in the status bar before each capture (pull down the shade → **Clear all**). The
+   ongoing "New ads privacy features" one only goes away when you open it and tap **Got it**.
 
    - Shot 5: the empty state, right after launch: `branding/capture.sh $L 5`.
    - Import (empty state) → Import cards → ☰ roots → Downloads → `cards.csv`.
