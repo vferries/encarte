@@ -51,4 +51,15 @@
     <string name="discard_title">Abandonner les modifications ?</string>
     <string name="discard_confirm">Abandonner</string>
     <string name="keep_editing">Continuer</string>
+    <string name="scan_title">Scanner une carte</string>
+    <string name="scan_hint">Visez le code-barres de la carte</string>
+    <string name="action_enter_manually">Saisir à la main</string>
+    <string name="action_from_image">Depuis une image</string>
+    <string name="action_torch_on">Allumer la lampe</string>
+    <string name="action_torch_off">Éteindre la lampe</string>
+    <string name="camera_permission_rationale">Encarté a besoin de l\'appareil photo pour scanner les codes-barres. Les images ne quittent jamais votre appareil.</string>
+    <string name="action_grant_permission">Autoriser l\'appareil photo</string>
+    <string name="action_open_settings">Ouvrir les réglages de l\'app</string>
+    <string name="camera_unavailable">Aucun appareil photo disponible. Saisissez la carte à la main ou utilisez une image.</string>
+    <string name="no_barcode_in_image">Aucun code-barres trouvé dans cette image.</string>
 </resources>

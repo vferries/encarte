@@ -52,4 +52,15 @@
     <string name="discard_title">Discard changes?</string>
     <string name="discard_confirm">Discard</string>
     <string name="keep_editing">Keep editing</string>
+    <string name="scan_title">Scan a card</string>
+    <string name="scan_hint">Point the camera at the card\'s barcode</string>
+    <string name="action_enter_manually">Enter manually</string>
+    <string name="action_from_image">From an image</string>
+    <string name="action_torch_on">Turn on flashlight</string>
+    <string name="action_torch_off">Turn off flashlight</string>
+    <string name="camera_permission_rationale">Encarté needs the camera to scan barcodes. Images never leave your device.</string>
+    <string name="action_grant_permission">Allow camera</string>
+    <string name="action_open_settings">Open app settings</string>
+    <string name="camera_unavailable">No camera is available. Enter the card manually or use an image.</string>
+    <string name="no_barcode_in_image">No barcode found in this image.</string>
 </resources>
