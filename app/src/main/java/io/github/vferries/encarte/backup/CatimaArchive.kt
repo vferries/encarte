@@ -41,7 +41,7 @@ class CatimaArchive(
                 checkReadable(zip, password)
                 val csvHeader = zip.fileHeaders.firstOrNull { it.baseName == CatimaCsv.FILE_NAME }
                     ?: throw CatimaFormatException("No ${CatimaCsv.FILE_NAME} in archive")
-                CatimaCsv.read(readEntry(zip, csvHeader) { it.readBytes().toString(Charsets.UTF_8) })
+                CatimaCsv.read(readEntryBytes(zip, csvHeader).toString(Charsets.UTF_8))
             }
         }
         if (cards.size > maxCards) throw CatimaFormatException("Too many cards: ${cards.size}")
@@ -59,7 +59,8 @@ class CatimaArchive(
                     Log.w(TAG, "Ignoring unexpected archive entry ${header.baseName}")
                     continue
                 }
-                readEntry(zip, header) { action(ref, it) }
+                // Callback runs outside readEntryBytes' try so its own I/O errors aren't taken for a wrong password.
+                action(ref, readEntryBytes(zip, header).inputStream())
             }
         }
     }
@@ -90,8 +91,8 @@ class CatimaArchive(
         }
     }
 
-    private fun <T> readEntry(zip: ZipFile, header: FileHeader, block: (InputStream) -> T): T = try {
-        zip.getInputStream(header).use(block)
+    private fun readEntryBytes(zip: ZipFile, header: FileHeader): ByteArray = try {
+        zip.getInputStream(header).use { it.readBytes() }
     } catch (e: ZipException) {
         Log.w(TAG, "Cannot read archive entry ${header.baseName}: ${e.javaClass.simpleName}")
         if (e.type == ZipException.Type.WRONG_PASSWORD) throw WrongPasswordException(e) else throw e

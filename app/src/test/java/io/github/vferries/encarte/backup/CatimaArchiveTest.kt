@@ -10,6 +10,7 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
 
 class CatimaArchiveTest {
     @get:Rule
@@ -93,5 +94,15 @@ class CatimaArchiveTest {
 
         assertThrows(CatimaFormatException::class.java) { CatimaArchive(maxCards = 1).readCards(file, null) }
         assertThrows(CatimaFormatException::class.java) { CatimaArchive(maxUncompressedBytes = 10).readCards(file, null) }
+    }
+
+    @Test
+    fun callbackIoFailureIsNotReportedAsWrongPassword() {
+        val file = written("secret".toCharArray())
+
+        val e = assertThrows(IOException::class.java) {
+            archive.forEachImage(file, "secret".toCharArray()) { _, _ -> throw IOException("disk full") }
+        }
+        assertEquals("disk full", e.message)
     }
 }
