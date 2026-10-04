@@ -2,6 +2,7 @@ package io.github.vferries.encarte.backup
 
 import android.util.Log
 import androidx.room3.withWriteTransaction
+import androidx.sqlite.SQLiteException
 import io.github.vferries.encarte.core.data.Card
 import io.github.vferries.encarte.core.data.EncarteDatabase
 import io.github.vferries.encarte.core.data.ImageStore
@@ -76,6 +77,9 @@ class BackupService(
             ImportResult.Invalid
         } catch (e: IOException) {
             Log.e(TAG, "Cannot read backup", e)
+            ImportResult.IoError
+        } catch (e: SQLiteException) {
+            Log.e(TAG, "Import failed in the database", e)
             ImportResult.IoError
         } finally {
             images.clearStaging()

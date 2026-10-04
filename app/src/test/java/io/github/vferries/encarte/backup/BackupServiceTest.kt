@@ -1,6 +1,7 @@
 package io.github.vferries.encarte.backup
 
 import android.graphics.Bitmap
+import androidx.room3.useWriterConnection
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.vferries.encarte.core.data.EncarteDatabase
 import io.github.vferries.encarte.core.data.ImageStore
@@ -165,5 +166,18 @@ class BackupServiceTest {
         val file = File(tmp.root, "plain.zip").apply { writeBytes(exported.toByteArray()) }
         val names = ZipFile(file).use { zip -> zip.fileHeaders.map { it.fileName }.toSet() }
         assertEquals(setOf("catima.csv", "card_${id}_front.png"), names)
+    }
+
+    @Test
+    fun failedTransactionLeavesNoCardsAndNoImages() = runTest {
+        db.useWriterConnection { connection ->
+            connection.usePrepared("CREATE TRIGGER fail_insert BEFORE INSERT ON cards BEGIN SELECT RAISE(ABORT, 'boom'); END") { it.step() }
+        }
+
+        val result = service.import(fixtureArchive(), null)
+
+        assertEquals(ImportResult.IoError, result)
+        assertTrue(db.cardDao().getAll().isEmpty())
+        assertTrue(File(tmp.root, "images").walkTopDown().none { it.isFile })
     }
 }
