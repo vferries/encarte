@@ -67,6 +67,8 @@ The controller can do it with `gh api` once you agree.
    | `@` | AAAA | `2606:50c0:8003::153` |
    | `www` | CNAME | `vferries.github.io.` |
 
-   Remove any other `A`/`AAAA` record on `@` (the registrar's parking page, for instance).
+   `@` means the domain itself. OVH (the current registrar) refuses `@`: leave its **Subdomain** field empty instead.
+   Modify or remove any other `A`/`AAAA` record on the domain itself. At OVH these point to the bundled web hosting
+   (`cluster029.hosting.ovh.net`, `51.91.236.255` and `2001:41d0:301::29`).
 4. Once the certificate is issued (Settings → Pages shows it), tick **Enforce HTTPS**.
 5. Check: `https://encarte.fr/` and `https://encarte.fr/privacy.html` load, and `https://www.encarte.fr/` redirects.
