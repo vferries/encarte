@@ -7,3 +7,7 @@ local.properties
 captures/
 .DS_Store
 .superpowers/
+*.jks
+*.keystore
+*.p12
+*.pem
