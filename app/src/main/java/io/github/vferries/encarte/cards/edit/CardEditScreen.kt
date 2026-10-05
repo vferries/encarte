@@ -34,7 +34,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
@@ -79,8 +78,9 @@ import io.github.vferries.encarte.core.color.CardPalette
 import io.github.vferries.encarte.core.data.CardSide
 import io.github.vferries.encarte.core.ui.BarcodeImage
 import io.github.vferries.encarte.core.ui.CARD_ASPECT_RATIO
+import io.github.vferries.encarte.core.ui.EncarteAlertDialog
+import io.github.vferries.encarte.core.ui.EncarteExposedDropdownMenu
 import io.github.vferries.encarte.core.ui.rememberImageBitmap
-import io.github.vferries.encarte.lock.LocalContentCovered
 import java.io.File
 import java.io.IOException
 
@@ -215,8 +215,8 @@ fun CardEditScreen(
         }
     }
 
-    if (confirmDiscard && !LocalContentCovered.current) {
-        AlertDialog(
+    if (confirmDiscard) {
+        EncarteAlertDialog(
             onDismissRequest = { confirmDiscard = false },
             title = { Text(stringResource(R.string.discard_title)) },
             confirmButton = {
@@ -351,17 +351,15 @@ private fun FormatField(selected: BarcodeFormat?, onSelect: (BarcodeFormat?) -> 
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
         )
-        if (!LocalContentCovered.current) {
-            ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                (listOf<BarcodeFormat?>(null) + BarcodeFormat.entries).forEach { format ->
-                    DropdownMenuItem(
-                        text = { Text(format?.label ?: noneLabel) },
-                        onClick = {
-                            expanded = false
-                            onSelect(format)
-                        },
-                    )
-                }
+        EncarteExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            (listOf<BarcodeFormat?>(null) + BarcodeFormat.entries).forEach { format ->
+                DropdownMenuItem(
+                    text = { Text(format?.label ?: noneLabel) },
+                    onClick = {
+                        expanded = false
+                        onSelect(format)
+                    },
+                )
             }
         }
     }

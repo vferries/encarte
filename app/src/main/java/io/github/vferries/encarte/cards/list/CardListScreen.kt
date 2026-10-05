@@ -20,7 +20,6 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -48,7 +47,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.vferries.encarte.R
 import io.github.vferries.encarte.core.prefs.SortOrder
 import io.github.vferries.encarte.core.ui.CardTile
-import io.github.vferries.encarte.lock.LocalContentCovered
+import io.github.vferries.encarte.core.ui.EncarteDropdownMenu
 
 @Composable
 fun CardListRoute(
@@ -116,21 +115,19 @@ private fun SortMenu(current: SortOrder, onSortOrderChange: (SortOrder) -> Unit)
         IconButton(onClick = { expanded = true }) {
             Icon(painterResource(R.drawable.ic_sort), stringResource(R.string.action_sort))
         }
-        if (!LocalContentCovered.current) {
-            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                for ((order, label) in listOf(
-                    SortOrder.NAME to R.string.sort_by_name,
-                    SortOrder.RECENTLY_USED to R.string.sort_recently_used,
-                )) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(label)) },
-                        leadingIcon = { RadioButton(selected = order == current, onClick = null) },
-                        onClick = {
-                            expanded = false
-                            onSortOrderChange(order)
-                        },
-                    )
-                }
+        EncarteDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            for ((order, label) in listOf(
+                SortOrder.NAME to R.string.sort_by_name,
+                SortOrder.RECENTLY_USED to R.string.sort_recently_used,
+            )) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(label)) },
+                    leadingIcon = { RadioButton(selected = order == current, onClick = null) },
+                    onClick = {
+                        expanded = false
+                        onSortOrderChange(order)
+                    },
+                )
             }
         }
     }

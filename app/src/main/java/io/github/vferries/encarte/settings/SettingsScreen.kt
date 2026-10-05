@@ -18,7 +18,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -53,8 +52,8 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.vferries.encarte.BuildConfig
 import io.github.vferries.encarte.R
+import io.github.vferries.encarte.core.ui.EncarteAlertDialog
 import io.github.vferries.encarte.lock.DeviceAuthenticator
-import io.github.vferries.encarte.lock.LocalContentCovered
 import io.github.vferries.encarte.lock.isDeviceSecure
 import java.io.IOException
 import java.time.LocalDate
@@ -217,8 +216,7 @@ fun SettingsScreen(
         }
     }
 
-    val covered = LocalContentCovered.current
-    if (askExportPassword && !covered) {
+    if (askExportPassword) {
         ExportPasswordDialog(
             onConfirm = { password ->
                 askExportPassword = false
@@ -228,11 +226,11 @@ fun SettingsScreen(
         )
     }
     val prompt = state.passwordPrompt
-    if (prompt != null && !covered) {
+    if (prompt != null) {
         ImportPasswordDialog(retry = prompt == PasswordPrompt.RETRY, onSubmit = onImportPassword, onDismiss = onImportCancelled)
     }
-    if (showLicenses && !covered) {
-        AlertDialog(
+    if (showLicenses) {
+        EncarteAlertDialog(
             onDismissRequest = { showLicenses = false },
             title = { Text(stringResource(R.string.settings_third_party)) },
             text = { Text(stringResource(R.string.third_party_licenses)) },
@@ -270,7 +268,7 @@ private fun ExportPasswordDialog(onConfirm: (CharArray?) -> Unit, onDismiss: () 
     val confirmation = remember { TextFieldState() }
     val mismatch = password.text.isNotEmpty() && confirmation.text.isNotEmpty() && password.text.toString() != confirmation.text.toString()
     val valid = password.text.isNotEmpty() && password.text.toString() == confirmation.text.toString()
-    AlertDialog(
+    EncarteAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.export_password_title)) },
         text = {
@@ -299,7 +297,7 @@ private fun ExportPasswordDialog(onConfirm: (CharArray?) -> Unit, onDismiss: () 
 @Composable
 private fun ImportPasswordDialog(retry: Boolean, onSubmit: (CharArray) -> Unit, onDismiss: () -> Unit) {
     val password = remember { TextFieldState() }
-    AlertDialog(
+    EncarteAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.import_password_title)) },
         text = {

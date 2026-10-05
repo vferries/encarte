@@ -2,7 +2,6 @@ package io.github.vferries.encarte.lock
 
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -11,6 +10,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.github.vferries.encarte.core.ui.EncarteAlertDialog
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -60,10 +60,8 @@ class LockGateTest {
         var state by mutableStateOf(LockState.UNLOCKED)
         composeRule.setContent {
             LockGate(state, deviceSecure = true, onUnlockRequest = { prompts++ }, onLockUnavailable = {}) {
-                // Gated exactly like the app's dialogs: a dialog is its own window, above the lock screen.
-                if (!LocalContentCovered.current) {
-                    AlertDialog(onDismissRequest = {}, confirmButton = {}, text = { Text("Secret dialog") })
-                }
+                // The app's dialogs go through the coverable wrappers: a dialog is its own window, above the lock screen.
+                EncarteAlertDialog(onDismissRequest = {}, confirmButton = {}, text = { Text("Secret dialog") })
             }
         }
         composeRule.onNodeWithText("Secret dialog").assertIsDisplayed()

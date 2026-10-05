@@ -16,7 +16,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -41,7 +40,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.vferries.encarte.R
@@ -49,9 +47,10 @@ import io.github.vferries.encarte.core.data.Card
 import io.github.vferries.encarte.core.data.encodedValue
 import io.github.vferries.encarte.core.ui.BarcodeImage
 import io.github.vferries.encarte.core.ui.CARD_ASPECT_RATIO
+import io.github.vferries.encarte.core.ui.EncarteAlertDialog
+import io.github.vferries.encarte.core.ui.EncarteDialog
 import io.github.vferries.encarte.core.ui.MaxBrightnessEffect
 import io.github.vferries.encarte.core.ui.rememberImageBitmap
-import io.github.vferries.encarte.lock.LocalContentCovered
 import java.io.File
 
 private const val THUMBNAIL_MAX_SIDE = 480
@@ -120,8 +119,8 @@ fun CardDisplayScreen(
             else -> CardContent(state, card, Modifier.padding(padding))
         }
     }
-    if (confirmDelete && card != null && !LocalContentCovered.current) {
-        AlertDialog(
+    if (confirmDelete && card != null) {
+        EncarteAlertDialog(
             onDismissRequest = { confirmDelete = false },
             title = { Text(stringResource(R.string.delete_confirm_title)) },
             text = { Text(stringResource(R.string.delete_confirm_body, card.storeName)) },
@@ -178,7 +177,7 @@ private fun CardContent(state: CardDisplayUiState, card: Card, modifier: Modifie
         }
     }
     val shownImage = fullScreenImage
-    if (shownImage != null && !LocalContentCovered.current) FullScreenImage(shownImage) { fullScreenImage = null }
+    if (shownImage != null) FullScreenImage(shownImage) { fullScreenImage = null }
 }
 
 @Composable
@@ -197,7 +196,7 @@ private fun Thumbnail(file: File, description: String, modifier: Modifier = Modi
 
 @Composable
 private fun FullScreenImage(file: File, onDismiss: () -> Unit) {
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+    EncarteDialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         val image = rememberImageBitmap(file, FULL_SCREEN_MAX_SIDE)
         Box(Modifier.fillMaxSize().clickable(onClick = onDismiss), contentAlignment = Alignment.Center) {
             if (image != null) {
