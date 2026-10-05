@@ -1,6 +1,7 @@
 package io.github.vferries.encarte.core.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
@@ -18,7 +19,7 @@ private val SoonText = Color(0xFF1D2440)
 private val ExpiredBackground = Color(0xFFD32F2F)
 private val ExpiredText = Color.White
 
-/** Opaque, so it stays readable on any tile color or photo. Nothing unless the card expires soon. */
+/** Opaque and outlined in its text color, so it stays visible on a tile of its own color or on a photo. Nothing unless the card expires soon. */
 @Composable
 fun ExpiryBadge(status: ExpiryStatus, modifier: Modifier = Modifier) {
     val (text, background, content) = when (status) {
@@ -39,6 +40,6 @@ fun ExpiryBadge(status: ExpiryStatus, modifier: Modifier = Modifier) {
         color = content,
         style = MaterialTheme.typography.labelSmall,
         maxLines = 1,
-        modifier = modifier.background(background, CircleShape).padding(horizontal = 8.dp, vertical = 2.dp),
+        modifier = modifier.background(background, CircleShape).border(1.dp, content, CircleShape).padding(horizontal = 8.dp, vertical = 2.dp),
     )
 }
