@@ -63,7 +63,8 @@ img { max-width: 100%; height: auto; }
 @media (max-width: 599px) { .site-nav .anchor { display: none; } }
 
 /* Hero */
-.hero { text-align: center; padding-top: 1.5rem; overflow: hidden; }
+/* Clip only sideways: the rotated side phones must not cause horizontal scroll, but the phones overflow downward. */
+.hero { text-align: center; padding-top: 1.5rem; overflow-x: clip; position: relative; z-index: 1; }
 .hero-icon { width: 5.25rem; height: 5.25rem; border-radius: 1.25rem; box-shadow: 0 4px 14px rgba(29, 36, 64, 0.18); }
 h1 { font-size: clamp(2.25rem, 6vw, 3.5rem); font-weight: 900; line-height: 1.05; letter-spacing: -0.01em; margin: 1rem 0 0; }
 .lead { font-size: clamp(1.0625rem, 2.2vw, 1.25rem); font-weight: 600; color: var(--muted); max-width: 36rem; margin: 1rem auto 1.5rem; }
@@ -75,19 +76,26 @@ h1 { font-size: clamp(2.25rem, 6vw, 3.5rem); font-weight: 900; line-height: 1.05
 .play-soon .play-badge, .fdroid-soon .fdroid-badge { display: none; }
 body:not(.play-soon) .play-soon-text, body:not(.fdroid-soon) .fdroid-soon-text { display: none; }
 
-/* Phone fan: flex-start keeps each phone at its own height (no black frame under the side screenshots). */
-.fan { display: flex; justify-content: center; align-items: flex-start; gap: clamp(0.5rem, 2vw, 1.25rem); height: clamp(15rem, 42vw, 26rem); margin-top: 2.5rem; padding-top: 0.5rem; overflow: hidden; }
+/* Phone fan: whole phones, sized by viewport width so three always fit (360 px is the common Android width).
+   flex-start keeps each phone at its own height (no black frame under the side screenshots). */
+.fan { display: flex; justify-content: center; align-items: flex-start; gap: clamp(0.5rem, 2vw, 1.25rem); margin-top: 2.5rem; padding-top: 0.5rem; }
 .phone { flex: none; background: #111111; border-radius: clamp(1rem, 2.6vw, 1.75rem); padding: clamp(0.25rem, 0.6vw, 0.4rem); box-shadow: var(--shadow); }
 .phone img { display: block; width: 100%; border-radius: clamp(0.8rem, 2.2vw, 1.45rem); }
-.phone.side { width: clamp(6.5rem, 20vw, 13rem); margin-top: 1.5rem; }
+.phone.side { width: min(25vw, 13rem); margin-top: 1.5rem; }
 .phone.left { transform: rotate(-6deg); }
 .phone.right { transform: rotate(6deg); }
-.phone.center { width: clamp(7.5rem, 23vw, 15rem); position: relative; z-index: 1; }
+.phone.center { width: min(29vw, 15rem); position: relative; z-index: 1; }
 
 /* Sections */
 main > section { padding: clamp(2.5rem, 6vw, 4.5rem) 0; }
 h2 { font-size: clamp(1.75rem, 4vw, 2.25rem); font-weight: 900; line-height: 1.15; text-align: center; margin: 0 0 1.5rem; }
 .features, .closing { background: var(--bg-alt); }
+/* The features background starts behind the phones' lower third, so they stand across the two sections. */
+.features {
+  --overlap: clamp(6rem, 22vw, 11rem);
+  margin-top: calc(var(--overlap) * -1);
+  padding-top: calc(var(--overlap) + clamp(2.5rem, 6vw, 4.5rem));
+}
 .cards { display: grid; gap: 1rem; grid-template-columns: 1fr; }
 @media (min-width: 600px) { .cards { grid-template-columns: repeat(2, 1fr); } }
 .card { background: var(--surface); border-radius: 0.75rem; padding: 1.25rem; }
