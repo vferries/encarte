@@ -19,6 +19,8 @@ F-Droid in `docs/release/fdroid/README.md`.
 - [ ] `https://encarte.fr` and `https://encarte.fr/privacy.html` live over HTTPS, domain verified (`setup.md` §4).
 - [ ] Play Console app created, listing and App content complete (`play-console.md` §1–5).
 - [ ] After `v1.0.0`: open the F-Droid merge request (`docs/release/fdroid/README.md`).
+- [ ] When the Play listing is live, remove `play-soon` from `<body>` in `site/index.html` and `site/en/index.html`;
+      when F-Droid lists the app, remove `fdroid-soon` the same way (see `branding/README.md`).
 
 ## Every release
 
