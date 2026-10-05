@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.room3.ColumnTypeConverter
 import io.github.vferries.encarte.core.barcode.BarcodeFormat
 import java.time.Instant
+import java.time.LocalDate
 
 private const val TAG = "Converters"
 
@@ -13,6 +14,12 @@ class Converters {
 
     @ColumnTypeConverter
     fun epochMillisToInstant(epochMillis: Long): Instant = Instant.ofEpochMilli(epochMillis)
+
+    @ColumnTypeConverter
+    fun localDateToEpochDay(date: LocalDate): Long = date.toEpochDay()
+
+    @ColumnTypeConverter
+    fun epochDayToLocalDate(epochDay: Long): LocalDate = LocalDate.ofEpochDay(epochDay)
 
     @ColumnTypeConverter
     fun barcodeFormatToName(format: BarcodeFormat): String = format.name

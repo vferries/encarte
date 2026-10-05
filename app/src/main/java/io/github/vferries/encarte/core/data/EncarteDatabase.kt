@@ -1,12 +1,18 @@
 package io.github.vferries.encarte.core.data
 
 import android.content.Context
+import androidx.room3.AutoMigration
 import androidx.room3.ColumnTypeConverters
 import androidx.room3.Database
 import androidx.room3.Room
 import androidx.room3.RoomDatabase
 
-@Database(entities = [Card::class], version = 1, exportSchema = true)
+@Database(
+    entities = [Card::class],
+    version = 2,
+    exportSchema = true,
+    autoMigrations = [AutoMigration(from = 1, to = 2)],
+)
 @ColumnTypeConverters(Converters::class)
 abstract class EncarteDatabase : RoomDatabase() {
     abstract fun cardDao(): CardDao

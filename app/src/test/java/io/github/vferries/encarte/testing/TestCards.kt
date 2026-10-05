@@ -3,6 +3,7 @@ package io.github.vferries.encarte.testing
 import io.github.vferries.encarte.core.barcode.BarcodeFormat
 import io.github.vferries.encarte.core.data.Card
 import java.time.Instant
+import java.time.LocalDate
 
 fun testCard(
     storeName: String = "Store",
@@ -14,6 +15,8 @@ fun testCard(
     createdAt: Instant = Instant.ofEpochMilli(1_700_000_000_000),
     lastUsedAt: Instant? = null,
     id: Long = 0,
+    expiresOn: LocalDate? = null,
+    isArchived: Boolean = false,
 ) = Card(
     id = id,
     storeName = storeName,
@@ -25,4 +28,6 @@ fun testCard(
     backImage = backImage,
     createdAt = createdAt,
     lastUsedAt = lastUsedAt,
+    expiresOn = expiresOn,
+    isArchived = isArchived,
 )

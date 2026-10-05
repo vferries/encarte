@@ -49,6 +49,8 @@ class CardRepository(
 
     suspend fun setFavorite(id: Long, favorite: Boolean) = dao.setFavorite(id, favorite)
 
+    suspend fun setArchived(id: Long, archived: Boolean) = dao.setArchived(id, archived)
+
     suspend fun saveImage(open: () -> InputStream): String = withContext(io) { images.save(open) }
 
     suspend fun discardImage(name: String) = withContext(io) { images.delete(name) }

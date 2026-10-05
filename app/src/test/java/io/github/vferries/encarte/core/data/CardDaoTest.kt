@@ -12,12 +12,14 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.time.Instant
+import java.time.LocalDate
 
 @RunWith(AndroidJUnit4::class)
 class CardDaoTest {
@@ -100,5 +102,18 @@ class CardDaoTest {
     fun encodedValueFallsBackToCardNumber() {
         assertEquals("123456", testCard().encodedValue)
         assertEquals("999", testCard().copy(barcodeValue = "999").encodedValue)
+    }
+
+    @Test
+    fun expiryAndArchiveArePersisted() = runTest {
+        val id = dao.insert(testCard("Library", expiresOn = LocalDate.of(2027, 3, 12)))
+
+        dao.setArchived(id, true)
+
+        val stored = dao.get(id)!!
+        assertEquals(LocalDate.of(2027, 3, 12), stored.expiresOn)
+        assertTrue(stored.isArchived)
+        dao.setArchived(id, false)
+        assertFalse(dao.get(id)!!.isArchived)
     }
 }

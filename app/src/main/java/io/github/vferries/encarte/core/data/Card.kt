@@ -1,9 +1,11 @@
 package io.github.vferries.encarte.core.data
 
+import androidx.room3.ColumnInfo
 import androidx.room3.Entity
 import androidx.room3.PrimaryKey
 import io.github.vferries.encarte.core.barcode.BarcodeFormat
 import java.time.Instant
+import java.time.LocalDate
 
 @Entity(tableName = "cards")
 data class Card(
@@ -24,6 +26,11 @@ data class Card(
     /** Assigned by CardRepository on insert. */
     val createdAt: Instant,
     val lastUsedAt: Instant? = null,
+    /** Inclusive: the card is still valid on that day. Null means it never expires. */
+    val expiresOn: LocalDate? = null,
+    /** The default lets the 1 → 2 auto-migration add the column to existing rows. */
+    @ColumnInfo(defaultValue = "0")
+    val isArchived: Boolean = false,
 )
 
 val Card.encodedValue: String get() = barcodeValue ?: cardNumber

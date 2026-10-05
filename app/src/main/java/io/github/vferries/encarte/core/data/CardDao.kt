@@ -37,6 +37,9 @@ interface CardDao {
     @Query("UPDATE cards SET isFavorite = :favorite WHERE id = :id")
     suspend fun setFavorite(id: Long, favorite: Boolean)
 
+    @Query("UPDATE cards SET isArchived = :archived WHERE id = :id")
+    suspend fun setArchived(id: Long, archived: Boolean)
+
     @Query(
         "SELECT frontImage FROM cards WHERE frontImage IS NOT NULL " +
             "UNION SELECT backImage FROM cards WHERE backImage IS NOT NULL"
