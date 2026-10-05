@@ -48,6 +48,7 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.time.Clock
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneOffset
 
 @RunWith(AndroidJUnit4::class)
@@ -246,6 +247,7 @@ class CardEditViewModelTest {
         vm.barcodeValue.setTextAndPlaceCursorAtEnd("4006381333948")
         vm.note.setTextAndPlaceCursorAtEnd("Gold member")
         vm.selectColor(CardPalette.swatches[2])
+        vm.setExpiresOn(LocalDate.of(2027, 3, 12))
         vm.onImagePicked(CardSide.FRONT) { jpeg() }
         eventually { vm.frontImage != null }
         val picked = vm.frontImage!!
@@ -260,6 +262,7 @@ class CardEditViewModelTest {
         assertEquals("4006381333948", restored.barcodeValue.text.toString())
         assertEquals("Gold member", restored.note.text.toString())
         assertEquals(CardPalette.swatches[2], restored.color)
+        assertEquals(LocalDate.of(2027, 3, 12), restored.expiresOn)
         assertEquals(picked, restored.frontImage)
         assertNull(restored.backImage)
         assertTrue(restored.hasChanges)
@@ -351,6 +354,36 @@ class CardEditViewModelTest {
                 parcel.recycle()
             }
         }
+    }
+
+    @Test
+    fun expiryDateIsSaved() = runTest {
+        val vm = newCard("123")
+        vm.storeName.setTextAndPlaceCursorAtEnd("Fnac")
+        vm.setExpiresOn(LocalDate.of(2027, 3, 12))
+
+        vm.save()
+        eventually { vm.savedCardId != null }
+
+        assertEquals(LocalDate.of(2027, 3, 12), cards.get(vm.savedCardId!!)!!.expiresOn)
+    }
+
+    @Test
+    fun editingAnArchivedCardKeepsItArchivedAndTracksTheDate() = runTest {
+        val id = cards.save(testCard("Fnac", isArchived = true, expiresOn = LocalDate.of(2027, 3, 12)))
+        val vm = CardEditViewModel(id, null, null, false, cards, brands, SavedStateHandle())
+        eventually { !vm.isLoading }
+        assertEquals(LocalDate.of(2027, 3, 12), vm.expiresOn)
+        assertFalse(vm.hasChanges)
+
+        vm.setExpiresOn(null)
+        assertTrue(vm.hasChanges)
+        vm.save()
+        eventually { vm.savedCardId != null }
+
+        val saved = cards.get(id)!!
+        assertNull(saved.expiresOn)
+        assertTrue("archived state is preserved", saved.isArchived)
     }
 
     private fun jpeg() = ByteArrayOutputStream().also {

@@ -45,6 +45,10 @@
     <string name="field_encoded_value_toggle">Le code-barres encode une autre valeur</string>
     <string name="field_encoded_value">Valeur encodée</string>
     <string name="field_note">Note</string>
+    <string name="field_expiry">Date d\'expiration (facultatif)</string>
+    <string name="action_pick_date">Choisir une date</string>
+    <string name="action_clear_date">Effacer la date</string>
+    <string name="date_picker_confirm">OK</string>
     <string name="field_color">Couleur</string>
     <string name="color_swatch_description">Couleur %1$d</string>
     <string name="photos_title">Photos</string>

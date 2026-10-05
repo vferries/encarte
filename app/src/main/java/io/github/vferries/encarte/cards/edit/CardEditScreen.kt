@@ -13,6 +13,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,6 +37,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
@@ -50,6 +54,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -61,6 +66,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -79,10 +86,15 @@ import io.github.vferries.encarte.core.data.CardSide
 import io.github.vferries.encarte.core.ui.BarcodeImage
 import io.github.vferries.encarte.core.ui.CARD_ASPECT_RATIO
 import io.github.vferries.encarte.core.ui.EncarteAlertDialog
+import io.github.vferries.encarte.core.ui.EncarteDatePickerDialog
 import io.github.vferries.encarte.core.ui.EncarteExposedDropdownMenu
 import io.github.vferries.encarte.core.ui.rememberImageBitmap
+import io.github.vferries.encarte.core.ui.rememberMediumDateFormatter
 import java.io.File
 import java.io.IOException
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneOffset
 
 private const val TAG = "CardEditScreen"
 private const val PHOTO_MAX_SIDE = 480
@@ -313,12 +325,74 @@ private fun Form(
             label = { Text(stringResource(R.string.field_note)) },
             lineLimits = TextFieldLineLimits.MultiLine(minHeightInLines = 2),
         )
+        ExpiryField(viewModel.expiresOn, viewModel::setExpiresOn)
         Text(stringResource(R.string.photos_title), style = MaterialTheme.typography.titleSmall)
         if (viewModel.imageError || photoNotice != null) {
             Text(stringResource(photoNotice ?: R.string.photo_error), color = MaterialTheme.colorScheme.error)
         }
         PhotoSlot(R.string.photo_front, viewModel.frontImage?.let(viewModel::imageFile), CardSide.FRONT, viewModel, onPickImage, onTakePhoto)
         PhotoSlot(R.string.photo_back, viewModel.backImage?.let(viewModel::imageFile), CardSide.BACK, viewModel, onPickImage, onTakePhoto)
+    }
+}
+
+@Composable
+private fun ExpiryField(date: LocalDate?, onChange: (LocalDate?) -> Unit) {
+    var picking by rememberSaveable { mutableStateOf(false) }
+    val formatter = rememberMediumDateFormatter()
+    OutlinedTextField(
+        value = date?.let(formatter::format).orEmpty(),
+        onValueChange = {},
+        readOnly = true,
+        singleLine = true,
+        label = { Text(stringResource(R.string.field_expiry)) },
+        trailingIcon = {
+            IconButton(onClick = { picking = true }) {
+                Icon(painterResource(R.drawable.ic_event), stringResource(R.string.action_pick_date))
+            }
+        },
+        // A read-only field consumes taps: watch them before it does, like Material's date picker samples.
+        modifier = Modifier.fillMaxWidth().pointerInput(Unit) {
+            awaitEachGesture {
+                awaitFirstDown(pass = PointerEventPass.Initial)
+                if (waitForUpOrCancellation(pass = PointerEventPass.Initial) != null) picking = true
+            }
+        },
+    )
+    if (date != null) {
+        TextButton(onClick = { onChange(null) }) { Text(stringResource(R.string.action_clear_date)) }
+    }
+    if (picking) {
+        ExpiryDatePicker(
+            initial = date,
+            onPicked = {
+                onChange(it)
+                picking = false
+            },
+            onDismiss = { picking = false },
+        )
+    }
+}
+
+/** Material's date picker works with UTC midnights. */
+@Composable
+private fun ExpiryDatePicker(initial: LocalDate?, onPicked: (LocalDate) -> Unit, onDismiss: () -> Unit) {
+    // Outside the dialog, so the selection survives the lock hiding the dialog.
+    val pickerState = rememberDatePickerState(
+        initialSelectedDateMillis = initial?.atStartOfDay(ZoneOffset.UTC)?.toInstant()?.toEpochMilli(),
+    )
+    EncarteDatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    pickerState.selectedDateMillis?.let { onPicked(Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate()) }
+                },
+                enabled = pickerState.selectedDateMillis != null,
+            ) { Text(stringResource(R.string.date_picker_confirm)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    ) {
+        DatePicker(state = pickerState)
     }
 }
 

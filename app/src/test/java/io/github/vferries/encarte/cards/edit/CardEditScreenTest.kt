@@ -2,13 +2,18 @@ package io.github.vferries.encarte.cards.edit
 
 import androidx.activity.ComponentActivity
 import androidx.compose.material3.Text
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -23,8 +28,10 @@ import io.github.vferries.encarte.brands.BrandCatalog
 import io.github.vferries.encarte.core.barcode.BarcodeFormat
 import io.github.vferries.encarte.core.data.CardRepository
 import io.github.vferries.encarte.core.data.ImageStore
+import io.github.vferries.encarte.lock.LocalContentCovered
 import io.github.vferries.encarte.testing.inMemoryDatabase
 import org.junit.After
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -33,6 +40,7 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.GraphicsMode
 import java.io.File
 import java.time.Clock
+import java.time.LocalDate
 
 @RunWith(AndroidJUnit4::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -138,5 +146,50 @@ class CardEditScreenTest {
         composeRule.onNodeWithText("Discard changes?").assertIsDisplayed()
         composeRule.onNodeWithText("Discard").performClick()
         composeRule.onNodeWithText("Home").assertIsDisplayed()
+    }
+
+    @Test
+    fun expiryDateShowsFormattedAndCanBeCleared() {
+        val vm = viewModel("123")
+        vm.setExpiresOn(LocalDate.of(2027, 3, 12))
+        composeRule.setContent { CardEditScreen(vm, onClose = {}, onPickImage = {}, onTakePhoto = {}) }
+
+        composeRule.onNodeWithText("Mar 12, 2027").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithText("Clear date").performScrollTo().performClick()
+
+        composeRule.onNodeWithText("Mar 12, 2027").assertDoesNotExist()
+        assertNull(vm.expiresOn)
+    }
+
+    @Test
+    fun tappingTheExpiryFieldOpensTheDatePicker() {
+        val vm = viewModel("123")
+        composeRule.setContent { CardEditScreen(vm, onClose = {}, onPickImage = {}, onTakePhoto = {}) }
+
+        composeRule.onNodeWithText("Expiry date (optional)").performScrollTo().performClick()
+
+        composeRule.onNodeWithText("OK").assertIsDisplayed()
+        composeRule.onNodeWithText("Cancel").performClick()
+        composeRule.onNodeWithText("OK").assertDoesNotExist()
+        assertNull(vm.expiresOn)
+    }
+
+    @Test
+    fun datePickerHidesWhileTheLockCoversTheScreen() {
+        val vm = viewModel("123")
+        var covered by mutableStateOf(false)
+        composeRule.setContent {
+            CompositionLocalProvider(LocalContentCovered provides covered) {
+                CardEditScreen(vm, onClose = {}, onPickImage = {}, onTakePhoto = {})
+            }
+        }
+        composeRule.onNodeWithContentDescription("Choose a date").performScrollTo().performClick()
+        composeRule.onNodeWithText("OK").assertIsDisplayed()
+
+        covered = true
+        composeRule.onNodeWithText("OK").assertDoesNotExist()
+
+        covered = false
+        composeRule.onNodeWithText("OK").assertIsDisplayed()
     }
 }

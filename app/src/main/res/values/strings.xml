@@ -46,6 +46,10 @@
     <string name="field_encoded_value_toggle">The barcode encodes a different value</string>
     <string name="field_encoded_value">Encoded value</string>
     <string name="field_note">Note</string>
+    <string name="field_expiry">Expiry date (optional)</string>
+    <string name="action_pick_date">Choose a date</string>
+    <string name="action_clear_date">Clear date</string>
+    <string name="date_picker_confirm">OK</string>
     <string name="field_color">Color</string>
     <string name="color_swatch_description">Color %1$d</string>
     <string name="photos_title">Photos</string>

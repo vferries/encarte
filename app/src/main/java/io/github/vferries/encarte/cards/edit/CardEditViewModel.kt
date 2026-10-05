@@ -25,6 +25,7 @@ import java.io.File
 import java.io.IOException
 import java.io.InputStream
 import java.time.Instant
+import java.time.LocalDate
 
 private const val TAG = "CardEditViewModel"
 private const val SAVED_STATE_KEY = "card_edit_form"
@@ -38,6 +39,7 @@ private const val KEY_NOTE = "note"
 private const val KEY_COLOR = "color"
 private const val KEY_FRONT_IMAGE = "front_image"
 private const val KEY_BACK_IMAGE = "back_image"
+private const val KEY_EXPIRES_ON = "expires_on"
 private const val KEY_CREATED_IMAGES = "created_images"
 
 class CardEditViewModel(
@@ -63,6 +65,11 @@ class CardEditViewModel(
         private set
     var backImage by mutableStateOf<String?>(null)
         private set
+
+    private var expiresOnState by mutableStateOf<LocalDate?>(null)
+
+    /** Null: the card never expires. */
+    val expiresOn: LocalDate? get() = expiresOnState
     var isLoading by mutableStateOf(cardId != null)
         private set
     var notFound by mutableStateOf(false)
@@ -155,6 +162,7 @@ class CardEditViewModel(
         manualColor = form.color
         frontImage = form.frontImage
         backImage = form.backImage
+        expiresOnState = form.expiresOn
     }
 
     /** Saved only once the form is filled: an editor that died while loading simply loads the card again. */
@@ -171,6 +179,7 @@ class CardEditViewModel(
         form.color?.let { putInt(KEY_COLOR, it) }
         putString(KEY_FRONT_IMAGE, form.frontImage)
         putString(KEY_BACK_IMAGE, form.backImage)
+        form.expiresOn?.let { putLong(KEY_EXPIRES_ON, it.toEpochDay()) }
         putStringArrayList(KEY_CREATED_IMAGES, ArrayList(createdImages))
     }
 
@@ -186,6 +195,7 @@ class CardEditViewModel(
                 color = if (state.containsKey(KEY_COLOR)) state.getInt(KEY_COLOR) else null,
                 frontImage = state.getString(KEY_FRONT_IMAGE)?.takeIf(::imageStillExists),
                 backImage = state.getString(KEY_BACK_IMAGE)?.takeIf(::imageStillExists),
+                expiresOn = if (state.containsKey(KEY_EXPIRES_ON)) LocalDate.ofEpochDay(state.getLong(KEY_EXPIRES_ON)) else null,
             )
         )
         state.getStringArrayList(KEY_CREATED_IMAGES)?.filterTo(createdImages, ::imageStillExists)
@@ -205,6 +215,10 @@ class CardEditViewModel(
 
     fun selectColor(argb: Int) {
         manualColor = argb
+    }
+
+    fun setExpiresOn(date: LocalDate?) {
+        expiresOnState = date
     }
 
     fun selectSuggestion(brand: Brand) {
@@ -279,6 +293,9 @@ class CardEditViewModel(
             backImage = backImage,
             createdAt = original?.createdAt ?: Instant.EPOCH, // replaced by CardRepository on insert
             lastUsedAt = original?.lastUsedAt,
+            expiresOn = expiresOn,
+            // The editor has no archive switch: editing an archived card keeps it archived.
+            isArchived = original?.isArchived ?: false,
         )
     }
 
@@ -292,6 +309,7 @@ class CardEditViewModel(
         color = color,
         frontImage = frontImage,
         backImage = backImage,
+        expiresOn = expiresOn,
     )
 
     private fun snapshot() = FormSnapshot(
@@ -304,6 +322,7 @@ class CardEditViewModel(
         color = manualColor,
         frontImage = frontImage,
         backImage = backImage,
+        expiresOn = expiresOn,
     )
 
     private data class FormSnapshot(
@@ -316,5 +335,6 @@ class CardEditViewModel(
         val color: Int?,
         val frontImage: String?,
         val backImage: String?,
+        val expiresOn: LocalDate?,
     )
 }
