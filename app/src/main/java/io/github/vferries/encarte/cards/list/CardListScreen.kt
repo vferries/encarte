@@ -57,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.vferries.encarte.R
 import io.github.vferries.encarte.core.prefs.SortOrder
+import io.github.vferries.encarte.core.text.normalizedForMatching
 import io.github.vferries.encarte.core.ui.CardTile
 import io.github.vferries.encarte.core.ui.EncarteDropdownMenu
 
@@ -176,8 +177,10 @@ private fun CardGrid(
     modifier: Modifier = Modifier,
 ) {
     var archivedOpen by rememberSaveable { mutableStateOf(false) }
+    // Same normalization as the filter: a query of spaces or punctuation matches everything, so it is not a search.
+    val searching = query.text.toString().normalizedForMatching().isNotEmpty()
     // While searching, archived matches show without opening the section.
-    val showArchived = archivedOpen || query.text.isNotEmpty()
+    val showArchived = archivedOpen || searching
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 160.dp),
         modifier = modifier.fillMaxSize(),
@@ -203,7 +206,7 @@ private fun CardGrid(
         section(R.string.section_all_cards, state.others, onOpenCard, showHeader = state.favorites.isNotEmpty())
         if (state.archived.isNotEmpty()) {
             item(span = { GridItemSpan(maxLineSpan) }, contentType = "header") {
-                ArchivedHeader(state.archived.size, expanded = showArchived, onToggle = { archivedOpen = !archivedOpen })
+                ArchivedHeader(state.archived.size, expanded = showArchived, toggleEnabled = !searching, onToggle = { archivedOpen = !archivedOpen })
             }
             if (showArchived) cardTiles(state.archived, onOpenCard)
         }
@@ -234,12 +237,12 @@ private fun LazyGridScope.cardTiles(tiles: List<CardTileModel>, onOpenCard: (Lon
 }
 
 @Composable
-private fun ArchivedHeader(count: Int, expanded: Boolean, onToggle: () -> Unit) {
+private fun ArchivedHeader(count: Int, expanded: Boolean, toggleEnabled: Boolean, onToggle: () -> Unit) {
     val stateText = stringResource(if (expanded) R.string.state_expanded else R.string.state_collapsed)
     Row(
         Modifier
             .fillMaxWidth()
-            .clickable(role = Role.Button, onClick = onToggle)
+            .clickable(enabled = toggleEnabled, role = Role.Button, onClick = onToggle)
             .semantics { stateDescription = stateText }
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,

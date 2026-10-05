@@ -127,6 +127,17 @@ class CardListScreenTest {
     }
 
     @Test
+    fun blankQueryKeepsTheArchivedSectionCollapsed() {
+        setScreen(
+            CardListUiState(isLoading = false, hasCards = true, archived = listOf(tile("Darty", 2))),
+            query = TextFieldState("   "),
+        )
+
+        composeRule.onNodeWithText("Archived (1)").assertIsDisplayed()
+        composeRule.onNodeWithText("Darty").assertDoesNotExist()
+    }
+
+    @Test
     fun tilesShowTheirExpiryBadge() {
         setScreen(CardListUiState(isLoading = false, hasCards = true, others = listOf(tile("Fnac", 1, ExpiryStatus.Soon(5)))))
 
