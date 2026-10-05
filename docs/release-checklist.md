@@ -41,6 +41,10 @@ F-Droid in `docs/release/fdroid/README.md`.
 - [ ] After unlocking, the screen you were on is restored.
 - [ ] Relock while the full-screen photo or a dialog is open: nothing of the card shows above the lock screen, and Back leaves the app.
 - [ ] Remove the device screen lock while the app lock is on: the app turns its lock off and says so.
+- [ ] With "Block contactless payment" on, show a card and hold the phone to a contactless terminal: no payment
+      starts. Leave the card screen and try again: contactless payment works.
+- [ ] Install the previous release, add cards with photos, then install the new build over it: every card and photo
+      is still there.
 - [ ] Rotate on every screen; "Don't keep activities" round-trip on the card display and the editor.
 - [ ] Bump `versionName` (`MAJOR.MINOR.PATCH`) and `versionCode` (`MAJOR*10000 + MINOR*100 + PATCH`)
       in `app/build.gradle.kts`.
