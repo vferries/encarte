@@ -1,7 +1,7 @@
 name: Pages
 
 # Publishes encarte.fr from site/ (release spec §8). The build script copies the app's font and icon, so changes
-# to those also redeploy.
+# to those also redeploy, as do the feature graphics it copies as Open Graph previews.
 on:
   push:
     branches: [main]
@@ -10,6 +10,7 @@ on:
       - 'scripts/build-site.sh'
       - 'app/src/main/res/font/nunito.ttf'
       - 'branding/icon.svg'
+      - 'fastlane/metadata/android/*/images/featureGraphic.png'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
