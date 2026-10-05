@@ -15,6 +15,12 @@
         android:name="android.hardware.camera"
         android:required="false" />
 
+    <!-- Reader mode while a card is shown keeps a terminal from starting a contactless payment. -->
+    <uses-permission android:name="android.permission.NFC" />
+    <uses-feature
+        android:name="android.hardware.nfc"
+        android:required="false" />
+
     <application
         android:name=".EncarteApp"
         android:allowBackup="true"

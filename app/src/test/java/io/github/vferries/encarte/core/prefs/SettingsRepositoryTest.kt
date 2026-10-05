@@ -28,6 +28,7 @@ class SettingsRepositoryTest {
 
         assertEquals(SortOrder.NAME, settings.sortOrder.first())
         assertFalse(settings.lockEnabled.first())
+        assertTrue(settings.nfcBlockEnabled.first())
     }
 
     @Test
@@ -36,8 +37,10 @@ class SettingsRepositoryTest {
 
         settings.setSortOrder(SortOrder.RECENTLY_USED)
         settings.setLockEnabled(true)
+        settings.setNfcBlockEnabled(false)
 
         assertEquals(SortOrder.RECENTLY_USED, settings.sortOrder.first())
         assertTrue(settings.lockEnabled.first())
+        assertFalse(settings.nfcBlockEnabled.first())
     }
 }

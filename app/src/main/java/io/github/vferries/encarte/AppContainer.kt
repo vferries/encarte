@@ -1,6 +1,7 @@
 package io.github.vferries.encarte
 
 import android.content.Context
+import android.nfc.NfcAdapter
 import android.os.SystemClock
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.preferencesDataStoreFile
@@ -11,6 +12,8 @@ import io.github.vferries.encarte.brands.BrandCatalog
 import io.github.vferries.encarte.core.data.CardRepository
 import io.github.vferries.encarte.core.data.EncarteDatabase
 import io.github.vferries.encarte.core.data.ImageStore
+import io.github.vferries.encarte.core.nfc.ContactlessGuard
+import io.github.vferries.encarte.core.nfc.NfcContactlessGuard
 import io.github.vferries.encarte.core.prefs.SettingsRepository
 import io.github.vferries.encarte.lock.LockManager
 import kotlinx.coroutines.Dispatchers
@@ -35,6 +38,9 @@ class AppContainer(context: Context) {
     val brandCatalog = BrandCatalog {
         appContext.assets.open("brands.json").bufferedReader().use { it.readText() }
     }
+
+    /** Null adapter on devices without NFC: the guard then blocks nothing. */
+    val contactlessGuard: ContactlessGuard = NfcContactlessGuard(NfcAdapter.getDefaultAdapter(appContext))
 
     val backupService = BackupService(
         database = database,

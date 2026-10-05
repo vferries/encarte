@@ -1,13 +1,16 @@
 package io.github.vferries.encarte.cards.display
 
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.vferries.encarte.core.data.CardRepository
 import io.github.vferries.encarte.core.data.ExpiryStatus
 import io.github.vferries.encarte.core.data.ImageStore
+import io.github.vferries.encarte.core.prefs.SettingsRepository
 import io.github.vferries.encarte.testing.MainDispatcherRule
 import io.github.vferries.encarte.testing.inMemoryDatabase
 import io.github.vferries.encarte.testing.testCard
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -43,7 +46,12 @@ class CardDisplayViewModelTest {
         )
     }
 
-    private fun displayViewModel(id: Long) = CardDisplayViewModel(id, cards, clock)
+    private fun TestScope.settings() = SettingsRepository(
+        PreferenceDataStoreFactory.create(scope = backgroundScope) { File(tmp.root, "s.preferences_pb") }
+    )
+
+    private fun TestScope.displayViewModel(id: Long, settings: SettingsRepository = settings()) =
+        CardDisplayViewModel(id, cards, clock, settings)
 
     @After
     fun tearDown() = db.close()
@@ -118,5 +126,17 @@ class CardDisplayViewModelTest {
         vm.toggleArchived()
 
         assertFalse(vm.uiState.first { it.card?.isArchived == false }.justArchived)
+    }
+
+    @Test
+    fun contactlessBlockingFollowsTheSetting() = runTest {
+        val id = cards.save(testCard("Fnac"))
+        val settings = settings()
+        val vm = displayViewModel(id, settings)
+        assertTrue(vm.uiState.first { it.card != null }.blockContactless)
+
+        settings.setNfcBlockEnabled(false)
+
+        assertFalse(vm.uiState.first { !it.blockContactless }.blockContactless)
     }
 }

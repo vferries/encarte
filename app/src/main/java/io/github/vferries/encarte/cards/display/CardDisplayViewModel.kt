@@ -6,6 +6,7 @@ import io.github.vferries.encarte.core.data.Card
 import io.github.vferries.encarte.core.data.CardRepository
 import io.github.vferries.encarte.core.data.ExpiryStatus
 import io.github.vferries.encarte.core.data.expiryStatus
+import io.github.vferries.encarte.core.prefs.SettingsRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -24,12 +25,14 @@ data class CardDisplayUiState(
     val expiry: ExpiryStatus = ExpiryStatus.None,
     val isDeleted: Boolean = false,
     val justArchived: Boolean = false,
+    val blockContactless: Boolean = false,
 )
 
 class CardDisplayViewModel(
     private val cardId: Long,
     private val cards: CardRepository,
     private val clock: Clock,
+    private val settings: SettingsRepository,
 ) : ViewModel() {
 
     private val deleted = MutableStateFlow(false)
@@ -39,7 +42,8 @@ class CardDisplayViewModel(
         cards.observeCard(cardId),
         deleted,
         archivedHere,
-    ) { card, isDeleted, isArchivedHere ->
+        settings.nfcBlockEnabled,
+    ) { card, isDeleted, isArchivedHere, nfcBlock ->
         CardDisplayUiState(
             isLoading = false,
             card = card,
@@ -48,6 +52,7 @@ class CardDisplayViewModel(
             expiry = expiryStatus(card?.expiresOn, LocalDate.now(clock)),
             isDeleted = isDeleted,
             justArchived = isArchivedHere,
+            blockContactless = nfcBlock,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CardDisplayUiState())
 

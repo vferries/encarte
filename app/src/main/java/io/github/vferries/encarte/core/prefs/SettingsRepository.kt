@@ -31,6 +31,10 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         .map { it[LOCK_ENABLED] ?: false }
         .distinctUntilChanged()
 
+    val nfcBlockEnabled: Flow<Boolean> = preferences
+        .map { it[NFC_BLOCK_ENABLED] ?: true }
+        .distinctUntilChanged()
+
     suspend fun setSortOrder(order: SortOrder) {
         dataStore.edit { it[SORT_ORDER] = order.name }
     }
@@ -39,8 +43,13 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         dataStore.edit { it[LOCK_ENABLED] = enabled }
     }
 
+    suspend fun setNfcBlockEnabled(enabled: Boolean) {
+        dataStore.edit { it[NFC_BLOCK_ENABLED] = enabled }
+    }
+
     private companion object {
         val SORT_ORDER = stringPreferencesKey("sort_order")
         val LOCK_ENABLED = booleanPreferencesKey("lock_enabled")
+        val NFC_BLOCK_ENABLED = booleanPreferencesKey("nfc_block_enabled")
     }
 }

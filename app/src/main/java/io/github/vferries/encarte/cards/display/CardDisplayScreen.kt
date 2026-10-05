@@ -48,6 +48,8 @@ import io.github.vferries.encarte.R
 import io.github.vferries.encarte.core.data.Card
 import io.github.vferries.encarte.core.data.ExpiryStatus
 import io.github.vferries.encarte.core.data.encodedValue
+import io.github.vferries.encarte.core.nfc.ContactlessBlockEffect
+import io.github.vferries.encarte.core.nfc.ContactlessGuard
 import io.github.vferries.encarte.core.ui.BarcodeImage
 import io.github.vferries.encarte.core.ui.CARD_ASPECT_RATIO
 import io.github.vferries.encarte.core.ui.EncarteAlertDialog
@@ -65,11 +67,13 @@ private const val FULL_SCREEN_MAX_SIDE = 2048
 @Composable
 fun CardDisplayRoute(
     viewModel: CardDisplayViewModel,
+    contactlessGuard: ContactlessGuard,
     onBack: () -> Unit,
     onEdit: (Long) -> Unit,
     onArchived: (Long) -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    ContactlessBlockEffect(enabled = state.blockContactless && state.card != null, guard = contactlessGuard)
     LaunchedEffect(state.isDeleted) {
         if (state.isDeleted) onBack()
     }
