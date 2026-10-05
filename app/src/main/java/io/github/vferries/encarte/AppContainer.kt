@@ -15,6 +15,7 @@ import io.github.vferries.encarte.core.data.ImageStore
 import io.github.vferries.encarte.core.nfc.ContactlessGuard
 import io.github.vferries.encarte.core.nfc.NfcContactlessGuard
 import io.github.vferries.encarte.core.prefs.SettingsRepository
+import io.github.vferries.encarte.core.time.DeviceClock
 import io.github.vferries.encarte.lock.LockManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
@@ -25,7 +26,7 @@ import java.time.Clock
 /** Manual dependency injection: every long-lived object, built once per process. */
 class AppContainer(context: Context) {
     private val appContext = context.applicationContext
-    val clock: Clock = Clock.systemDefaultZone()
+    val clock: Clock = DeviceClock()
     private val database = EncarteDatabase.create(appContext)
     private val imageStore = ImageStore(File(appContext.filesDir, "images"), File(appContext.cacheDir, "staging"))
 
