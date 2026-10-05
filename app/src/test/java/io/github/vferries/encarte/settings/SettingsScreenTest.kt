@@ -3,6 +3,8 @@ package io.github.vferries.encarte.settings
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -11,9 +13,11 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
 class SettingsScreenTest {
@@ -109,5 +113,29 @@ class SettingsScreenTest {
         composeRule.onNodeWithText("Block contactless payment").assertIsOn().performClick()
 
         assertEquals(false, changedTo)
+    }
+
+    @Test
+    fun cancelClosesTheExportDialogWithoutExporting() {
+        setScreen()
+        composeRule.onNodeWithText("Export cards").performClick()
+
+        composeRule.onNodeWithText("Cancel").performClick()
+
+        composeRule.onNodeWithText("No password").assertDoesNotExist()
+        assertEquals(0, exportCalls)
+    }
+
+    @Test
+    @Config(qualifiers = "w320dp-h640dp")
+    fun exportDialogButtonsWrapInsideTheDialogOnNarrowScreens() {
+        setScreen()
+        composeRule.onNodeWithText("Export cards").performClick()
+
+        val dialog = composeRule.onNode(isDialog()).getUnclippedBoundsInRoot()
+        for (label in listOf("Cancel", "No password", "Export")) {
+            val button = composeRule.onNodeWithText(label).getUnclippedBoundsInRoot()
+            assertTrue("$label inside the dialog", button.left >= dialog.left && button.right <= dialog.right)
+        }
     }
 }
