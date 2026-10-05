@@ -30,18 +30,19 @@ class CoverableWindowsGuardTest {
     fun patternCatchesDirectCallsButNotLookalikes() {
         listOf(
             "AlertDialog(", "BasicAlertDialog(", "Dialog(onDismissRequest = {})", "DropdownMenu (",
-            "ExposedDropdownMenu(", "DatePickerDialog(", "ModalBottomSheet(", "Popup(",
+            "ExposedDropdownMenu(", "DatePickerDialog(", "ModalBottomSheet(", "Popup(", "Popup {",
         ).forEach { assertTrue(it, DIRECT_WINDOW_CALL.containsMatchIn(it)) }
         listOf(
             "EncarteAlertDialog(", "EncarteDialog(", "EncarteExposedDropdownMenu(", "DropdownMenuItem(",
-            "ExposedDropdownMenuBox(", "DialogProperties(", "private fun ExportPasswordDialog(",
+            "ExposedDropdownMenuBox(", "DialogProperties(", "PopupProperties {",
+            "private fun ExportPasswordDialog(",
             "import androidx.compose.material3.AlertDialog",
         ).forEach { assertFalse(it, DIRECT_WINDOW_CALL.containsMatchIn(it)) }
     }
 
     private companion object {
         val DIRECT_WINDOW_CALL = Regex(
-            """\b(AlertDialog|BasicAlertDialog|Dialog|DropdownMenu|ExposedDropdownMenu|DatePickerDialog|ModalBottomSheet|Popup)\s*\("""
+            """\b(AlertDialog|BasicAlertDialog|Dialog|DropdownMenu|ExposedDropdownMenu|DatePickerDialog|ModalBottomSheet|Popup)\s*[({]"""
         )
     }
 }
