@@ -64,7 +64,6 @@
     <string name="camera_unavailable">Aucun appareil photo disponible. Saisissez la carte à la main ou utilisez une image.</string>
     <string name="no_barcode_in_image">Aucun code-barres trouvé dans cette image.</string>
     <string name="import_note_valid_from">Valide à partir du : %1$s</string>
-    <string name="import_note_expires">Expire le : %1$s</string>
     <string name="import_note_balance">Solde : %1$s</string>
     <string name="import_note_points">%1$s points</string>
     <string name="lock_title">Encarté est verrouillé</string>

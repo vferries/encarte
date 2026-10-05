@@ -133,7 +133,7 @@ class BackupService(
         val temp = File(workDir, "export-${UUID.randomUUID()}.zip")
         try {
             val cards = dao.getAll()
-            val csv = CatimaCsv.write(cards.map(CatimaMapping::toCatima))
+            val csv = CatimaCsv.write(cards.map { CatimaMapping.toCatima(it, clock.zone) })
             archive.write(FileOutputStream(temp), csv, cards.flatMap(::archiveImages), password)
             open().use { out -> temp.inputStream().use { it.copyTo(out) } }
             ExportResult.Success(cards.size)

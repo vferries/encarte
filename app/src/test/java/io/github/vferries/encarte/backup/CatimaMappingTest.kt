@@ -4,17 +4,20 @@ import io.github.vferries.encarte.core.barcode.BarcodeFormat
 import io.github.vferries.encarte.core.color.CardPalette
 import io.github.vferries.encarte.testing.testCard
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.math.BigDecimal
 import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 import java.time.ZoneOffset
 import java.util.Locale
 
 class CatimaMappingTest {
-    private val labels = ImportLabels("Valid from: %1\$s", "Expires: %1\$s", "Balance: %1\$s", "%1\$s points", Locale.US)
+    private val labels = ImportLabels("Valid from: %1\$s", "Balance: %1\$s", "%1\$s points", Locale.US)
     private val now = Instant.parse("2026-10-04T12:00:00Z")
 
     private fun map(source: CatimaCard) = CatimaMapping.toCard(source, labels, ZoneOffset.UTC, now)
@@ -65,7 +68,7 @@ class CatimaMappingTest {
     }
 
     @Test
-    fun catimaOnlyFieldsAreAppendedToNote() {
+    fun validFromAndBalanceAreAppendedToNoteAndExpiryBecomesTheField() {
         val card = map(
             CatimaCard(
                 id = 1, store = "S", note = "Gold", cardId = "42",
@@ -75,7 +78,8 @@ class CatimaMappingTest {
             )
         )
 
-        assertEquals("Gold\nValid from: Jan 15, 2025\nExpires: Dec 31, 2026\nBalance: 12.50 EUR", card.note)
+        assertEquals("Gold\nValid from: Jan 15, 2025\nBalance: 12.50 EUR", card.note)
+        assertEquals(LocalDate.of(2026, 12, 31), card.expiresOn)
     }
 
     @Test
@@ -92,14 +96,14 @@ class CatimaMappingTest {
 
     @Test
     fun exportMapsBackAndFlagsUtf8For2dNonAscii() {
-        val ascii = CatimaMapping.toCatima(testCard("Shop", cardNumber = "42", barcodeFormat = BarcodeFormat.QR_CODE, id = 3))
+        val ascii = CatimaMapping.toCatima(testCard("Shop", cardNumber = "42", barcodeFormat = BarcodeFormat.QR_CODE, id = 3), ZoneOffset.UTC)
         assertEquals(3, ascii.id)
         assertEquals("42", ascii.cardId)
         assertEquals("QR_CODE", ascii.barcodeType)
         assertNull(ascii.barcodeEncoding)
         assertEquals(0L, ascii.lastUsed)
 
-        val utf8 = CatimaMapping.toCatima(testCard("Käse", cardNumber = "Käseschnitte", barcodeFormat = BarcodeFormat.AZTEC))
+        val utf8 = CatimaMapping.toCatima(testCard("Käse", cardNumber = "Käseschnitte", barcodeFormat = BarcodeFormat.AZTEC), ZoneOffset.UTC)
         assertEquals("UTF-8", utf8.barcodeEncoding)
     }
 
@@ -109,5 +113,49 @@ class CatimaMappingTest {
             testCard("Écomarché", cardNumber = "42").duplicateKey(),
             testCard("ecomarche", cardNumber = " 42 ").duplicateKey(),
         )
+    }
+
+    @Test
+    fun expiryUsesTheDeviceTimeZoneAndArchiveIsKept() {
+        val source = CatimaCard(
+            id = 1, store = "S", cardId = "42",
+            expiry = Instant.parse("2026-12-31T23:30:00Z").toEpochMilli(), archived = true,
+        )
+
+        val card = CatimaMapping.toCard(source, labels, ZoneId.of("Europe/Paris"), now)
+
+        assertEquals(LocalDate.of(2027, 1, 1), card.expiresOn)
+        assertTrue(card.isArchived)
+        assertEquals("", card.note)
+    }
+
+    @Test
+    fun noExpiryAndNotArchivedByDefault() {
+        val card = map(CatimaCard(id = 1, store = "S", cardId = "42"))
+
+        assertNull(card.expiresOn)
+        assertFalse(card.isArchived)
+    }
+
+    @Test
+    fun exportWritesTheStartOfTheExpiryDayInTheDeviceTimeZone() {
+        val card = testCard("S", expiresOn = LocalDate.of(2027, 3, 12), isArchived = true)
+
+        val catima = CatimaMapping.toCatima(card, ZoneId.of("Europe/Paris"))
+
+        assertEquals(Instant.parse("2027-03-11T23:00:00Z").toEpochMilli(), catima.expiry)
+        assertTrue(catima.archived)
+        assertNull(CatimaMapping.toCatima(testCard("S"), ZoneOffset.UTC).expiry)
+    }
+
+    @Test
+    fun expiryAndArchiveSurviveARoundTripInAZoneBehindUtc() {
+        val zone = ZoneId.of("America/New_York")
+        val card = testCard("S", cardNumber = "42", expiresOn = LocalDate.of(2027, 3, 12), isArchived = true)
+
+        val back = CatimaMapping.toCard(CatimaMapping.toCatima(card, zone), labels, zone, now)
+
+        assertEquals(LocalDate.of(2027, 3, 12), back.expiresOn)
+        assertTrue(back.isArchived)
     }
 }

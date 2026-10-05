@@ -39,7 +39,7 @@ class SettingsViewModelTest {
     private val backup by lazy {
         BackupService(
             db, ImageStore(File(tmp.root, "images"), File(tmp.root, "staging")), CatimaArchive(),
-            File(tmp.root, "work"), { ImportLabels("%1\$s", "%1\$s", "%1\$s", "%1\$s", Locale.US) }, Clock.systemUTC(),
+            File(tmp.root, "work"), { ImportLabels("%1\$s", "%1\$s", "%1\$s", Locale.US) }, Clock.systemUTC(),
         )
     }
 

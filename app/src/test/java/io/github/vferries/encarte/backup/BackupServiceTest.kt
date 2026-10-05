@@ -16,6 +16,8 @@ import kotlinx.coroutines.test.runTest
 import net.lingala.zip4j.ZipFile
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -29,6 +31,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.time.Clock
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
 import java.util.Locale
@@ -39,7 +42,7 @@ class BackupServiceTest {
     @get:Rule
     val tmp = TemporaryFolder()
 
-    private val labels = ImportLabels("Valid from: %1\$s", "Expires: %1\$s", "Balance: %1\$s", "%1\$s points", Locale.US)
+    private val labels = ImportLabels("Valid from: %1\$s", "Balance: %1\$s", "%1\$s points", Locale.US)
     private val clock = Clock.fixed(Instant.parse("2026-10-04T12:00:00Z"), ZoneOffset.UTC)
     private val db = inMemoryDatabase()
     private val images by lazy { ImageStore(File(tmp.root, "images"), File(tmp.root, "staging")) }
@@ -153,7 +156,7 @@ class BackupServiceTest {
                 frontImage = front, backImage = back, lastUsedAt = Instant.parse("2026-09-30T08:15:42.123Z"),
             ).copy(note = "Gold member\nsince 2020, \"VIP\"", color = 0xFF123456.toInt()),
             testCard("Decathlon", cardNumber = "1234 5678", barcodeFormat = BarcodeFormat.CODE_128)
-                .copy(barcodeValue = "X-12345678"),
+                .copy(barcodeValue = "X-12345678", expiresOn = LocalDate.of(2027, 3, 12), isArchived = true),
             testCard("Käse", cardNumber = "Käseschnitte", barcodeFormat = BarcodeFormat.QR_CODE)
                 .copy(note = "Crème brûlée ☕"),
         )
@@ -230,5 +233,23 @@ class BackupServiceTest {
         assertEquals(ImportResult.IoError, result)
         assertTrue(db.cardDao().getAll().isEmpty())
         assertTrue(File(tmp.root, "images").walkTopDown().none { it.isFile })
+    }
+
+    @Test
+    fun importsCatimaExpiryAndArchive() = runTest {
+        // The upstream fixture has no archived card: archive Department Store, which has an expiry date.
+        val original = fixture("catima_v2.csv")
+        val row = "2,Department Store,,,1618041729,0,,A,,,,-9977996,0,0,"
+        val csv = original.replace("${row}0", "${row}1")
+        assertNotEquals("the fixture row was rewritten", original, csv)
+
+        service.import(fixtureArchive(csv = csv), null)
+
+        val cards = db.cardDao().getAll()
+        val store = cards.single { it.storeName == "Department Store" }
+        // 1618041729 read as epoch milliseconds, in the test clock's UTC zone.
+        assertEquals(LocalDate.of(1970, 1, 19), store.expiresOn)
+        assertTrue(store.isArchived)
+        assertFalse(cards.single { it.storeName == "Pharmacy" }.isArchived)
     }
 }

@@ -21,7 +21,6 @@ private const val TAG = "CatimaMapping"
 /** Localized `%1$s` patterns for the note lines that carry Catima-only fields. */
 data class ImportLabels(
     val validFrom: String,
-    val expires: String,
     val balance: String,
     val points: String,
     val locale: Locale,
@@ -29,7 +28,6 @@ data class ImportLabels(
 
 fun importLabels(context: Context) = ImportLabels(
     validFrom = context.getString(R.string.import_note_valid_from),
-    expires = context.getString(R.string.import_note_expires),
     balance = context.getString(R.string.import_note_balance),
     points = context.getString(R.string.import_note_points),
     locale = context.resources.configuration.locales[0],
@@ -55,13 +53,17 @@ object CatimaMapping {
             isFavorite = source.starred,
             createdAt = now,
             lastUsedAt = source.lastUsed.takeIf { it > 0 }?.let(Instant::ofEpochSecond),
+            expiresOn = source.expiry?.let { Instant.ofEpochMilli(it).atZone(zone).toLocalDate() },
+            isArchived = source.archived,
         )
     }
 
-    fun toCatima(card: Card): CatimaCard = CatimaCard(
+    fun toCatima(card: Card, zone: ZoneId): CatimaCard = CatimaCard(
         id = card.id.toInt(),
         store = card.storeName,
         note = card.note,
+        // Catima stores the start of the expiry day, in the device's time zone.
+        expiry = card.expiresOn?.atStartOfDay(zone)?.toInstant()?.toEpochMilli(),
         cardId = card.cardNumber,
         barcodeId = card.barcodeValue,
         barcodeType = card.barcodeFormat?.name,
@@ -70,13 +72,13 @@ object CatimaMapping {
         headerColor = card.color,
         starred = card.isFavorite,
         lastUsed = card.lastUsedAt?.epochSecond ?: 0L,
+        archived = card.isArchived,
     )
 
     private fun noteWithExtras(source: CatimaCard, labels: ImportLabels, zone: ZoneId): String {
         val dates = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(labels.locale).withZone(zone)
         val extras = buildList {
             source.validFrom?.let { add(labels.validFrom.format(labels.locale, dates.format(Instant.ofEpochMilli(it)))) }
-            source.expiry?.let { add(labels.expires.format(labels.locale, dates.format(Instant.ofEpochMilli(it)))) }
             if (source.balance.signum() != 0) add(labels.balance.format(labels.locale, balanceText(source, labels)))
         }
         return (listOf(source.note.trim()).filter { it.isNotEmpty() } + extras).joinToString("\n")
