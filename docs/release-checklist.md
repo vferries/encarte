@@ -21,6 +21,8 @@ F-Droid in `docs/release/fdroid/README.md`.
 - [ ] After `v1.0.0`: open the F-Droid merge request (`docs/release/fdroid/README.md`).
 - [ ] When the Play listing is live, remove `play-soon` from `<body>` in `site/index.html` and `site/en/index.html`;
       when F-Droid lists the app, remove `fdroid-soon` the same way (see `branding/README.md`).
+      Before showing the Play badge, check its displayed size against Google's current badge guidelines (they sit behind the
+      Partner Marketing Hub, see `branding/README.md`).
 
 ## Every release
 

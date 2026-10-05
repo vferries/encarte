@@ -83,4 +83,4 @@ for locale in "${locales[@]}"; do
     echo "render.sh: site/img/$short/${pair#*:}.png"
   done
 done
-echo "render.sh: all store images regenerated and checked"
+echo "render.sh: store images regenerated and checked; site screenshots regenerated"
