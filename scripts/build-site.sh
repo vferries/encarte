@@ -26,11 +26,11 @@ scripts_found=$(grep -rliE '<script' --include='*.html' "$out" || true)
 # browser, so no URL with a scheme or a leading // may remain, whatever the quoting or line layout. A URL in visible
 # text fails loudly too, which is acceptable. The site's own origin is same-origin, not external: the canonical,
 # hreflang and Open Graph tags need absolute https://encarte.fr URLs. It is removed only when it is the whole host
-# (followed by / or a delimiter), so https://encarte.fr.evil.com still fails.
+# (followed by / or a delimiter, including ) and ,), so https://encarte.fr.evil.com still fails.
 external=0
 while IFS= read -r -d '' file; do
   hits=$(tr '\n' ' ' < "$file" | sed -E 's/<a[[:space:]][^>]*>//gI' \
-    | sed -E 's#https://encarte\.fr(/[^"'"'"'[:space:]>]*)?(["'"'"'[:space:]>])#\2#g' \
+    | sed -E 's#https://encarte\.fr(/[^"'"'"'[:space:]>),]*)?(["'"'"'[:space:]>),])#\2#g' \
     | grep -oiE "([a-z][a-z0-9+.-]*:)?//[^[:space:])>\"']+" || true)
   [[ -z $hits ]] || { echo "build-site: external resource in $file:" >&2; echo "$hits" >&2; external=1; }
 done < <(find "$out" -type f \( -name '*.html' -o -name '*.css' \) -print0)
@@ -62,7 +62,7 @@ while IFS= read -r match; do
     [[ $target == */ || $target == */. ]] && target="${target%.}index.html"
   fi
   [[ -e $target ]] || continue   # a missing page is reported by the link check above
-  grep -q "id=\"$fragment\"" "$target" || { echo "build-site: broken anchor in $file: $ref" >&2; bad_anchor=1; }
+  grep -qF -- "id=\"$fragment\"" "$target" || { echo "build-site: broken anchor in $file: $ref" >&2; bad_anchor=1; }
 done < <(grep -roE 'href="[^"]*#[^"]+' --include='*.html' "$out")
 (( bad_anchor == 0 )) || fail "broken anchors (above)"
 
