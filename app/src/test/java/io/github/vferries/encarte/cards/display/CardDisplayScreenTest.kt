@@ -4,6 +4,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -12,11 +13,13 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.vferries.encarte.core.barcode.BarcodeFormat
 import io.github.vferries.encarte.core.data.ExpiryStatus
+import io.github.vferries.encarte.core.ui.theme.EncarteTheme
 import io.github.vferries.encarte.lock.LocalContentCovered
 import io.github.vferries.encarte.testing.testCard
 import org.junit.Assert.assertEquals
@@ -65,7 +68,8 @@ class CardDisplayScreenTest {
             )
         }
 
-        composeRule.onNodeWithContentDescription("Delete").performClick()
+        composeRule.onNodeWithContentDescription("More options").performClick()
+        composeRule.onNodeWithText("Delete").performClick()
         composeRule.onNodeWithText("Delete this card?").assertIsDisplayed()
         composeRule.onNodeWithText("Delete").performClick()
 
@@ -80,7 +84,8 @@ class CardDisplayScreenTest {
                 CardDisplayScreen(CardDisplayUiState(isLoading = false, card = testCard("Fnac")), {}, {}, {}, {}, {})
             }
         }
-        composeRule.onNodeWithContentDescription("Delete").performClick()
+        composeRule.onNodeWithContentDescription("More options").performClick()
+        composeRule.onNodeWithText("Delete").performClick()
         composeRule.onNodeWithText("Delete this card?").assertIsDisplayed()
 
         covered = true
@@ -137,11 +142,35 @@ class CardDisplayScreenTest {
             )
         }
 
-        composeRule.onNodeWithContentDescription("Archive").performClick()
+        composeRule.onNodeWithContentDescription("More options").performClick()
+        composeRule.onNodeWithText("Archive").performClick()
         assertEquals(1, toggled)
 
         card = card.copy(isArchived = true)
-        composeRule.onNodeWithContentDescription("Unarchive").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("More options").performClick()
+        composeRule.onNodeWithText("Unarchive").assertIsDisplayed()
+    }
+
+    @Test
+    @Config(qualifiers = "w360dp-h800dp")
+    fun titleBreaksOnlyBetweenWordsOnA360dpPhone() {
+        val title = "Pharmacie du Centre"
+        composeRule.setContent {
+            EncarteTheme {
+                CardDisplayScreen(CardDisplayUiState(isLoading = false, card = testCard(title)), {}, {}, {}, {}, {})
+            }
+        }
+
+        val layouts = mutableListOf<TextLayoutResult>()
+        composeRule.onNodeWithText(title).fetchSemanticsNode()
+            .config[SemanticsActions.GetTextLayoutResult].action!!.invoke(layouts)
+        val layout = layouts.single()
+
+        assertTrue("title wraps on ${layout.lineCount} lines", layout.lineCount <= 2)
+        for (i in 0 until layout.lineCount - 1) {
+            val end = layout.getLineEnd(i)
+            assertTrue("line $i ends mid-word at $end", title[end - 1] == ' ' || title.getOrNull(end) == ' ')
+        }
     }
 
     @Test

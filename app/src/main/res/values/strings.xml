@@ -132,6 +132,7 @@
     </plurals>
     <string name="third_party_licenses" translatable="false">AndroidX (Compose, Room, CameraX, Navigation, Lifecycle, DataStore, Biometric, Fragment) — Apache-2.0\nKotlin, kotlinx.coroutines, kotlinx.serialization — Apache-2.0\nZXing — Apache-2.0\nzxing-cpp — Apache-2.0\nzip4j — Apache-2.0\nApache Commons CSV, IO, Codec — Apache-2.0\nMaterial Symbols — Apache-2.0\nNunito — SIL Open Font License 1.1</string>
     <string name="action_archive">Archive</string>
+    <string name="action_more">More options</string>
     <string name="action_unarchive">Unarchive</string>
     <string name="card_archived">Card archived</string>
     <string name="action_undo">Undo</string>

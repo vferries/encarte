@@ -89,9 +89,10 @@ class AppFlowTest {
         composeRule.onNodeWithText("Store").performTextInput("Fnac")
         composeRule.onNodeWithText("Card number").performTextInput("A-42")
         composeRule.onNodeWithText("Save").performClick()
-        waitFor(hasContentDescription("Archive"))
+        waitFor(hasContentDescription("More options"))
 
-        composeRule.onNodeWithContentDescription("Archive").performClick()
+        composeRule.onNodeWithContentDescription("More options").performClick()
+        composeRule.onNodeWithText("Archive").performClick()
 
         waitForText("Card archived")
         composeRule.onNodeWithText("Archived (1)").assertIsDisplayed()

@@ -18,6 +18,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -42,6 +43,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
@@ -56,6 +58,7 @@ import io.github.vferries.encarte.core.ui.BarcodeImage
 import io.github.vferries.encarte.core.ui.CARD_ASPECT_RATIO
 import io.github.vferries.encarte.core.ui.EncarteAlertDialog
 import io.github.vferries.encarte.core.ui.EncarteDialog
+import io.github.vferries.encarte.core.ui.EncarteDropdownMenu
 import io.github.vferries.encarte.core.ui.MaxBrightnessEffect
 import io.github.vferries.encarte.core.ui.displayAspectRatio
 import io.github.vferries.encarte.core.ui.rememberImageBitmap
@@ -114,7 +117,7 @@ fun CardDisplayScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(card?.storeName.orEmpty()) },
+                title = { Text(card?.storeName.orEmpty(), maxLines = 2, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(painterResource(R.drawable.ic_arrow_back), stringResource(R.string.navigate_back))
@@ -128,17 +131,39 @@ fun CardDisplayScreen(
                                 stringResource(if (card.isFavorite) R.string.action_unfavorite else R.string.action_favorite),
                             )
                         }
-                        IconButton(onClick = onToggleArchive) {
-                            Icon(
-                                painterResource(if (card.isArchived) R.drawable.ic_unarchive else R.drawable.ic_archive),
-                                stringResource(if (card.isArchived) R.string.action_unarchive else R.string.action_archive),
-                            )
-                        }
                         IconButton(onClick = onEdit) {
                             Icon(painterResource(R.drawable.ic_edit), stringResource(R.string.action_edit))
                         }
-                        IconButton(onClick = { confirmDelete = true }) {
-                            Icon(painterResource(R.drawable.ic_delete), stringResource(R.string.action_delete))
+                        var menuExpanded by remember { mutableStateOf(false) }
+                        Box {
+                            IconButton(onClick = { menuExpanded = true }) {
+                                Icon(painterResource(R.drawable.ic_more_vert), stringResource(R.string.action_more))
+                            }
+                            EncarteDropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(stringResource(if (card.isArchived) R.string.action_unarchive else R.string.action_archive))
+                                    },
+                                    leadingIcon = {
+                                        Icon(
+                                            painterResource(if (card.isArchived) R.drawable.ic_unarchive else R.drawable.ic_archive),
+                                            contentDescription = null,
+                                        )
+                                    },
+                                    onClick = {
+                                        menuExpanded = false
+                                        onToggleArchive()
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.action_delete)) },
+                                    leadingIcon = { Icon(painterResource(R.drawable.ic_delete), contentDescription = null) },
+                                    onClick = {
+                                        menuExpanded = false
+                                        confirmDelete = true
+                                    },
+                                )
+                            }
                         }
                     }
                 },
