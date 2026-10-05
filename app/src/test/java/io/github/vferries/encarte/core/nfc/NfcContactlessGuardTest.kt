@@ -1,7 +1,6 @@
 package io.github.vferries.encarte.core.nfc
 
 import android.app.Activity
-import android.app.Application
 import android.content.pm.PackageManager
 import android.nfc.NfcAdapter
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -10,13 +9,10 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
-import org.robolectric.annotation.Config
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowNfcAdapter
 
-// EncarteApp builds the AppContainer at startup, which caches an NFC-less NfcManager before the test can declare the feature.
-@Config(application = Application::class)
 @RunWith(AndroidJUnit4::class)
 class NfcContactlessGuardTest {
     private val activity = Robolectric.buildActivity(Activity::class.java).setup().get()

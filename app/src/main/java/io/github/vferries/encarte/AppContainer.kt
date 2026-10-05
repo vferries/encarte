@@ -41,7 +41,7 @@ class AppContainer(context: Context) {
     }
 
     /** Null adapter on devices without NFC: the guard then blocks nothing. */
-    val contactlessGuard: ContactlessGuard = NfcContactlessGuard(NfcAdapter.getDefaultAdapter(appContext))
+    val contactlessGuard: ContactlessGuard by lazy { NfcContactlessGuard(NfcAdapter.getDefaultAdapter(appContext)) }
 
     val backupService = BackupService(
         database = database,
