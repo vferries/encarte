@@ -5,6 +5,7 @@ import androidx.compose.runtime.snapshots.Snapshot
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.vferries.encarte.core.data.CardRepository
+import io.github.vferries.encarte.core.data.ExpiryStatus
 import io.github.vferries.encarte.core.data.ImageStore
 import io.github.vferries.encarte.core.prefs.SettingsRepository
 import io.github.vferries.encarte.core.prefs.SortOrder
@@ -23,6 +24,9 @@ import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import java.io.File
 import java.time.Clock
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneOffset
 import java.util.Locale
 
 @RunWith(AndroidJUnit4::class)
@@ -33,6 +37,7 @@ class CardListViewModelTest {
     @get:Rule
     val tmp = TemporaryFolder()
 
+    private val clock = Clock.fixed(Instant.parse("2026-10-05T10:00:00Z"), ZoneOffset.UTC)
     private val db = inMemoryDatabase()
     private val cards by lazy {
         CardRepository(db.cardDao(), ImageStore(File(tmp.root, "images"), File(tmp.root, "staging")), Clock.systemUTC())
@@ -45,7 +50,7 @@ class CardListViewModelTest {
         val settings = SettingsRepository(
             PreferenceDataStoreFactory.create(scope = backgroundScope) { File(tmp.root, "s.preferences_pb") }
         )
-        return CardListViewModel(cards, settings, cardCollator(Locale.FRANCE)) to settings
+        return CardListViewModel(cards, settings, cardCollator(Locale.FRANCE), clock) to settings
     }
 
     @Test
@@ -84,5 +89,28 @@ class CardListViewModelTest {
 
         assertEquals(SortOrder.RECENTLY_USED, settings.sortOrder.first { it == SortOrder.RECENTLY_USED })
         assertEquals(SortOrder.RECENTLY_USED, vm.uiState.first { it.sortOrder == SortOrder.RECENTLY_USED }.sortOrder)
+    }
+
+    @Test
+    fun archivedCardsAreListedApart() = runTest {
+        cards.save(testCard("Darty", isFavorite = true, isArchived = true))
+        cards.save(testCard("Fnac"))
+        val (vm, _) = viewModel()
+
+        val state = vm.uiState.first { !it.isLoading && it.hasCards }
+
+        assertEquals(listOf("Darty"), state.archived.map { it.card.storeName })
+        assertEquals(emptyList<CardTileModel>(), state.favorites)
+        assertEquals(listOf("Fnac"), state.others.map { it.card.storeName })
+    }
+
+    @Test
+    fun tilesCarryTheirExpiryStatusForToday() = runTest {
+        cards.save(testCard("Fnac", expiresOn = LocalDate.of(2026, 10, 10)))
+        val (vm, _) = viewModel()
+
+        val tile = vm.uiState.first { !it.isLoading && it.hasCards }.others.single()
+
+        assertEquals(ExpiryStatus.Soon(5), tile.expiry)
     }
 }

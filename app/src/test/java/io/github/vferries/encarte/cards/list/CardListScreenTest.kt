@@ -7,6 +7,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.github.vferries.encarte.core.data.ExpiryStatus
 import io.github.vferries.encarte.core.prefs.SortOrder
 import io.github.vferries.encarte.testing.testCard
 import org.junit.Assert.assertEquals
@@ -23,13 +24,14 @@ class CardListScreenTest {
 
     private fun setScreen(
         state: CardListUiState,
+        query: TextFieldState = TextFieldState(),
         onOpenCard: (Long) -> Unit = {},
         onImport: () -> Unit = {},
         onSortOrderChange: (SortOrder) -> Unit = {},
     ) = composeRule.setContent {
         CardListScreen(
             state = state,
-            query = TextFieldState(),
+            query = query,
             onSortOrderChange = onSortOrderChange,
             onOpenCard = onOpenCard,
             onAddCard = {},
@@ -37,6 +39,9 @@ class CardListScreenTest {
             onImport = onImport,
         )
     }
+
+    private fun tile(name: String, id: Long, expiry: ExpiryStatus = ExpiryStatus.None) =
+        CardTileModel(testCard(name, id = id), image = null, expiry = expiry)
 
     @Test
     fun emptyStateOffersImport() {
@@ -83,5 +88,53 @@ class CardListScreenTest {
         composeRule.onNodeWithText("Recently used").performClick()
 
         assertEquals(SortOrder.RECENTLY_USED, order)
+    }
+
+    @Test
+    fun archivedSectionIsCollapsedUntilOpened() {
+        setScreen(CardListUiState(isLoading = false, hasCards = true, archived = listOf(tile("Darty", 2))))
+
+        composeRule.onNodeWithText("Archived (1)").assertIsDisplayed()
+        composeRule.onNodeWithText("Darty").assertDoesNotExist()
+
+        composeRule.onNodeWithText("Archived (1)").performClick()
+
+        composeRule.onNodeWithText("Darty").assertIsDisplayed()
+    }
+
+    @Test
+    fun noArchivedHeaderWithoutArchivedCards() {
+        setScreen(CardListUiState(isLoading = false, hasCards = true, others = listOf(tile("Fnac", 1))))
+
+        composeRule.onNodeWithText("Archived", substring = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun searchShowsArchivedMatchesWithoutOpeningTheSection() {
+        setScreen(
+            CardListUiState(isLoading = false, hasCards = true, archived = listOf(tile("Darty", 2))),
+            query = TextFieldState("dar"),
+        )
+
+        composeRule.onNodeWithText("Darty").assertIsDisplayed()
+        composeRule.onNodeWithText("No card matches your search.").assertDoesNotExist()
+    }
+
+    @Test
+    fun tilesShowTheirExpiryBadge() {
+        setScreen(CardListUiState(isLoading = false, hasCards = true, others = listOf(tile("Fnac", 1, ExpiryStatus.Soon(5)))))
+
+        composeRule.onNodeWithText("Expires in 5 d").assertIsDisplayed()
+    }
+
+    @Test
+    fun sortMenuOffersExpiry() {
+        var order: SortOrder? = null
+        setScreen(CardListUiState(isLoading = false, hasCards = true), onSortOrderChange = { order = it })
+
+        composeRule.onNodeWithContentDescription("Sort").performClick()
+        composeRule.onNodeWithText("Expiry date").performClick()
+
+        assertEquals(SortOrder.EXPIRY, order)
     }
 }

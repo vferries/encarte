@@ -45,7 +45,7 @@ fun EncarteNavHost(container: AppContainer) {
             entry<CardListKey> {
                 CardListRoute(
                     viewModel = viewModel {
-                        CardListViewModel(container.cardRepository, container.settingsRepository, cardCollator())
+                        CardListViewModel(container.cardRepository, container.settingsRepository, cardCollator(), container.clock)
                     },
                     onOpenCard = { id -> backStack.add(CardDisplayKey(id)) },
                     onAddCard = { backStack.add(ScannerKey) },

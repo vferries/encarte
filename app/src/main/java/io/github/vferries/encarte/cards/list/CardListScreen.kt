@@ -1,10 +1,12 @@
 package io.github.vferries.encarte.cards.list
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,11 +38,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -119,6 +125,7 @@ private fun SortMenu(current: SortOrder, onSortOrderChange: (SortOrder) -> Unit)
             for ((order, label) in listOf(
                 SortOrder.NAME to R.string.sort_by_name,
                 SortOrder.RECENTLY_USED to R.string.sort_recently_used,
+                SortOrder.EXPIRY to R.string.sort_expiry,
             )) {
                 DropdownMenuItem(
                     text = { Text(stringResource(label)) },
@@ -141,6 +148,9 @@ private fun CardGrid(
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
 ) {
+    var archivedOpen by rememberSaveable { mutableStateOf(false) }
+    // While searching, archived matches show without opening the section.
+    val showArchived = archivedOpen || query.text.isNotEmpty()
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 160.dp),
         modifier = modifier.fillMaxSize(),
@@ -157,13 +167,19 @@ private fun CardGrid(
                 lineLimits = TextFieldLineLimits.SingleLine,
             )
         }
-        if (state.favorites.isEmpty() && state.others.isEmpty()) {
+        if (state.favorites.isEmpty() && state.others.isEmpty() && state.archived.isEmpty()) {
             item(span = { GridItemSpan(maxLineSpan) }) {
                 Text(stringResource(R.string.no_search_results), Modifier.padding(vertical = 24.dp))
             }
         }
         section(R.string.section_favorites, state.favorites, onOpenCard)
         section(R.string.section_all_cards, state.others, onOpenCard, showHeader = state.favorites.isNotEmpty())
+        if (state.archived.isNotEmpty()) {
+            item(span = { GridItemSpan(maxLineSpan) }, contentType = "header") {
+                ArchivedHeader(state.archived.size, expanded = showArchived, onToggle = { archivedOpen = !archivedOpen })
+            }
+            if (showArchived) cardTiles(state.archived, onOpenCard)
+        }
         // Keeps the last row clear of the floating action button.
         item(span = { GridItemSpan(maxLineSpan) }) { Spacer(Modifier.height(72.dp)) }
     }
@@ -181,8 +197,35 @@ private fun LazyGridScope.section(
             Text(stringResource(title), style = MaterialTheme.typography.titleSmall)
         }
     }
+    cardTiles(tiles, onOpenCard)
+}
+
+private fun LazyGridScope.cardTiles(tiles: List<CardTileModel>, onOpenCard: (Long) -> Unit) {
     items(tiles, key = { it.card.id }, contentType = { "card" }) { tile ->
-        CardTile(tile.card, tile.image, onClick = { onOpenCard(tile.card.id) })
+        CardTile(tile.card, tile.image, onClick = { onOpenCard(tile.card.id) }, expiry = tile.expiry)
+    }
+}
+
+@Composable
+private fun ArchivedHeader(count: Int, expanded: Boolean, onToggle: () -> Unit) {
+    val stateText = stringResource(if (expanded) R.string.state_expanded else R.string.state_collapsed)
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clickable(role = Role.Button, onClick = onToggle)
+            .semantics { stateDescription = stateText }
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            stringResource(R.string.section_archived, count),
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.weight(1f),
+        )
+        Icon(
+            painterResource(if (expanded) R.drawable.ic_expand_less else R.drawable.ic_expand_more),
+            contentDescription = null,
+        )
     }
 }
 

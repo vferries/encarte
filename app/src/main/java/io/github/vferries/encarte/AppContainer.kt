@@ -22,7 +22,7 @@ import java.time.Clock
 /** Manual dependency injection: every long-lived object, built once per process. */
 class AppContainer(context: Context) {
     private val appContext = context.applicationContext
-    private val clock: Clock = Clock.systemDefaultZone()
+    val clock: Clock = Clock.systemDefaultZone()
     private val database = EncarteDatabase.create(appContext)
     private val imageStore = ImageStore(File(appContext.filesDir, "images"), File(appContext.cacheDir, "staging"))
 

@@ -17,6 +17,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.vferries.encarte.core.color.CardPalette
 import io.github.vferries.encarte.core.data.Card
+import io.github.vferries.encarte.core.data.ExpiryStatus
 import java.io.File
 
 /** ISO/IEC 7810 ID-1, the size of a bank or loyalty card. */
@@ -25,7 +26,13 @@ const val CARD_ASPECT_RATIO = 1.586f
 private const val TILE_IMAGE_MAX_SIDE = 480
 
 @Composable
-fun CardTile(card: Card, imageFile: File?, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun CardTile(
+    card: Card,
+    imageFile: File?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    expiry: ExpiryStatus = ExpiryStatus.None,
+) {
     val image = rememberImageBitmap(imageFile, TILE_IMAGE_MAX_SIDE)
     Surface(
         onClick = onClick,
@@ -52,6 +59,8 @@ fun CardTile(card: Card, imageFile: File?, onClick: () -> Unit, modifier: Modifi
                     modifier = Modifier.align(Alignment.BottomStart).padding(12.dp),
                 )
             }
+            // Inside the clickable surface, so its text joins the tile's accessibility description.
+            ExpiryBadge(expiry, Modifier.align(Alignment.TopEnd).padding(8.dp))
         }
     }
 }
