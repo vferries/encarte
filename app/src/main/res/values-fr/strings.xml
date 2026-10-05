@@ -19,6 +19,8 @@
     <string name="expiry_badge_days">Expire dans %1$d j</string>
     <string name="expiry_badge_today">Expire aujourd\'hui</string>
     <string name="expiry_badge_expired">Expirée</string>
+    <string name="expires_on">Expire le %1$s</string>
+    <string name="expired_on">Expirée depuis le %1$s</string>
     <string name="empty_title">Aucune carte pour l\'instant</string>
     <string name="empty_body">Scannez une carte de fidélité, ou importez une sauvegarde Catima ou Encarté.</string>
     <string name="no_search_results">Aucune carte ne correspond à votre recherche.</string>

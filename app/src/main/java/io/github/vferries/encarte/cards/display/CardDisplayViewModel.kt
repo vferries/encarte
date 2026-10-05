@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.vferries.encarte.core.data.Card
 import io.github.vferries.encarte.core.data.CardRepository
+import io.github.vferries.encarte.core.data.ExpiryStatus
+import io.github.vferries.encarte.core.data.expiryStatus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -11,16 +13,23 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.io.File
+import java.time.Clock
+import java.time.LocalDate
 
 data class CardDisplayUiState(
     val isLoading: Boolean = true,
     val card: Card? = null,
     val frontImage: File? = null,
     val backImage: File? = null,
+    val expiry: ExpiryStatus = ExpiryStatus.None,
     val isDeleted: Boolean = false,
 )
 
-class CardDisplayViewModel(private val cardId: Long, private val cards: CardRepository) : ViewModel() {
+class CardDisplayViewModel(
+    private val cardId: Long,
+    private val cards: CardRepository,
+    private val clock: Clock,
+) : ViewModel() {
 
     private val deleted = MutableStateFlow(false)
 
@@ -30,6 +39,7 @@ class CardDisplayViewModel(private val cardId: Long, private val cards: CardRepo
             card = card,
             frontImage = card?.frontImage?.let(cards::imageFile),
             backImage = card?.backImage?.let(cards::imageFile),
+            expiry = expiryStatus(card?.expiresOn, LocalDate.now(clock)),
             isDeleted = isDeleted,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CardDisplayUiState())

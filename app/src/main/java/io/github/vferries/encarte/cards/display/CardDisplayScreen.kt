@@ -34,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.keepScreenOn
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -44,6 +45,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.vferries.encarte.R
 import io.github.vferries.encarte.core.data.Card
+import io.github.vferries.encarte.core.data.ExpiryStatus
 import io.github.vferries.encarte.core.data.encodedValue
 import io.github.vferries.encarte.core.ui.BarcodeImage
 import io.github.vferries.encarte.core.ui.CARD_ASPECT_RATIO
@@ -51,7 +53,9 @@ import io.github.vferries.encarte.core.ui.EncarteAlertDialog
 import io.github.vferries.encarte.core.ui.EncarteDialog
 import io.github.vferries.encarte.core.ui.MaxBrightnessEffect
 import io.github.vferries.encarte.core.ui.rememberImageBitmap
+import io.github.vferries.encarte.core.ui.rememberMediumDateFormatter
 import java.io.File
+import java.time.LocalDate
 
 private const val THUMBNAIL_MAX_SIDE = 480
 private const val FULL_SCREEN_MAX_SIDE = 2048
@@ -164,6 +168,7 @@ private fun CardContent(state: CardDisplayUiState, card: Card, modifier: Modifie
                 textAlign = TextAlign.Center,
             )
         }
+        card.expiresOn?.let { date -> ExpiryLine(date, expired = state.expiry == ExpiryStatus.Expired) }
         if (card.note.isNotBlank()) {
             Text(card.note, modifier = Modifier.fillMaxWidth())
         }
@@ -204,4 +209,14 @@ private fun FullScreenImage(file: File, onDismiss: () -> Unit) {
             }
         }
     }
+}
+
+@Composable
+private fun ExpiryLine(date: LocalDate, expired: Boolean) {
+    val formatted = rememberMediumDateFormatter().format(date)
+    Text(
+        stringResource(if (expired) R.string.expired_on else R.string.expires_on, formatted),
+        color = if (expired) MaterialTheme.colorScheme.error else Color.Unspecified,
+        style = MaterialTheme.typography.bodyLarge,
+    )
 }

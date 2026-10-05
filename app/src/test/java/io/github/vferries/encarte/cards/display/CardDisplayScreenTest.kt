@@ -12,6 +12,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.vferries.encarte.core.barcode.BarcodeFormat
+import io.github.vferries.encarte.core.data.ExpiryStatus
 import io.github.vferries.encarte.lock.LocalContentCovered
 import io.github.vferries.encarte.testing.testCard
 import org.junit.Assert.assertTrue
@@ -19,6 +20,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.GraphicsMode
+import java.time.LocalDate
 
 @RunWith(AndroidJUnit4::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -87,5 +89,34 @@ class CardDisplayScreenTest {
         composeRule.setContent { CardDisplayScreen(CardDisplayUiState(isLoading = false), {}, {}, {}, {}) }
 
         composeRule.onNodeWithText("This card no longer exists.").assertIsDisplayed()
+    }
+
+    @Test
+    fun expiryDateIsShownBelowTheNumber() {
+        val card = testCard("Fnac", cardNumber = "A-42", expiresOn = LocalDate.of(2027, 3, 12))
+        composeRule.setContent {
+            CardDisplayScreen(CardDisplayUiState(isLoading = false, card = card, expiry = ExpiryStatus.Later), {}, {}, {}, {})
+        }
+
+        composeRule.onNodeWithText("Expires on Mar 12, 2027").assertIsDisplayed()
+    }
+
+    @Test
+    fun pastExpiryIsShownAsExpired() {
+        val card = testCard("Fnac", expiresOn = LocalDate.of(2027, 3, 12))
+        composeRule.setContent {
+            CardDisplayScreen(CardDisplayUiState(isLoading = false, card = card, expiry = ExpiryStatus.Expired), {}, {}, {}, {})
+        }
+
+        composeRule.onNodeWithText("Expired on Mar 12, 2027").assertIsDisplayed()
+    }
+
+    @Test
+    fun noExpiryLineWithoutADate() {
+        composeRule.setContent {
+            CardDisplayScreen(CardDisplayUiState(isLoading = false, card = testCard("Fnac")), {}, {}, {}, {})
+        }
+
+        composeRule.onNodeWithText("Expire", substring = true).assertDoesNotExist()
     }
 }

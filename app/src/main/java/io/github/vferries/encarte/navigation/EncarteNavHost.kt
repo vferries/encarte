@@ -55,7 +55,7 @@ fun EncarteNavHost(container: AppContainer) {
             }
             entry<CardDisplayKey> { key ->
                 CardDisplayRoute(
-                    viewModel = viewModel { CardDisplayViewModel(key.cardId, container.cardRepository) },
+                    viewModel = viewModel { CardDisplayViewModel(key.cardId, container.cardRepository, container.clock) },
                     onBack = pop,
                     onEdit = { id -> backStack.add(CardEditKey(cardId = id)) },
                 )
