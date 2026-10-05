@@ -5,11 +5,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.height
+import androidx.compose.ui.unit.width
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.vferries.encarte.core.barcode.BarcodeFormat
 import io.github.vferries.encarte.core.data.ExpiryStatus
@@ -20,6 +24,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.time.LocalDate
 
@@ -137,5 +142,21 @@ class CardDisplayScreenTest {
 
         card = card.copy(isArchived = true)
         composeRule.onNodeWithContentDescription("Unarchive").assertIsDisplayed()
+    }
+
+    @Test
+    @Config(qualifiers = "w891dp-h411dp-land")
+    fun twoDimensionalCodeFitsTheScreenInLandscape() {
+        val card = testCard("Fnac", cardNumber = "123456", barcodeFormat = BarcodeFormat.QR_CODE)
+        composeRule.setContent {
+            CardDisplayScreen(CardDisplayUiState(isLoading = false, card = card), {}, {}, {}, {}, {})
+        }
+
+        val root = composeRule.onRoot().getUnclippedBoundsInRoot()
+        val barcode = composeRule.onNodeWithTag("barcode").getUnclippedBoundsInRoot()
+
+        assertTrue("barcode bottom ${barcode.bottom} is within ${root.bottom}", barcode.bottom <= root.bottom)
+        assertEquals(barcode.width.value, barcode.height.value, 0.5f)
+        composeRule.onNodeWithText("123456").assertIsDisplayed()
     }
 }

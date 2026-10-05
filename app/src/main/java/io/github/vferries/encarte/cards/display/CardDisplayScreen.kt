@@ -5,6 +5,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
@@ -41,6 +42,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -55,6 +57,7 @@ import io.github.vferries.encarte.core.ui.CARD_ASPECT_RATIO
 import io.github.vferries.encarte.core.ui.EncarteAlertDialog
 import io.github.vferries.encarte.core.ui.EncarteDialog
 import io.github.vferries.encarte.core.ui.MaxBrightnessEffect
+import io.github.vferries.encarte.core.ui.displayAspectRatio
 import io.github.vferries.encarte.core.ui.rememberImageBitmap
 import io.github.vferries.encarte.core.ui.rememberMediumDateFormatter
 import java.io.File
@@ -63,6 +66,10 @@ import java.time.LocalDate
 private const val TAG = "CardDisplayScreen"
 private const val THUMBNAIL_MAX_SIDE = 480
 private const val FULL_SCREEN_MAX_SIDE = 2048
+
+/** Vertical padding (32), spacing (16) and the card number line (about 32) kept on screen below the code. */
+private val BarcodeReservedHeight = 80.dp
+private val BarcodeMinHeight = 120.dp
 
 @Composable
 fun CardDisplayRoute(
@@ -169,39 +176,47 @@ fun CardDisplayScreen(
 private fun CardContent(state: CardDisplayUiState, card: Card, modifier: Modifier = Modifier) {
     MaxBrightnessEffect()
     var fullScreenImage by remember { mutableStateOf<File?>(null) }
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            // Large screens: cap the content width instead of stretching the layout.
-            .wrapContentWidth()
-            .widthIn(max = 640.dp)
-            .keepScreenOn()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        val format = card.barcodeFormat
-        if (format != null) {
-            BarcodeImage(card.encodedValue, format, Modifier.fillMaxWidth())
-        }
-        SelectionContainer {
-            Text(
-                text = card.cardNumber,
-                style = if (format == null) MaterialTheme.typography.displaySmall else MaterialTheme.typography.titleLarge,
-                textAlign = TextAlign.Center,
-            )
-        }
-        card.expiresOn?.let { date -> ExpiryLine(date, expired = state.expiry == ExpiryStatus.Expired) }
-        if (card.note.isNotBlank()) {
-            Text(card.note, modifier = Modifier.fillMaxWidth())
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            state.frontImage?.let { file ->
-                Thumbnail(file, stringResource(R.string.photo_front), Modifier.weight(1f)) { fullScreenImage = file }
+    BoxWithConstraints(modifier.fillMaxSize()) {
+        // In landscape a square code as wide as the content would be taller than the screen.
+        val barcodeMaxHeight = (maxHeight - BarcodeReservedHeight).coerceAtLeast(BarcodeMinHeight)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                // Large screens: cap the content width instead of stretching the layout.
+                .wrapContentWidth()
+                .widthIn(max = 640.dp)
+                .keepScreenOn()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            val format = card.barcodeFormat
+            if (format != null) {
+                BarcodeImage(
+                    card.encodedValue,
+                    format,
+                    Modifier.widthIn(max = barcodeMaxHeight * format.displayAspectRatio).fillMaxWidth(),
+                )
             }
-            state.backImage?.let { file ->
-                Thumbnail(file, stringResource(R.string.photo_back), Modifier.weight(1f)) { fullScreenImage = file }
+            SelectionContainer {
+                Text(
+                    text = card.cardNumber,
+                    style = if (format == null) MaterialTheme.typography.displaySmall else MaterialTheme.typography.titleLarge,
+                    textAlign = TextAlign.Center,
+                )
+            }
+            card.expiresOn?.let { date -> ExpiryLine(date, expired = state.expiry == ExpiryStatus.Expired) }
+            if (card.note.isNotBlank()) {
+                Text(card.note, modifier = Modifier.fillMaxWidth())
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                state.frontImage?.let { file ->
+                    Thumbnail(file, stringResource(R.string.photo_front), Modifier.weight(1f)) { fullScreenImage = file }
+                }
+                state.backImage?.let { file ->
+                    Thumbnail(file, stringResource(R.string.photo_back), Modifier.weight(1f)) { fullScreenImage = file }
+                }
             }
         }
     }

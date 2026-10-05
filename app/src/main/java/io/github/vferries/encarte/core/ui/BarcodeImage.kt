@@ -90,7 +90,7 @@ fun BarcodeImage(code: String, format: BarcodeFormat, modifier: Modifier = Modif
     }
 }
 
-private val BarcodeFormat.displayAspectRatio: Float
+internal val BarcodeFormat.displayAspectRatio: Float
     get() = when {
         this == BarcodeFormat.PDF_417 -> 2.5f
         isTwoDimensional -> 1f
