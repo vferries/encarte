@@ -86,6 +86,9 @@
     <string name="settings_lock_summary">Ask for fingerprint, face or screen lock when opening Encarté</string>
     <string name="settings_lock_unavailable">Set a screen lock on this device first</string>
     <string name="lock_enable_prompt_title">Confirm to turn on the lock</string>
+    <string name="settings_checkout">At checkout</string>
+    <string name="settings_nfc_block">Block contactless payment</string>
+    <string name="settings_nfc_block_summary">While a card is shown, a terminal can\'t trigger your phone\'s payment.</string>
     <string name="settings_backup">Backup</string>
     <string name="settings_export">Export cards</string>
     <string name="settings_export_summary">ZIP file compatible with Catima</string>

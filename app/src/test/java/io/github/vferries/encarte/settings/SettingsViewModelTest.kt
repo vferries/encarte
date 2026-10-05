@@ -136,4 +136,15 @@ class SettingsViewModelTest {
         vm.exportTo { ByteArrayOutputStream() }
         assertEquals(BackupMessage.ExportFailed, vm.uiState.first { it.message != null }.message)
     }
+
+    @Test
+    fun contactlessBlockingToggleIsPersisted() = runTest {
+        val (vm, settings) = viewModel()
+        assertTrue(vm.uiState.first { it.nfcBlockEnabled }.nfcBlockEnabled)
+
+        vm.setNfcBlockEnabled(false)
+
+        assertFalse(settings.nfcBlockEnabled.first { !it })
+        assertFalse(vm.uiState.first { !it.nfcBlockEnabled }.nfcBlockEnabled)
+    }
 }

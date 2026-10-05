@@ -2,11 +2,13 @@ package io.github.vferries.encarte.settings
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.util.Log
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -41,6 +43,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -69,6 +72,7 @@ fun SettingsRoute(viewModel: SettingsViewModel, onBack: () -> Unit) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var deviceSecure by remember { mutableStateOf(context.isDeviceSecure()) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { deviceSecure = context.isDeviceSecure() }
+    val nfcSupported = remember { context.packageManager.hasSystemFeature(PackageManager.FEATURE_NFC) }
 
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
         if (uri == null) {
@@ -91,6 +95,7 @@ fun SettingsRoute(viewModel: SettingsViewModel, onBack: () -> Unit) {
     SettingsScreen(
         state = state,
         deviceSecure = deviceSecure,
+        nfcSupported = nfcSupported,
         onBack = onBack,
         onLockChange = { enabled ->
             when {
@@ -99,6 +104,7 @@ fun SettingsRoute(viewModel: SettingsViewModel, onBack: () -> Unit) {
                 else -> DeviceAuthenticator(activity).authenticate(promptTitle, onSuccess = { viewModel.setLockEnabled(true) })
             }
         },
+        onNfcBlockChange = viewModel::setNfcBlockEnabled,
         onExportConfirmed = { password ->
             viewModel.prepareExport(password)
             try {
@@ -134,8 +140,10 @@ fun SettingsRoute(viewModel: SettingsViewModel, onBack: () -> Unit) {
 fun SettingsScreen(
     state: SettingsUiState,
     deviceSecure: Boolean,
+    nfcSupported: Boolean,
     onBack: () -> Unit,
     onLockChange: (Boolean) -> Unit,
+    onNfcBlockChange: (Boolean) -> Unit,
     onExportConfirmed: (CharArray?) -> Unit,
     onImport: () -> Unit,
     onImportPassword: (CharArray) -> Unit,
@@ -190,6 +198,20 @@ fun SettingsScreen(
                     )
                 },
             )
+            if (nfcSupported) {
+                SectionTitle(R.string.settings_checkout)
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.settings_nfc_block)) },
+                    supportingContent = { Text(stringResource(R.string.settings_nfc_block_summary)) },
+                    trailingContent = { Switch(checked = state.nfcBlockEnabled, onCheckedChange = null) },
+                    // The whole row toggles: a larger target, announced once as a switch.
+                    modifier = Modifier.toggleable(
+                        value = state.nfcBlockEnabled,
+                        role = Role.Switch,
+                        onValueChange = onNfcBlockChange,
+                    ),
+                )
+            }
             SectionTitle(R.string.settings_backup)
             ListItem(
                 headlineContent = { Text(stringResource(R.string.settings_export)) },

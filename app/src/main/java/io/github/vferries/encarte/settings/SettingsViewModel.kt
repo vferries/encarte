@@ -34,6 +34,7 @@ sealed interface BackupMessage {
 
 data class SettingsUiState(
     val lockEnabled: Boolean = false,
+    val nfcBlockEnabled: Boolean = true,
     val busy: Boolean = false,
     val passwordPrompt: PasswordPrompt? = null,
     val message: BackupMessage? = null,
@@ -46,8 +47,8 @@ class SettingsViewModel(
 
     private val ui = MutableStateFlow(SettingsUiState())
 
-    val uiState: StateFlow<SettingsUiState> = combine(ui, settings.lockEnabled) { state, lock ->
-        state.copy(lockEnabled = lock)
+    val uiState: StateFlow<SettingsUiState> = combine(ui, settings.lockEnabled, settings.nfcBlockEnabled) { state, lock, nfc ->
+        state.copy(lockEnabled = lock, nfcBlockEnabled = nfc)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
 
     /** Kept here (not in the UI) so a configuration change during the file picker can't drop it. */
@@ -57,6 +58,10 @@ class SettingsViewModel(
 
     fun setLockEnabled(enabled: Boolean) {
         viewModelScope.launch { settings.setLockEnabled(enabled) }
+    }
+
+    fun setNfcBlockEnabled(enabled: Boolean) {
+        viewModelScope.launch { settings.setNfcBlockEnabled(enabled) }
     }
 
     fun prepareExport(password: CharArray?) {

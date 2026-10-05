@@ -85,6 +85,9 @@
     <string name="settings_lock_summary">Demander empreinte, visage ou code de l\'appareil à l\'ouverture d\'Encarté</string>
     <string name="settings_lock_unavailable">Définissez d\'abord un verrouillage d\'écran sur l\'appareil</string>
     <string name="lock_enable_prompt_title">Confirmez pour activer le verrouillage</string>
+    <string name="settings_checkout">En caisse</string>
+    <string name="settings_nfc_block">Bloquer le paiement sans contact</string>
+    <string name="settings_nfc_block_summary">Pendant l\'affichage d\'une carte, un terminal ne peut pas déclencher le paiement de votre téléphone.</string>
     <string name="settings_backup">Sauvegarde</string>
     <string name="settings_export">Exporter les cartes</string>
     <string name="settings_export_summary">Fichier ZIP compatible avec Catima</string>

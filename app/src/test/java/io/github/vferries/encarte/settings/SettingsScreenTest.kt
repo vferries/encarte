@@ -2,6 +2,7 @@ package io.github.vferries.encarte.settings
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -22,21 +23,27 @@ class SettingsScreenTest {
     private var exported: CharArray? = charArrayOf('x')
     private var exportCalls = 0
 
-    private fun setScreen(state: SettingsUiState = SettingsUiState(), deviceSecure: Boolean = true) =
-        composeRule.setContent {
-            SettingsScreen(
-                state = state,
-                deviceSecure = deviceSecure,
-                onBack = {},
-                onLockChange = {},
-                onExportConfirmed = { exported = it; exportCalls++ },
-                onImport = {},
-                onImportPassword = {},
-                onImportCancelled = {},
-                onMessageShown = {},
-                onOpenSource = {},
-            )
-        }
+    private fun setScreen(
+        state: SettingsUiState = SettingsUiState(),
+        deviceSecure: Boolean = true,
+        nfcSupported: Boolean = false,
+        onNfcBlockChange: (Boolean) -> Unit = {},
+    ) = composeRule.setContent {
+        SettingsScreen(
+            state = state,
+            deviceSecure = deviceSecure,
+            nfcSupported = nfcSupported,
+            onBack = {},
+            onLockChange = {},
+            onNfcBlockChange = onNfcBlockChange,
+            onExportConfirmed = { exported = it; exportCalls++ },
+            onImport = {},
+            onImportPassword = {},
+            onImportCancelled = {},
+            onMessageShown = {},
+            onOpenSource = {},
+        )
+    }
 
     @Test
     fun lockIsUnavailableWithoutScreenLock() {
@@ -84,5 +91,23 @@ class SettingsScreenTest {
 
         composeRule.onNodeWithText("zxing-cpp — Apache-2.0", substring = true).assertIsDisplayed()
         composeRule.onNodeWithText("Nunito — SIL Open Font License 1.1", substring = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun checkoutSectionOnlyWithNfc() {
+        setScreen(nfcSupported = false)
+
+        composeRule.onNodeWithText("At checkout").assertDoesNotExist()
+    }
+
+    @Test
+    fun contactlessBlockingIsOnByDefaultAndCanBeTurnedOff() {
+        var changedTo: Boolean? = null
+        setScreen(nfcSupported = true, onNfcBlockChange = { changedTo = it })
+
+        composeRule.onNodeWithText("At checkout").assertIsDisplayed()
+        composeRule.onNodeWithText("Block contactless payment").assertIsOn().performClick()
+
+        assertEquals(false, changedTo)
     }
 }
