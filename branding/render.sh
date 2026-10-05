@@ -72,4 +72,15 @@ for locale in "${locales[@]}"; do
     render "$url" 1080 1920 "$images/phoneScreenshots/$n.png"
   done
 done
+# Web-sized screenshots for the landing page's phone fan (landing page spec §4.2): committed under site/img so the
+# Pages deploy needs no ImageMagick. Same byte-stable output rule as the store images.
+for locale in "${locales[@]}"; do
+  short=${locale%%-*}
+  mkdir -p "site/img/$short"
+  for pair in 2:display 1:list 5:empty; do
+    magick "$branding/screenshots/raw/$locale/${pair%%:*}.png" -resize 600x -strip \
+      -define png:exclude-chunk=date,time "site/img/$short/${pair#*:}.png"
+    echo "render.sh: site/img/$short/${pair#*:}.png"
+  done
+done
 echo "render.sh: all store images regenerated and checked"
