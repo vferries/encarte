@@ -15,6 +15,7 @@ import io.github.vferries.encarte.core.barcode.BarcodeFormat
 import io.github.vferries.encarte.core.data.ExpiryStatus
 import io.github.vferries.encarte.lock.LocalContentCovered
 import io.github.vferries.encarte.testing.testCard
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -32,7 +33,7 @@ class CardDisplayScreenTest {
     fun showsBarcodeAndNumber() {
         val card = testCard("Fnac", cardNumber = "4006381333931", barcodeFormat = BarcodeFormat.EAN_13)
         composeRule.setContent {
-            CardDisplayScreen(CardDisplayUiState(isLoading = false, card = card), {}, {}, {}, {})
+            CardDisplayScreen(CardDisplayUiState(isLoading = false, card = card), {}, {}, {}, {}, {})
         }
 
         composeRule.onNodeWithTag("barcode").assertIsDisplayed()
@@ -42,7 +43,7 @@ class CardDisplayScreenTest {
     @Test
     fun withoutBarcodeShowsNumberOnly() {
         composeRule.setContent {
-            CardDisplayScreen(CardDisplayUiState(isLoading = false, card = testCard(cardNumber = "A-42")), {}, {}, {}, {})
+            CardDisplayScreen(CardDisplayUiState(isLoading = false, card = testCard(cardNumber = "A-42")), {}, {}, {}, {}, {})
         }
 
         composeRule.onNodeWithText("A-42").assertIsDisplayed()
@@ -55,7 +56,7 @@ class CardDisplayScreenTest {
         composeRule.setContent {
             CardDisplayScreen(
                 CardDisplayUiState(isLoading = false, card = testCard("Fnac")),
-                onBack = {}, onEdit = {}, onToggleFavorite = {}, onDelete = { deleted = true },
+                onBack = {}, onEdit = {}, onToggleFavorite = {}, onDelete = { deleted = true }, onToggleArchive = {},
             )
         }
 
@@ -71,7 +72,7 @@ class CardDisplayScreenTest {
         var covered by mutableStateOf(false)
         composeRule.setContent {
             CompositionLocalProvider(LocalContentCovered provides covered) {
-                CardDisplayScreen(CardDisplayUiState(isLoading = false, card = testCard("Fnac")), {}, {}, {}, {})
+                CardDisplayScreen(CardDisplayUiState(isLoading = false, card = testCard("Fnac")), {}, {}, {}, {}, {})
             }
         }
         composeRule.onNodeWithContentDescription("Delete").performClick()
@@ -86,7 +87,7 @@ class CardDisplayScreenTest {
 
     @Test
     fun missingCardShowsMessage() {
-        composeRule.setContent { CardDisplayScreen(CardDisplayUiState(isLoading = false), {}, {}, {}, {}) }
+        composeRule.setContent { CardDisplayScreen(CardDisplayUiState(isLoading = false), {}, {}, {}, {}, {}) }
 
         composeRule.onNodeWithText("This card no longer exists.").assertIsDisplayed()
     }
@@ -95,7 +96,7 @@ class CardDisplayScreenTest {
     fun expiryDateIsShownBelowTheNumber() {
         val card = testCard("Fnac", cardNumber = "A-42", expiresOn = LocalDate.of(2027, 3, 12))
         composeRule.setContent {
-            CardDisplayScreen(CardDisplayUiState(isLoading = false, card = card, expiry = ExpiryStatus.Later), {}, {}, {}, {})
+            CardDisplayScreen(CardDisplayUiState(isLoading = false, card = card, expiry = ExpiryStatus.Later), {}, {}, {}, {}, {})
         }
 
         composeRule.onNodeWithText("Expires on Mar 12, 2027").assertIsDisplayed()
@@ -105,7 +106,7 @@ class CardDisplayScreenTest {
     fun pastExpiryIsShownAsExpired() {
         val card = testCard("Fnac", expiresOn = LocalDate.of(2027, 3, 12))
         composeRule.setContent {
-            CardDisplayScreen(CardDisplayUiState(isLoading = false, card = card, expiry = ExpiryStatus.Expired), {}, {}, {}, {})
+            CardDisplayScreen(CardDisplayUiState(isLoading = false, card = card, expiry = ExpiryStatus.Expired), {}, {}, {}, {}, {})
         }
 
         composeRule.onNodeWithText("Expired on Mar 12, 2027").assertIsDisplayed()
@@ -114,9 +115,27 @@ class CardDisplayScreenTest {
     @Test
     fun noExpiryLineWithoutADate() {
         composeRule.setContent {
-            CardDisplayScreen(CardDisplayUiState(isLoading = false, card = testCard("Fnac")), {}, {}, {}, {})
+            CardDisplayScreen(CardDisplayUiState(isLoading = false, card = testCard("Fnac")), {}, {}, {}, {}, {})
         }
 
         composeRule.onNodeWithText("Expire", substring = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun archiveActionFollowsTheCardState() {
+        var toggled = 0
+        var card by mutableStateOf(testCard("Fnac"))
+        composeRule.setContent {
+            CardDisplayScreen(
+                CardDisplayUiState(isLoading = false, card = card),
+                onBack = {}, onEdit = {}, onToggleFavorite = {}, onDelete = {}, onToggleArchive = { toggled++ },
+            )
+        }
+
+        composeRule.onNodeWithContentDescription("Archive").performClick()
+        assertEquals(1, toggled)
+
+        card = card.copy(isArchived = true)
+        composeRule.onNodeWithContentDescription("Unarchive").assertIsDisplayed()
     }
 }

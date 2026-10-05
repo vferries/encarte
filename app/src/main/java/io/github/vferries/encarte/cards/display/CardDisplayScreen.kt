@@ -1,5 +1,6 @@
 package io.github.vferries.encarte.cards.display
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -57,14 +58,25 @@ import io.github.vferries.encarte.core.ui.rememberMediumDateFormatter
 import java.io.File
 import java.time.LocalDate
 
+private const val TAG = "CardDisplayScreen"
 private const val THUMBNAIL_MAX_SIDE = 480
 private const val FULL_SCREEN_MAX_SIDE = 2048
 
 @Composable
-fun CardDisplayRoute(viewModel: CardDisplayViewModel, onBack: () -> Unit, onEdit: (Long) -> Unit) {
+fun CardDisplayRoute(
+    viewModel: CardDisplayViewModel,
+    onBack: () -> Unit,
+    onEdit: (Long) -> Unit,
+    onArchived: (Long) -> Unit,
+) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(state.isDeleted) {
         if (state.isDeleted) onBack()
+    }
+    LaunchedEffect(state.justArchived) {
+        if (state.justArchived) {
+            state.card?.let { onArchived(it.id) } ?: Log.w(TAG, "Archived card vanished before leaving its screen")
+        }
     }
     CardDisplayScreen(
         state = state,
@@ -72,6 +84,7 @@ fun CardDisplayRoute(viewModel: CardDisplayViewModel, onBack: () -> Unit, onEdit
         onEdit = { state.card?.let { onEdit(it.id) } },
         onToggleFavorite = viewModel::toggleFavorite,
         onDelete = viewModel::delete,
+        onToggleArchive = viewModel::toggleArchived,
     )
 }
 
@@ -83,6 +96,7 @@ fun CardDisplayScreen(
     onEdit: () -> Unit,
     onToggleFavorite: () -> Unit,
     onDelete: () -> Unit,
+    onToggleArchive: () -> Unit,
 ) {
     val card = state.card
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
@@ -101,6 +115,12 @@ fun CardDisplayScreen(
                             Icon(
                                 painterResource(if (card.isFavorite) R.drawable.ic_star_filled else R.drawable.ic_star),
                                 stringResource(if (card.isFavorite) R.string.action_unfavorite else R.string.action_favorite),
+                            )
+                        }
+                        IconButton(onClick = onToggleArchive) {
+                            Icon(
+                                painterResource(if (card.isArchived) R.drawable.ic_unarchive else R.drawable.ic_archive),
+                                stringResource(if (card.isArchived) R.string.action_unarchive else R.string.action_archive),
                             )
                         }
                         IconButton(onClick = onEdit) {

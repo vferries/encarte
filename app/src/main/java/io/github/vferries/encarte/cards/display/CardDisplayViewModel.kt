@@ -23,6 +23,7 @@ data class CardDisplayUiState(
     val backImage: File? = null,
     val expiry: ExpiryStatus = ExpiryStatus.None,
     val isDeleted: Boolean = false,
+    val justArchived: Boolean = false,
 )
 
 class CardDisplayViewModel(
@@ -32,8 +33,13 @@ class CardDisplayViewModel(
 ) : ViewModel() {
 
     private val deleted = MutableStateFlow(false)
+    private val archivedHere = MutableStateFlow(false)
 
-    val uiState: StateFlow<CardDisplayUiState> = combine(cards.observeCard(cardId), deleted) { card, isDeleted ->
+    val uiState: StateFlow<CardDisplayUiState> = combine(
+        cards.observeCard(cardId),
+        deleted,
+        archivedHere,
+    ) { card, isDeleted, isArchivedHere ->
         CardDisplayUiState(
             isLoading = false,
             card = card,
@@ -41,6 +47,7 @@ class CardDisplayViewModel(
             backImage = card?.backImage?.let(cards::imageFile),
             expiry = expiryStatus(card?.expiresOn, LocalDate.now(clock)),
             isDeleted = isDeleted,
+            justArchived = isArchivedHere,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CardDisplayUiState())
 
@@ -52,6 +59,15 @@ class CardDisplayViewModel(
     fun toggleFavorite() {
         val card = uiState.value.card ?: return
         viewModelScope.launch { cards.setFavorite(cardId, !card.isFavorite) }
+    }
+
+    fun toggleArchived() {
+        val card = uiState.value.card ?: return
+        viewModelScope.launch {
+            cards.setArchived(cardId, !card.isArchived)
+            // Archiving leaves the screen (the list offers to undo it); unarchiving stays here.
+            if (!card.isArchived) archivedHere.value = true
+        }
     }
 
     fun delete() {

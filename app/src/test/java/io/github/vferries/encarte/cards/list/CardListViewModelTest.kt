@@ -113,4 +113,16 @@ class CardListViewModelTest {
 
         assertEquals(ExpiryStatus.Soon(5), tile.expiry)
     }
+
+    @Test
+    fun unarchiveBringsAFavoriteBackUnderFavorites() = runTest {
+        val id = cards.save(testCard("Darty", isFavorite = true, isArchived = true))
+        val (vm, _) = viewModel()
+        vm.uiState.first { it.archived.isNotEmpty() }
+
+        vm.unarchive(id)
+
+        val state = vm.uiState.first { it.archived.isEmpty() && it.hasCards }
+        assertEquals(listOf("Darty"), state.favorites.map { it.card.storeName })
+    }
 }

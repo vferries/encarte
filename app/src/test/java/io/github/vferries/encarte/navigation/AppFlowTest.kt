@@ -78,4 +78,28 @@ class AppFlowTest {
         waitForText("No cards yet")
         composeRule.onNodeWithText("No cards yet").assertIsDisplayed()
     }
+
+    @Test
+    fun archivingReturnsToTheListWhichOffersUndo() {
+        waitForText("No cards yet")
+        composeRule.onAllNodesWithText("Add a card").onFirst().performClick()
+        waitForText("Enter manually")
+        composeRule.onNodeWithText("Enter manually").performClick()
+        waitForText("New card")
+        composeRule.onNodeWithText("Store").performTextInput("Fnac")
+        composeRule.onNodeWithText("Card number").performTextInput("A-42")
+        composeRule.onNodeWithText("Save").performClick()
+        waitFor(hasContentDescription("Archive"))
+
+        composeRule.onNodeWithContentDescription("Archive").performClick()
+
+        waitForText("Card archived")
+        composeRule.onNodeWithText("Archived (1)").assertIsDisplayed()
+        composeRule.onNodeWithText("Fnac").assertDoesNotExist()
+
+        composeRule.onNodeWithText("Undo").performClick()
+
+        waitForText("Fnac")
+        composeRule.onNodeWithText("Archived (1)").assertDoesNotExist()
+    }
 }

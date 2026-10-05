@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -95,5 +96,27 @@ class CardDisplayViewModelTest {
         val vm = displayViewModel(id)
 
         assertEquals(ExpiryStatus.Expired, vm.uiState.first { it.card != null }.expiry)
+    }
+
+    @Test
+    fun archivingFlagsTheScreenToLeave() = runTest {
+        val id = cards.save(testCard("Fnac"))
+        val vm = displayViewModel(id)
+        vm.uiState.first { it.card != null }
+
+        vm.toggleArchived()
+
+        assertTrue(vm.uiState.first { it.justArchived && it.card?.isArchived == true }.justArchived)
+    }
+
+    @Test
+    fun unarchivingStaysOnTheScreen() = runTest {
+        val id = cards.save(testCard("Fnac", isArchived = true))
+        val vm = displayViewModel(id)
+        vm.uiState.first { it.card != null }
+
+        vm.toggleArchived()
+
+        assertFalse(vm.uiState.first { it.card?.isArchived == false }.justArchived)
     }
 }

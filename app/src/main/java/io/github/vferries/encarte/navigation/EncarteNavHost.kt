@@ -1,6 +1,10 @@
 package io.github.vferries.encarte.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
@@ -28,6 +32,8 @@ fun EncarteNavHost(container: AppContainer) {
     val backStack = rememberNavBackStack(CardListKey)
     // NavDisplay requires a non-empty back stack: never pop the root entry.
     val pop: () -> Unit = { if (backStack.size > 1) backStack.removeLastOrNull() }
+    // Set when the card display archives a card; the list then offers to undo it.
+    var archivedNotice by rememberSaveable { mutableStateOf<Long?>(null) }
     // Idempotent: a repeated callback (double tap, late result) must not replace another screen.
     fun replaceTopIf(expected: KClass<out NavKey>, key: NavKey) {
         if (expected.isInstance(backStack.lastOrNull())) backStack[backStack.lastIndex] = key
@@ -47,6 +53,8 @@ fun EncarteNavHost(container: AppContainer) {
                     viewModel = viewModel {
                         CardListViewModel(container.cardRepository, container.settingsRepository, cardCollator(), container.clock)
                     },
+                    archivedNotice = archivedNotice,
+                    onArchivedNoticeShown = { archivedNotice = null },
                     onOpenCard = { id -> backStack.add(CardDisplayKey(id)) },
                     onAddCard = { backStack.add(ScannerKey) },
                     onOpenSettings = { backStack.add(SettingsKey) },
@@ -58,6 +66,13 @@ fun EncarteNavHost(container: AppContainer) {
                     viewModel = viewModel { CardDisplayViewModel(key.cardId, container.cardRepository, container.clock) },
                     onBack = pop,
                     onEdit = { id -> backStack.add(CardEditKey(cardId = id)) },
+                    onArchived = { id ->
+                        // Idempotent: only the display that archived the card closes.
+                        if (backStack.lastOrNull() == key) {
+                            archivedNotice = id
+                            pop()
+                        }
+                    },
                 )
             }
             entry<ScannerKey> {

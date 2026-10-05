@@ -32,9 +32,14 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,6 +63,8 @@ import io.github.vferries.encarte.core.ui.EncarteDropdownMenu
 @Composable
 fun CardListRoute(
     viewModel: CardListViewModel,
+    archivedNotice: Long?,
+    onArchivedNoticeShown: () -> Unit,
     onOpenCard: (Long) -> Unit,
     onAddCard: () -> Unit,
     onOpenSettings: () -> Unit,
@@ -67,11 +74,14 @@ fun CardListRoute(
     CardListScreen(
         state = state,
         query = viewModel.query,
+        archivedNotice = archivedNotice,
         onSortOrderChange = viewModel::setSortOrder,
         onOpenCard = onOpenCard,
         onAddCard = onAddCard,
         onOpenSettings = onOpenSettings,
         onImport = onImport,
+        onUndoArchive = viewModel::unarchive,
+        onArchivedNoticeShown = onArchivedNoticeShown,
     )
 }
 
@@ -80,12 +90,28 @@ fun CardListRoute(
 fun CardListScreen(
     state: CardListUiState,
     query: TextFieldState,
+    archivedNotice: Long?,
     onSortOrderChange: (SortOrder) -> Unit,
     onOpenCard: (Long) -> Unit,
     onAddCard: () -> Unit,
     onOpenSettings: () -> Unit,
     onImport: () -> Unit,
+    onUndoArchive: (Long) -> Unit,
+    onArchivedNoticeShown: () -> Unit,
 ) {
+    val snackbar = remember { SnackbarHostState() }
+    val archivedMessage = stringResource(R.string.card_archived)
+    val undoLabel = stringResource(R.string.action_undo)
+    LaunchedEffect(archivedNotice) {
+        val id = archivedNotice ?: return@LaunchedEffect
+        try {
+            val result = snackbar.showSnackbar(archivedMessage, actionLabel = undoLabel, duration = SnackbarDuration.Long)
+            if (result == SnackbarResult.ActionPerformed) onUndoArchive(id)
+        } finally {
+            // Also when the list leaves the screen mid-notice: coming back later must not offer the undo again.
+            onArchivedNoticeShown()
+        }
+    }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -98,6 +124,7 @@ fun CardListScreen(
                 },
             )
         },
+        snackbarHost = { SnackbarHost(snackbar) },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onAddCard,

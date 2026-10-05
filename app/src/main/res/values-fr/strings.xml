@@ -125,4 +125,8 @@
         <item quantity="many">%d doublons ignorés</item>
         <item quantity="other">%d doublons ignorés</item>
     </plurals>
+    <string name="action_archive">Archiver</string>
+    <string name="action_unarchive">Désarchiver</string>
+    <string name="card_archived">Carte archivée</string>
+    <string name="action_undo">Annuler</string>
 </resources>

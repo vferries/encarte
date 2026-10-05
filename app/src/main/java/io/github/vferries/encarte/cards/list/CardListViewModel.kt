@@ -57,6 +57,10 @@ class CardListViewModel(
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CardListUiState())
 
+    fun unarchive(id: Long) {
+        viewModelScope.launch { cards.setArchived(id, false) }
+    }
+
     fun setSortOrder(order: SortOrder) {
         viewModelScope.launch { settings.setSortOrder(order) }
     }

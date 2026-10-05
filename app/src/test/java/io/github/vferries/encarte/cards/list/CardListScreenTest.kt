@@ -25,18 +25,24 @@ class CardListScreenTest {
     private fun setScreen(
         state: CardListUiState,
         query: TextFieldState = TextFieldState(),
+        archivedNotice: Long? = null,
         onOpenCard: (Long) -> Unit = {},
         onImport: () -> Unit = {},
         onSortOrderChange: (SortOrder) -> Unit = {},
+        onUndoArchive: (Long) -> Unit = {},
+        onArchivedNoticeShown: () -> Unit = {},
     ) = composeRule.setContent {
         CardListScreen(
             state = state,
             query = query,
+            archivedNotice = archivedNotice,
             onSortOrderChange = onSortOrderChange,
             onOpenCard = onOpenCard,
             onAddCard = {},
             onOpenSettings = {},
             onImport = onImport,
+            onUndoArchive = onUndoArchive,
+            onArchivedNoticeShown = onArchivedNoticeShown,
         )
     }
 
@@ -136,5 +142,24 @@ class CardListScreenTest {
         composeRule.onNodeWithText("Expiry date").performClick()
 
         assertEquals(SortOrder.EXPIRY, order)
+    }
+
+    @Test
+    fun archivedNoticeOffersUndo() {
+        var undone: Long? = null
+        var shown = false
+        setScreen(
+            CardListUiState(isLoading = false, hasCards = true),
+            archivedNotice = 7,
+            onUndoArchive = { undone = it },
+            onArchivedNoticeShown = { shown = true },
+        )
+
+        composeRule.onNodeWithText("Card archived").assertIsDisplayed()
+        composeRule.onNodeWithText("Undo").performClick()
+        composeRule.waitForIdle()
+
+        assertEquals(7L, undone)
+        assertTrue(shown)
     }
 }
