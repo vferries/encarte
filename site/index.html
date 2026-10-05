@@ -5,31 +5,129 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Encarté — vos cartes de fidélité, hors-ligne</title>
 <meta name="description" content="Encarté range vos cartes de fidélité sur votre téléphone et affiche leur code-barres en caisse. Hors-ligne, sans compte, logiciel libre.">
+<link rel="canonical" href="https://encarte.fr/">
+<link rel="alternate" hreflang="fr" href="https://encarte.fr/">
+<link rel="alternate" hreflang="en" href="https://encarte.fr/en/">
+<link rel="alternate" hreflang="x-default" href="https://encarte.fr/">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:url" content="https://encarte.fr/">
+<meta property="og:title" content="Encarté — vos cartes de fidélité, hors-ligne">
+<meta property="og:description" content="Encarté range vos cartes de fidélité sur votre téléphone et affiche leur code-barres en caisse. Hors-ligne, sans compte, logiciel libre.">
+<meta property="og:image" content="https://encarte.fr/og-fr.png">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="style.css">
-<link rel="alternate" hreflang="en" href="en/">
 </head>
-<body>
+<body class="play-soon fdroid-soon">
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="./"><img src="icon.svg" alt="" width="32" height="32">Encarté</a>
+    <nav class="site-nav" aria-label="Menu">
+      <a class="anchor" href="#fonctionnalites">Fonctionnalités</a>
+      <a class="anchor" href="#vie-privee">Vie privée</a>
+      <a class="anchor" href="#faq">FAQ</a>
+      <a href="en/" hreflang="en" lang="en">English</a>
+    </nav>
+  </div>
+</header>
+
 <main>
-  <nav class="lang"><a href="en/" hreflang="en" lang="en">English</a></nav>
-  <header class="hero">
-    <img src="icon.svg" alt="" width="112" height="112">
-    <h1>Encarté</h1>
-    <p class="tagline">Vos cartes de fidélité. Rien d'autre.</p>
-  </header>
-  <ul class="promises">
-    <li><strong>Hors-ligne.</strong> L'application n'a pas accès à Internet : elle ne peut rien envoyer.</li>
-    <li><strong>Sans compte.</strong> Rien à créer, rien à synchroniser.</li>
-    <li><strong>Libre.</strong> Code source ouvert, sous licence GPL-3.0 ou ultérieure.</li>
-  </ul>
-  <p>Encarté range vos cartes de fidélité sur votre téléphone et affiche leur code-barres en caisse, luminosité au maximum. Scannez une carte, retrouvez-la en un instant, et sauvegardez le tout dans un fichier compatible Catima.</p>
-  <p class="links"><a href="https://github.com/vferries/encarte">Code source</a> · <a href="privacy.html">Confidentialité</a></p>
+  <section class="hero">
+    <div class="wrap">
+      <img class="hero-icon" src="icon.svg" alt="" width="84" height="84">
+      <h1>Vos cartes de fidélité.<br>Rien d'autre.</h1>
+      <p class="lead">Toutes vos cartes dans votre téléphone, prêtes en caisse en une seconde. Sans compte, sans pub, sans Internet.</p>
+      <div class="stores">
+        <a class="badge play-badge" href="https://play.google.com/store/apps/details?id=io.github.vferries.encarte"><img src="img/badges/play-fr.png" alt="Disponible sur Google Play" width="646" height="250"></a>
+        <p class="soon play-soon-text">Bientôt sur Google Play</p>
+        <a class="badge fdroid-badge" href="https://f-droid.org/packages/io.github.vferries.encarte/"><img src="img/badges/fdroid-fr.png" alt="Disponible sur F-Droid" width="646" height="250"></a>
+        <p class="soon fdroid-soon-text">Bientôt sur F-Droid</p>
+      </div>
+      <div class="fan">
+        <div class="phone side left"><img src="img/fr/display.png" alt="Une carte affichée en caisse" width="600" height="1347" loading="lazy"></div>
+        <div class="phone center"><img src="img/fr/list.png" alt="La liste des cartes" width="600" height="1347"></div>
+        <div class="phone side right"><img src="img/fr/empty.png" alt="L'écran d'accueil d'Encarté" width="600" height="1347" loading="lazy"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="features" id="fonctionnalites">
+    <div class="wrap">
+      <h2>Simple, rapide, en caisse</h2>
+      <div class="cards">
+        <div class="card">
+          <div class="icon teal"><svg viewBox="0 0 960 960" aria-hidden="true"><path d="M233,840L298,559L80,370L368,345L480,80L592,345L880,370L662,559L727,840L480,691L233,840Z"/></svg></div>
+          <h3>Toutes vos cartes au même endroit</h3>
+          <p>Favorites en haut, recherche instantanée, tri par nom ou par usage récent.</p>
+        </div>
+        <div class="card">
+          <div class="icon mustard"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h2v14H3zM7 5h1v14H7zM10 5h3v14h-3zM15 5h1v14h-1zM18 5h3v14h-3z"/></svg></div>
+          <h3>Prête en caisse</h3>
+          <p>Code-barres en grand, luminosité au maximum, écran qui reste allumé.</p>
+        </div>
+        <div class="card">
+          <div class="icon navy"><svg viewBox="0 0 960 960" aria-hidden="true"><path d="M480,700Q555,700 607.5,647.5Q660,595 660,520Q660,445 607.5,392.5Q555,340 480,340Q405,340 352.5,392.5Q300,445 300,520Q300,595 352.5,647.5Q405,700 480,700ZM480,620Q438,620 409,591Q380,562 380,520Q380,478 409,449Q438,420 480,420Q522,420 551,449Q580,478 580,520Q580,562 551,591Q522,620 480,620ZM160,840Q127,840 103.5,816.5Q80,793 80,760L80,280Q80,247 103.5,223.5Q127,200 160,200L286,200L360,120L600,120L674,200L800,200Q833,200 856.5,223.5Q880,247 880,280L880,760Q880,793 856.5,816.5Q833,840 800,840L160,840ZM160,760L800,760Q800,760 800,760Q800,760 800,760L800,280Q800,280 800,280Q800,280 800,280L638,280L565,200L395,200L322,280L160,280Q160,280 160,280Q160,280 160,280L160,760Q160,760 160,760Q160,760 160,760ZM480,520Q480,520 480,520Q480,520 480,520L480,520Q480,520 480,520Q480,520 480,520L480,520L480,520L480,520L480,520L480,520Q480,520 480,520Q480,520 480,520L480,520Q480,520 480,520Q480,520 480,520L480,520Z"/></svg></div>
+          <h3>Ajoutez une carte en un instant</h3>
+          <p>Scannez-la avec l'appareil photo ou depuis une capture d'écran, ou tapez son numéro.</p>
+        </div>
+        <div class="card">
+          <div class="icon red"><svg viewBox="0 0 960 960" aria-hidden="true"><path d="M200,840Q167,840 143.5,816.5Q120,793 120,760L120,200Q120,167 143.5,143.5Q167,120 200,120L760,120Q793,120 816.5,143.5Q840,167 840,200L840,760Q840,793 816.5,816.5Q793,840 760,840L200,840ZM200,760L760,760Q760,760 760,760Q760,760 760,760L760,200Q760,200 760,200Q760,200 760,200L200,200Q200,200 200,200Q200,200 200,200L200,760Q200,760 200,760Q200,760 200,760ZM240,680L720,680L570,480L450,640L360,520L240,680ZM200,760Q200,760 200,760Q200,760 200,760L200,200Q200,200 200,200Q200,200 200,200L200,200Q200,200 200,200Q200,200 200,200L200,760Q200,760 200,760Q200,760 200,760L200,760Z"/></svg></div>
+          <h3>Recto, verso, notes</h3>
+          <p>Gardez une photo de chaque face et une note pour les infos utiles.</p>
+        </div>
+      </div>
+      <ul class="formats" aria-label="Codes pris en charge">
+        <li>QR code</li><li>EAN-13 / EAN-8</li><li>UPC-A / UPC-E</li><li>Code 128 / 39 / 93</li><li>Codabar</li><li>ITF</li><li>Aztec</li><li>Data Matrix</li><li>PDF417</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="privacy" id="vie-privee">
+    <div class="wrap">
+      <h2>Vos cartes restent chez vous</h2>
+      <p class="intro">Pour celles et ceux qui ne veulent pas qu'une app de cartes de fidélité en sache plus que nécessaire.</p>
+      <div class="cards">
+        <div class="card"><h3>Aucun accès à Internet</h3><p>L'app ne demande pas la permission réseau : elle ne pourrait rien envoyer, même si elle le voulait.</p></div>
+        <div class="card"><h3>Ni compte, ni pub, ni pistage</h3><p>Aucun outil de publicité ou de statistiques. Vous n'avez rien à créer.</p></div>
+        <div class="card"><h3>Compatible Catima</h3><p>Sauvegardes au format Catima, chiffrées si vous le voulez : changez d'app quand vous voulez.</p></div>
+        <div class="card"><h3>Logiciel libre</h3><p>Code source ouvert sous licence GPL-3.0 ou ultérieure, sur <a href="https://github.com/vferries/encarte">GitHub</a>.</p></div>
+      </div>
+      <p class="more"><a href="privacy.html">Lire la politique de confidentialité</a></p>
+    </div>
+  </section>
+
+  <section class="faq" id="faq">
+    <div class="wrap">
+      <h2>Questions fréquentes</h2>
+      <details open><summary>C'est vraiment gratuit ?</summary><p>Oui. Pas de publicité, pas d'achat intégré, pas d'abonnement. Encarté est un logiciel libre.</p></details>
+      <details><summary>Comment récupérer mes cartes sur un nouveau téléphone ?</summary><p>Dans les réglages, exportez une sauvegarde (avec un mot de passe pour la chiffrer), copiez le fichier sur le nouveau téléphone et importez-le. Le transfert direct d'Android d'un téléphone à l'autre peut aussi copier vos cartes.</p></details>
+      <details><summary>Je viens de Catima, comment faire ?</summary><p>Exportez vos cartes depuis Catima, puis importez le fichier dans Encarté (Réglages → Importer des cartes). Les cartes et leurs photos sont reprises. L'inverse marche aussi.</p></details>
+      <details><summary>Et sur iPhone ?</summary><p>Encarté n'existe que sur Android pour l'instant.</p></details>
+      <details><summary>Pourquoi je ne vois pas les logos des enseignes ?</summary><p>Les logos appartiennent aux enseignes : les intégrer poserait des problèmes de droits et rendrait l'app non libre. Les enseignes connues reçoivent leur couleur, et vous pouvez ajouter une photo de la vraie carte.</p></details>
+      <details><summary>Et si je perds mon téléphone ?</summary><p>Vos cartes ne sont que sur votre téléphone : exportez une sauvegarde de temps en temps. Le verrouillage facultatif protège l'app par empreinte, visage ou code de l'appareil.</p></details>
+    </div>
+  </section>
+
+  <section class="closing">
+    <div class="wrap">
+      <h2>Prêt à alléger votre portefeuille ?</h2>
+      <div class="stores">
+        <a class="badge play-badge" href="https://play.google.com/store/apps/details?id=io.github.vferries.encarte"><img src="img/badges/play-fr.png" alt="Disponible sur Google Play" width="646" height="250" loading="lazy"></a>
+        <p class="soon play-soon-text">Bientôt sur Google Play</p>
+        <a class="badge fdroid-badge" href="https://f-droid.org/packages/io.github.vferries.encarte/"><img src="img/badges/fdroid-fr.png" alt="Disponible sur F-Droid" width="646" height="250" loading="lazy"></a>
+        <p class="soon fdroid-soon-text">Bientôt sur F-Droid</p>
+      </div>
+    </div>
+  </section>
 </main>
-<footer>
-  <h2>Mentions légales</h2>
-  <p>Éditeur : Vincent Ferries. Contact : <a href="https://github.com/vferries/encarte/issues">suivi des tickets sur GitHub</a>.<br>
-  Hébergeur : GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis.</p>
-  <p>Ce site n'utilise ni cookie ni traceur.</p>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p class="links"><a href="privacy.html">Confidentialité</a> · <a href="https://github.com/vferries/encarte">Code source</a> · <a href="en/" hreflang="en" lang="en">English</a></p>
+    <p class="legal">Éditeur : Vincent Ferries. Contact : <a href="https://github.com/vferries/encarte/issues">suivi des tickets sur GitHub</a>. Hébergeur : GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis. Ce site n'utilise ni cookie ni traceur.</p>
+    <p class="legal play-badge">Google Play et le logo Google Play sont des marques de Google LLC.</p>
+    <p class="legal fdroid-badge">Badge F-Droid : F-Droid, <a href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a>.</p>
+  </div>
 </footer>
 </body>
 </html>
