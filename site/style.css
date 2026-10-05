@@ -20,6 +20,7 @@
   --band-muted: #C9C3B8;
   --band-link: #7FD1C7;
   --shadow: 0 10px 28px rgba(29, 36, 64, 0.22);
+  color-scheme: light dark;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -55,7 +56,7 @@ img { max-width: 100%; height: auto; }
 .wrap { max-width: 72rem; margin: 0 auto; padding: 0 1rem; }
 
 /* Header */
-.site-header .wrap { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-block: 1rem; }
+.site-header .wrap { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; padding-block: 1rem; }
 .brand { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--text); text-decoration: none; font-weight: 900; font-size: 1.25rem; }
 .brand img { width: 2rem; height: 2rem; border-radius: 0.5rem; }
 .site-nav { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.25rem 1.25rem; font-size: 0.9375rem; }
@@ -66,7 +67,7 @@ img { max-width: 100%; height: auto; }
 /* Clip only sideways: the rotated side phones must not cause horizontal scroll, but the phones overflow downward. */
 .hero { text-align: center; padding-top: 1.5rem; overflow-x: clip; position: relative; z-index: 1; }
 .hero-icon { width: 5.25rem; height: 5.25rem; border-radius: 1.25rem; box-shadow: 0 4px 14px rgba(29, 36, 64, 0.18); }
-h1 { font-size: clamp(2.25rem, 6vw, 3.5rem); font-weight: 900; line-height: 1.05; letter-spacing: -0.01em; margin: 1rem 0 0; }
+h1 { overflow-wrap: break-word; font-size: clamp(2.25rem, 6vw, 3.5rem); font-weight: 900; line-height: 1.05; letter-spacing: -0.01em; margin: 1rem 0 0; }
 .lead { font-size: clamp(1.0625rem, 2.2vw, 1.25rem); font-weight: 600; color: var(--muted); max-width: 36rem; margin: 1rem auto 1.5rem; }
 
 /* Store area. A badge appears only once its listing is live: remove play-soon / fdroid-soon from <body> then. */
@@ -88,7 +89,7 @@ body:not(.play-soon) .play-soon-text, body:not(.fdroid-soon) .fdroid-soon-text {
 
 /* Sections */
 main > section { padding: clamp(2.5rem, 6vw, 4.5rem) 0; }
-h2 { font-size: clamp(1.75rem, 4vw, 2.25rem); font-weight: 900; line-height: 1.15; text-align: center; margin: 0 0 1.5rem; }
+h2 { overflow-wrap: break-word; font-size: clamp(1.75rem, 4vw, 2.25rem); font-weight: 900; line-height: 1.15; text-align: center; margin: 0 0 1.5rem; }
 .features, .closing { background: var(--bg-alt); }
 /* The features background starts behind the phones' lower third, so they stand across the two sections. */
 .features {
@@ -116,14 +117,15 @@ h2 { font-size: clamp(1.75rem, 4vw, 2.25rem); font-weight: 900; line-height: 1.1
 .privacy .card { background: var(--band-surface); }
 .privacy .card p { color: var(--band-muted); }
 .privacy a { color: var(--band-link); }
+.privacy a:focus-visible { outline-color: var(--band-link); }
 .privacy .more { text-align: center; margin: 1.75rem 0 0; }
 
 .faq .wrap { max-width: 48rem; }
 details { border-bottom: 2px solid var(--rule); padding: 0.9rem 0; }
 summary { display: flex; justify-content: space-between; gap: 1rem; font-weight: 800; font-size: 1.0625rem; cursor: pointer; list-style: none; }
 summary::-webkit-details-marker { display: none; }
-summary::after { content: "+"; font-weight: 900; color: var(--link); }
-details[open] > summary::after { content: "–"; }
+summary::after { content: "+"; content: "+" / ""; font-weight: 900; color: var(--link); }
+details[open] > summary::after { content: "–"; content: "–" / ""; }
 details p { margin: 0.5rem 0 0; color: var(--muted); }
 
 .closing { text-align: center; }
