@@ -39,19 +39,24 @@ fun preferencesStore(
 )
 
 /**
- * The store's values, or the defaults while it cannot be read. A read error ends DataStore's flow, so the store is
- * read again after a growing delay: without that, the app lock and the home screen would keep the defaults until the
- * process restarts. A value read starts the delays over.
+ * The store's values, or the defaults until a first value could be read. A read error ends DataStore's flow, so the
+ * store is read again after a growing delay: without that, the app lock and the home screen would keep the defaults
+ * until the process restarts. A value read starts the delays over. An edit made during a delay shows at the next read.
  */
 fun DataStore<Preferences>.dataOrDefaults(tag: String, what: String): Flow<Preferences> = flow {
     var retryDelayMs = FIRST_RETRY_DELAY_MS
+    var hasValue = false
     emitAll(
         data
-            .onEach { retryDelayMs = FIRST_RETRY_DELAY_MS }
+            .onEach {
+                hasValue = true
+                retryDelayMs = FIRST_RETRY_DELAY_MS
+            }
             .retryWhen { e, _ ->
                 if (e !is IOException) return@retryWhen false
-                Log.e(tag, "Cannot read $what, using the defaults and reading again in $retryDelayMs ms", e)
-                emit(emptyPreferences())
+                Log.e(tag, "Cannot read $what, reading again in $retryDelayMs ms", e)
+                // A value already read beats the defaults: falling back to them would turn the app lock off.
+                if (!hasValue) emit(emptyPreferences())
                 delay(retryDelayMs)
                 retryDelayMs = (retryDelayMs * 2).coerceAtMost(MAX_RETRY_DELAY_MS)
                 true

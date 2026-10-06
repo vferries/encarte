@@ -5,7 +5,6 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.vferries.encarte.launcher.WidgetSource
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
@@ -19,11 +18,9 @@ import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import org.junit.runner.RunWith
 import java.io.File
 import java.io.IOException
 
-@RunWith(AndroidJUnit4::class)
 class WidgetSourceStoreTest {
     @get:Rule
     val tmp = TemporaryFolder()

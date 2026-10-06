@@ -10,11 +10,16 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -53,6 +58,50 @@ class PreferencesStoresTest {
         val values = store.dataOrDefaults(tag = "Test", what = "the test values").toList()
 
         assertEquals(listOf(emptyPreferences(), emptyPreferences(), STORED), values)
+    }
+
+    @Test
+    fun aReadErrorAfterAValueKeepsThatValue() = runTest {
+        val store = FlakyStore(listOf(Read.VALUE_THEN_FAIL, Read.VALUE), now = { testScheduler.currentTime })
+
+        val values = store.dataOrDefaults(tag = "Test", what = "the test values").toList()
+
+        assertEquals(listOf(STORED, STORED), values)
+    }
+
+    @Test
+    fun theDefaultsComeWithoutWaiting() = runTest {
+        val store = FlakyStore(listOf(Read.FAIL, Read.VALUE), now = { testScheduler.currentTime })
+
+        val firstValueAt = store.dataOrDefaults(tag = "Test", what = "the test values")
+            .map { testScheduler.currentTime }
+            .first()
+
+        assertEquals(0L, firstValueAt)
+    }
+
+    @Test
+    fun eachCollectorWaitsOnItsOwn() = runTest {
+        val store = FlakyStore(List(6) { Read.FAIL } + List(2) { Read.VALUE }, now = { testScheduler.currentTime })
+        val values = store.dataOrDefaults(tag = "Test", what = "the test values")
+
+        listOf(async { values.toList() }, async { values.toList() }).awaitAll()
+
+        assertEquals(listOf(0L, 0, 1_000, 1_000, 3_000, 3_000, 7_000, 7_000), store.readTimes)
+    }
+
+    @Test
+    fun aRealStoreIsReadAgainOnceItsFileCanBeRead() = runTest {
+        // A directory where the store expects its file makes every read fail with an IOException.
+        val file = File(tmp.root, "settings.preferences_pb").apply { mkdir() }
+        val store = preferencesStore(scope = backgroundScope) { file }
+        val values = async { store.dataOrDefaults(tag = "Test", what = "the test values").take(2).toList() }
+        runCurrent()
+
+        file.delete()
+        store.edit { it[booleanPreferencesKey("flag")] = true }
+
+        assertEquals(listOf(emptyPreferences(), STORED), values.await())
     }
 
     @Test

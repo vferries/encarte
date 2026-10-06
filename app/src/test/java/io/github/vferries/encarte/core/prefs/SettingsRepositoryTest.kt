@@ -3,7 +3,6 @@ package io.github.vferries.encarte.core.prefs
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
@@ -18,11 +17,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import org.junit.runner.RunWith
 import java.io.File
 import java.io.IOException
 
-@RunWith(AndroidJUnit4::class)
 class SettingsRepositoryTest {
     @get:Rule
     val tmp = TemporaryFolder()
