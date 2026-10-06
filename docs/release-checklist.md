@@ -45,6 +45,10 @@ F-Droid in `docs/release/fdroid/README.md`.
       starts. Leave the card screen and try again: contactless payment works.
 - [ ] Install the previous release, add cards with photos, then install the new build over it: every card and photo
       is still there.
+- [ ] Widget: place it and choose a group: its cards show. Tap a card: it opens, and Back returns to the list.
+      Turn the app lock on: the widget shows only the lock.
+- [ ] Shortcuts: long-press the app icon: up to 3 cards and "Add a card". Drag a card onto the home screen, then
+      turn the app lock on: the menu keeps only "Add a card", and the pinned shortcut reads "Encarté".
 - [ ] Rotate on every screen; "Don't keep activities" round-trip on the card display and the editor.
 - [ ] Bump `versionName` (`MAJOR.MINOR.PATCH`) and `versionCode` (`MAJOR*10000 + MINOR*100 + PATCH`)
       in `app/build.gradle.kts`.
