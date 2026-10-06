@@ -1,7 +1,6 @@
 package io.github.vferries.encarte.scan
 
 import android.content.Context
-import android.graphics.Bitmap
 import android.util.Log
 import android.util.Size
 import androidx.camera.core.CameraControl
@@ -19,22 +18,20 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewModelScope
-import io.github.vferries.encarte.core.ui.decodeSampledBitmap
-import kotlinx.coroutines.Dispatchers
+import io.github.vferries.encarte.importing.ImportFailure
+import io.github.vferries.encarte.importing.ImportOutcome
+import io.github.vferries.encarte.importing.failure
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.io.IOException
 import java.io.InputStream
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 private const val TAG = "ScannerViewModel"
-private const val GALLERY_MAX_SIDE = 2048
 
 data class ScannerUiState(
     val surfaceRequest: SurfaceRequest? = null,
@@ -42,11 +39,16 @@ data class ScannerUiState(
     val torchOn: Boolean = false,
     val cameraUnavailable: Boolean = false,
     val result: ScannedCode? = null,
-    val imageNotDecoded: Boolean = false,
+    /** A pass or a PDF read from a picked file: the editor or the chooser replaces the scanner. */
+    val fileResult: ImportOutcome? = null,
+    /** Why the picked file gave no card. */
+    val fileError: ImportFailure? = null,
+    val readingFile: Boolean = false,
 )
 
 class ScannerViewModel(
-    private val decodeImage: (Bitmap) -> ScannedCode? = { BarcodeScanner().scan(it) },
+    /** Copies, reads and deletes a picked file: FileImport.importPicked. */
+    private val readFile: suspend (open: () -> InputStream) -> ImportOutcome,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ScannerUiState())
@@ -120,18 +122,19 @@ class ScannerViewModel(
         }, Runnable::run)
     }
 
-    fun scanImage(open: () -> InputStream) {
-        _uiState.update { it.copy(imageNotDecoded = false) }
+    fun readPickedFile(open: () -> InputStream) {
+        _uiState.update { it.copy(fileError = null, readingFile = true) }
         viewModelScope.launch {
-            val found = withContext(Dispatchers.IO) {
-                try {
-                    decodeSampledBitmap(GALLERY_MAX_SIDE, open)?.let(decodeImage)
-                } catch (e: IOException) {
-                    Log.w(TAG, "Cannot read picked image", e)
-                    null
-                }
+            val outcome = readFile(open)
+            _uiState.update { state ->
+                val failure = outcome.failure
+                when {
+                    // An image is scanned like a camera frame.
+                    outcome is ImportOutcome.Image && outcome.code != null -> state.copy(result = outcome.code)
+                    failure != null -> state.copy(fileError = failure)
+                    else -> state.copy(fileResult = outcome)
+                }.copy(readingFile = false)
             }
-            _uiState.update { if (found != null) it.copy(result = found) else it.copy(imageNotDecoded = true) }
         }
     }
 

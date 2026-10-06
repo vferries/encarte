@@ -1,5 +1,6 @@
 package io.github.vferries.encarte.navigation
 
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -30,6 +31,8 @@ import io.github.vferries.encarte.scan.ScannerViewModel
 import io.github.vferries.encarte.settings.SettingsRoute
 import io.github.vferries.encarte.settings.SettingsViewModel
 import kotlin.reflect.KClass
+
+private const val TAG = "EncarteNavHost"
 
 @Composable
 fun EncarteNavHost(container: AppContainer, initialBackStack: List<NavKey> = listOf(CardListKey)) {
@@ -88,16 +91,16 @@ fun EncarteNavHost(container: AppContainer, initialBackStack: List<NavKey> = lis
             }
             entry<ScannerKey> { key ->
                 ScannerRoute(
-                    viewModel = viewModel { ScannerViewModel() },
+                    viewModel = viewModel { ScannerViewModel(container.fileImport::importPicked) },
                     onBack = pop,
-                    onScanned = { code ->
-                        replaceTopIf(
-                            ScannerKey::class,
-                            CardEditKey(
-                                barcodeValue = code.value, barcodeFormat = code.format,
-                                unsupportedFormat = code.format == null, groupId = key.groupId,
-                            ),
-                        )
+                    onScanned = { code -> replaceTopIf(ScannerKey::class, code.editKey(key.groupId)) },
+                    onFileRead = { outcome ->
+                        val next = outcome.destination(key.groupId)
+                        if (next != null) {
+                            replaceTopIf(ScannerKey::class, next)
+                        } else {
+                            Log.w(TAG, "A read file without a screen to open: ${outcome::class.simpleName}")
+                        }
                     },
                     onManualEntry = { replaceTopIf(ScannerKey::class, CardEditKey(groupId = key.groupId)) },
                 )

@@ -10,7 +10,6 @@ import android.provider.Settings
 import android.util.Log
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.compose.CameraXViewfinder
 import androidx.compose.foundation.background
@@ -29,6 +28,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -56,13 +56,20 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.vferries.encarte.R
+import io.github.vferries.encarte.importing.ImportOutcome
 import io.github.vferries.encarte.lock.LocalContentCovered
-import java.io.IOException
+import java.io.FileNotFoundException
 
 private const val TAG = "ScannerScreen"
 
-// Two buttons share one row: Material's 24 dp side padding would wrap longer labels ("Depuis une image").
+// Two buttons share one row: Material's 24 dp side padding would wrap longer labels ("Image ou fichier").
 private val SideBySideButtonPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+
+// Some sources label a .pkpass application/octet-stream; the content decides what the file is.
+private val PICKABLE_TYPES = arrayOf(
+    "image/*", "application/pdf", "application/vnd.apple.pkpass", "application/vnd-com.apple.pkpass",
+    "application/octet-stream",
+)
 
 enum class CameraPermission { GRANTED, NOT_GRANTED, PERMANENTLY_DENIED }
 
@@ -71,6 +78,8 @@ fun ScannerRoute(
     viewModel: ScannerViewModel,
     onBack: () -> Unit,
     onScanned: (ScannedCode) -> Unit,
+    /** A pass or a PDF: always an outcome with a screen to open (a draft or a choice). */
+    onFileRead: (ImportOutcome) -> Unit,
     onManualEntry: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -88,9 +97,12 @@ fun ScannerRoute(
             else -> CameraPermission.PERMANENTLY_DENIED
         }
     }
-    val pickImage = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri: Uri? ->
+    val pickFile = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         if (uri != null) {
-            viewModel.scanImage { context.contentResolver.openInputStream(uri) ?: throw IOException("Cannot open picked image") }
+            // A null stream must map to CANNOT_OPEN like any I/O failure, not crash with a NullPointerException.
+            viewModel.readPickedFile {
+                context.contentResolver.openInputStream(uri) ?: throw FileNotFoundException("Cannot open picked file")
+            }
         }
     }
 
@@ -106,6 +118,9 @@ fun ScannerRoute(
     LaunchedEffect(state.result) {
         state.result?.let(onScanned)
     }
+    LaunchedEffect(state.fileResult) {
+        state.fileResult?.let(onFileRead)
+    }
 
     ScannerScreen(
         state = state,
@@ -115,11 +130,11 @@ fun ScannerRoute(
         onOpenSettings = { context.openAppSettings() },
         onToggleTorch = { viewModel.setTorch(!state.torchOn) },
         onManualEntry = onManualEntry,
-        onPickImage = {
+        onPickFile = {
             try {
-                pickImage.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                pickFile.launch(PICKABLE_TYPES)
             } catch (e: ActivityNotFoundException) {
-                Log.w(TAG, "No photo picker available", e)
+                Log.w(TAG, "No document picker available", e)
             }
         },
     )
@@ -173,7 +188,7 @@ fun ScannerScreen(
     onOpenSettings: () -> Unit,
     onToggleTorch: () -> Unit,
     onManualEntry: () -> Unit,
-    onPickImage: () -> Unit,
+    onPickFile: () -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -223,9 +238,11 @@ fun ScannerScreen(
                     }
                 }
             }
-            if (state.imageNotDecoded) {
+            if (state.readingFile) LinearProgressIndicator(Modifier.fillMaxWidth())
+            val fileError = state.fileError
+            if (fileError != null) {
                 Text(
-                    stringResource(R.string.no_barcode_in_image),
+                    stringResource(fileError.message),
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 )
@@ -245,13 +262,15 @@ fun ScannerScreen(
                     Text(stringResource(R.string.action_enter_manually), Modifier.padding(start = 8.dp))
                 }
                 OutlinedButton(
-                    onClick = onPickImage,
+                    onClick = onPickFile,
+                    // One file at a time: a second pick while a PDF is read would race the first.
+                    enabled = !state.readingFile,
                     modifier = Modifier.weight(1f).fillMaxHeight(),
                     shape = MaterialTheme.shapes.small,
                     contentPadding = SideBySideButtonPadding,
                 ) {
                     Icon(painterResource(R.drawable.ic_image), contentDescription = null)
-                    Text(stringResource(R.string.action_from_image), Modifier.padding(start = 8.dp))
+                    Text(stringResource(R.string.action_image_or_file), Modifier.padding(start = 8.dp))
                 }
             }
         }

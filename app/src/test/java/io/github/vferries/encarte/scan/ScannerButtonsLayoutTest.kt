@@ -6,6 +6,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.vferries.encarte.core.ui.theme.EncarteTheme
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -19,9 +20,9 @@ class ScannerButtonsLayoutTest {
     @get:Rule
     val composeRule = createComposeRule()
 
-    // Robolectric wraps "Depuis une image" alone at 380 dp, as a 360 dp phone does.
+    // Robolectric wraps "Image ou fichier" alone between 362 and 368 dp (a 360 dp phone wraps both labels).
     @Test
-    @Config(qualifiers = "fr-w380dp-h800dp")
+    @Config(qualifiers = "fr-w364dp-h800dp")
     fun sideBySideButtonsKeepTheSameHeightWhenOneLabelWraps() {
         composeRule.setContent {
             EncarteTheme {
@@ -33,13 +34,16 @@ class ScannerButtonsLayoutTest {
                     onOpenSettings = {},
                     onToggleTorch = {},
                     onManualEntry = {},
-                    onPickImage = {},
+                    onPickFile = {},
                 )
             }
         }
 
+        val manualLabel = composeRule.onNodeWithText("Saisir à la main", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val imageLabel = composeRule.onNodeWithText("Image ou fichier", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        assertTrue("only one label wraps", imageLabel.bottom - imageLabel.top > manualLabel.bottom - manualLabel.top)
         val manual = composeRule.onNodeWithText("Saisir à la main").getUnclippedBoundsInRoot()
-        val image = composeRule.onNodeWithText("Depuis une image").getUnclippedBoundsInRoot()
+        val image = composeRule.onNodeWithText("Image ou fichier").getUnclippedBoundsInRoot()
 
         assertEquals(image.bottom - image.top, manual.bottom - manual.top)
     }

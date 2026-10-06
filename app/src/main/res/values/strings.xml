@@ -71,7 +71,7 @@
     <string name="scan_title">Scan a card</string>
     <string name="scan_hint">Point the camera at the card\'s barcode</string>
     <string name="action_enter_manually">Enter manually</string>
-    <string name="action_from_image">From an image</string>
+    <string name="action_image_or_file">Image or file</string>
     <string name="action_torch_on">Turn on flashlight</string>
     <string name="action_torch_off">Turn off flashlight</string>
     <string name="camera_permission_rationale">Encarté needs the camera to scan barcodes. Images never leave your device.</string>

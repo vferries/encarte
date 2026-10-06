@@ -5,11 +5,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.github.vferries.encarte.importing.ImportFailure
 import io.github.vferries.encarte.lock.LocalContentCovered
 import kotlinx.coroutines.awaitCancellation
 import org.junit.Assert.assertEquals
@@ -26,18 +28,24 @@ class ScannerScreenTest {
     private var settingsOpened = false
     private var manual = false
     private var requested = false
+    private var picks = 0
+    private var screenState by mutableStateOf(ScannerUiState())
 
-    private fun setScreen(state: ScannerUiState, permission: CameraPermission) = composeRule.setContent {
-        ScannerScreen(
-            state = state,
-            permission = permission,
-            onBack = {},
-            onRequestPermission = { requested = true },
-            onOpenSettings = { settingsOpened = true },
-            onToggleTorch = {},
-            onManualEntry = { manual = true },
-            onPickImage = {},
-        )
+    /** Later changes to [screenState] recompose the screen. */
+    private fun setScreen(state: ScannerUiState, permission: CameraPermission) {
+        screenState = state
+        composeRule.setContent {
+            ScannerScreen(
+                state = screenState,
+                permission = permission,
+                onBack = {},
+                onRequestPermission = { requested = true },
+                onOpenSettings = { settingsOpened = true },
+                onToggleTorch = {},
+                onManualEntry = { manual = true },
+                onPickFile = { picks++ },
+            )
+        }
     }
 
     @Test
@@ -60,13 +68,41 @@ class ScannerScreenTest {
 
     @Test
     fun alternativesAreAlwaysAvailable() {
-        setScreen(ScannerUiState(imageNotDecoded = true), CameraPermission.GRANTED)
+        setScreen(ScannerUiState(fileError = ImportFailure.NO_CODE_IN_IMAGE), CameraPermission.GRANTED)
 
         composeRule.onNodeWithText("No barcode found in this image.").assertIsDisplayed()
-        composeRule.onNodeWithText("From an image").assertIsDisplayed()
+        composeRule.onNodeWithText("Image or file").performClick()
         composeRule.onNodeWithText("Enter manually").performClick()
 
         assertTrue(manual)
+        assertEquals(1, picks)
+    }
+
+    @Test
+    fun eachFileErrorShowsUnderTheCamera() {
+        val messages = mapOf(
+            ImportFailure.UNRECOGNIZED_FILE to "Unrecognized file.",
+            ImportFailure.UNRECOGNIZED_PASS to "This file isn't a recognized pass.",
+            ImportFailure.PDF_UNREADABLE to "Can't read this PDF (protected or damaged).",
+            ImportFailure.NO_CODE_IN_PDF to "No barcode found in this PDF.",
+            ImportFailure.NO_CODE_IN_IMAGE to "No barcode found in this image.",
+            ImportFailure.CANNOT_OPEN to "Can't open this file.",
+            ImportFailure.FILE_GONE to "This file is no longer available.",
+        )
+        assertEquals(ImportFailure.entries.toSet(), messages.keys)
+        setScreen(ScannerUiState(), CameraPermission.GRANTED)
+
+        for ((failure, message) in messages) {
+            screenState = ScannerUiState(fileError = failure)
+            composeRule.onNodeWithText(message).assertIsDisplayed()
+        }
+    }
+
+    @Test
+    fun aFileBeingReadBlocksASecondPick() {
+        setScreen(ScannerUiState(readingFile = true), CameraPermission.GRANTED)
+
+        composeRule.onNodeWithText("Image or file").assertIsNotEnabled()
     }
 
     private var covered by mutableStateOf(true)

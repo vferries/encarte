@@ -70,7 +70,7 @@
     <string name="scan_title">Scanner une carte</string>
     <string name="scan_hint">Visez le code-barres de la carte</string>
     <string name="action_enter_manually">Saisir à la main</string>
-    <string name="action_from_image">Depuis une image</string>
+    <string name="action_image_or_file">Image ou fichier</string>
     <string name="action_torch_on">Allumer la lampe</string>
     <string name="action_torch_off">Éteindre la lampe</string>
     <string name="camera_permission_rationale">Encarté a besoin de l\'appareil photo pour scanner les codes-barres. Les images ne quittent jamais votre appareil.</string>
