@@ -85,7 +85,7 @@ class FileImport(
     private fun needsCopy(head: ByteArray) = head.startsWith(PDF_SIGNATURE) || head.startsWith(ZIP_SIGNATURE)
 
     private fun decodePicked(open: () -> InputStream): ImportOutcome {
-        val decoded = files.providerOrNull { files.providerCall { Decoded(decodeSampledBitmap(IMAGE_MAX_SIDE, open)) } }
+        val decoded = files.providerOrNull { Decoded(decodeSampledBitmap(IMAGE_MAX_SIDE) { files.providerCall(open) }) }
             ?: return ImportOutcome.Failure(ImportFailure.CANNOT_OPEN)
         val bitmap = decoded.bitmap
         if (bitmap == null) {
