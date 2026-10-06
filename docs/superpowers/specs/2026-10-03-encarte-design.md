@@ -190,7 +190,7 @@ Sorting and search run in Kotlin over the full card list. A user has at most hun
 
 ## 9. Brand catalog
 
-- `assets/brands.json` contains `[{ "name": "Carrefour", "aliases": ["Carrefour Market", "Carrefour City"], "color": "#RRGGBB" }, …]`, with roughly 100–150 common French retail brands for v1.
+- `assets/brands.json` contains `[{ "name": "Carrefour", "aliases": ["Carrefour Market", "Carrefour City"], "color": "#RRGGBB" }, …]`, with roughly 100–150 common French retail brands for v1 (224 as of 1.1).
 - Only names and colors are bundled, never logos. Colors are approximations of the brands' primary colors, and the user can always override them.
 - `BrandCatalog` loads the file lazily once and exposes:
   - `suggest(query): List<Brand>` (normalized prefix match first, then substring match, at most 5 results);

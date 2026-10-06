@@ -1,5 +1,24 @@
 [
   {
+    "name": "Action",
+    "aliases": [],
+    "color": "#001489"
+  },
+  {
+    "name": "Ada",
+    "aliases": [
+      "Ada Location"
+    ],
+    "color": "#FE0036"
+  },
+  {
+    "name": "Adidas",
+    "aliases": [
+      "Adiclub"
+    ],
+    "color": "#000000"
+  },
+  {
     "name": "Alain Afflelou",
     "aliases": [
       "Afflelou"
@@ -14,6 +33,11 @@
     "color": "#001E78"
   },
   {
+    "name": "Alinéa",
+    "aliases": [],
+    "color": "#000000"
+  },
+  {
     "name": "ALL Accor",
     "aliases": [
       "Accor",
@@ -21,7 +45,15 @@
       "AccorHotels",
       "Ibis",
       "Novotel",
-      "Mercure"
+      "Mercure",
+      "Hôtel F1",
+      "Formule 1",
+      "Sofitel",
+      "Pullman",
+      "MGallery",
+      "Adagio",
+      "Mama Shelter",
+      "Greet"
     ],
     "color": "#12283B"
   },
@@ -52,7 +84,9 @@
       "Auchan Hypermarché",
       "My Auchan",
       "Auchan Piéton",
-      "Auchan Drive"
+      "Auchan Drive",
+      "Simply Market",
+      "Atac"
     ],
     "color": "#D6180B"
   },
@@ -64,14 +98,33 @@
     "color": "#01972B"
   },
   {
+    "name": "Avis",
+    "aliases": [
+      "Avis Preferred"
+    ],
+    "color": "#D50028"
+  },
+  {
     "name": "Basic-Fit",
     "aliases": [],
     "color": "#EB6800"
   },
   {
+    "name": "B&B Hotels",
+    "aliases": [
+      "B and B Hotels"
+    ],
+    "color": "#BEE500"
+  },
+  {
     "name": "Beauty Success",
     "aliases": [],
     "color": "#DC161C"
+  },
+  {
+    "name": "Bershka",
+    "aliases": [],
+    "color": "#000000"
   },
   {
     "name": "Besson Chaussures",
@@ -102,6 +155,14 @@
     "name": "Boulanger",
     "aliases": [],
     "color": "#FD5300"
+  },
+  {
+    "name": "BP",
+    "aliases": [
+      "BP Station",
+      "BP France"
+    ],
+    "color": "#009900"
   },
   {
     "name": "Brico Dépôt",
@@ -149,6 +210,21 @@
     "color": "#000000"
   },
   {
+    "name": "Calzedonia",
+    "aliases": [],
+    "color": "#000000"
+  },
+  {
+    "name": "Campanile",
+    "aliases": [],
+    "color": "#23AC74"
+  },
+  {
+    "name": "Carglass",
+    "aliases": [],
+    "color": "#E4140A"
+  },
+  {
     "name": "Carrefour",
     "aliases": [
       "Carrefour Market",
@@ -157,7 +233,10 @@
       "Carrefour Contact",
       "Carrefour Montagne",
       "Carrefour Drive",
-      "Proxi"
+      "Proxi",
+      "Supeco",
+      "Carrefour Bio",
+      "Carrefour Voyages"
     ],
     "color": "#254F9B"
   },
@@ -167,7 +246,9 @@
       "Petit Casino",
       "Casino Shop",
       "Casino Proximité",
-      "Casino Max"
+      "Casino Max",
+      "Vival",
+      "Sherpa"
     ],
     "color": "#E1002B"
   },
@@ -184,6 +265,11 @@
     "color": "#DA1F3D"
   },
   {
+    "name": "Centrakor",
+    "aliases": [],
+    "color": "#50B6B2"
+  },
+  {
     "name": "CGR",
     "aliases": [
       "CGR Cinémas",
@@ -195,6 +281,33 @@
     "name": "Chaussea",
     "aliases": [],
     "color": "#21201E"
+  },
+  {
+    "name": "Cinéville",
+    "aliases": [],
+    "color": "#009BDF"
+  },
+  {
+    "name": "Claire's",
+    "aliases": [],
+    "color": "#544192"
+  },
+  {
+    "name": "Clarins",
+    "aliases": [],
+    "color": "#B40024"
+  },
+  {
+    "name": "Club Med",
+    "aliases": [
+      "Club Méditerranée"
+    ],
+    "color": "#00558A"
+  },
+  {
+    "name": "Colruyt",
+    "aliases": [],
+    "color": "#F5822A"
   },
   {
     "name": "Columbus Café",
@@ -210,6 +323,20 @@
     "color": "#E30613"
   },
   {
+    "name": "Cora",
+    "aliases": [
+      "Cora Drive"
+    ],
+    "color": "#E61845"
+  },
+  {
+    "name": "Costa Coffee",
+    "aliases": [
+      "Costa"
+    ],
+    "color": "#860026"
+  },
+  {
     "name": "Costco",
     "aliases": [
       "Costco Wholesale"
@@ -222,9 +349,19 @@
     "color": "#EA580C"
   },
   {
+    "name": "Courtepaille",
+    "aliases": [],
+    "color": "#D70A28"
+  },
+  {
     "name": "Cultura",
     "aliases": [],
     "color": "#25327B"
+  },
+  {
+    "name": "Damart",
+    "aliases": [],
+    "color": "#ED2A24"
   },
   {
     "name": "Darty",
@@ -244,11 +381,30 @@
     "color": "#C8102E"
   },
   {
+    "name": "Devred",
+    "aliases": [
+      "Devred 1902"
+    ],
+    "color": "#1A1A1A"
+  },
+  {
     "name": "Domino's",
     "aliases": [
       "Domino's Pizza"
     ],
     "color": "#0090E2"
+  },
+  {
+    "name": "Du Pareil au Même",
+    "aliases": [
+      "DPAM"
+    ],
+    "color": "#DB042D"
+  },
+  {
+    "name": "Easy Cash",
+    "aliases": [],
+    "color": "#C80515"
   },
   {
     "name": "E.Leclerc",
@@ -257,9 +413,18 @@
       "Centre E.Leclerc",
       "E.Leclerc Drive",
       "E.Leclerc Express",
-      "Espace Culturel E.Leclerc"
+      "Espace Culturel E.Leclerc",
+      "Leclerc Location",
+      "E.Leclerc Voyages",
+      "Leclerc Voyages",
+      "E.Leclerc Parapharmacie"
     ],
     "color": "#0B70B5"
+  },
+  {
+    "name": "Electro Dépôt",
+    "aliases": [],
+    "color": "#FFB700"
   },
   {
     "name": "Eram",
@@ -279,6 +444,11 @@
     "color": "#0B1215"
   },
   {
+    "name": "Euromaster",
+    "aliases": [],
+    "color": "#0E4393"
+  },
+  {
     "name": "Europcar",
     "aliases": [
       "Europcar Privilege"
@@ -295,6 +465,11 @@
     "color": "#116BFE"
   },
   {
+    "name": "Exki",
+    "aliases": [],
+    "color": "#242B1F"
+  },
+  {
     "name": "Feu Vert",
     "aliases": [],
     "color": "#008457"
@@ -305,9 +480,26 @@
     "color": "#FFD600"
   },
   {
+    "name": "Five Guys",
+    "aliases": [],
+    "color": "#C92027"
+  },
+  {
+    "name": "FlixBus",
+    "aliases": [],
+    "color": "#73D700"
+  },
+  {
     "name": "Flunch",
     "aliases": [],
     "color": "#DF2211"
+  },
+  {
+    "name": "Fly",
+    "aliases": [
+      "Fly Meubles"
+    ],
+    "color": "#EE3431"
   },
   {
     "name": "Flying Blue",
@@ -321,13 +513,21 @@
   },
   {
     "name": "Fnac",
-    "aliases": [],
+    "aliases": [
+      "Fnac Darty",
+      "Fnac Adhérent"
+    ],
     "color": "#EBB300"
   },
   {
     "name": "Foot Locker",
     "aliases": [],
     "color": "#0E1111"
+  },
+  {
+    "name": "Franck Provost",
+    "aliases": [],
+    "color": "#1B1A17"
   },
   {
     "name": "Franprix",
@@ -351,6 +551,11 @@
     "color": "#000000"
   },
   {
+    "name": "Game Cash",
+    "aliases": [],
+    "color": "#1EA133"
+  },
+  {
     "name": "Gamm vert",
     "aliases": [],
     "color": "#6FA291"
@@ -359,6 +564,13 @@
     "name": "Gémo",
     "aliases": [],
     "color": "#2D2825"
+  },
+  {
+    "name": "Générale d'Optique",
+    "aliases": [
+      "GO Optique"
+    ],
+    "color": "#003422"
   },
   {
     "name": "Gibert Joseph",
@@ -378,6 +590,40 @@
       "Pharmacien Giphar"
     ],
     "color": "#00442A"
+  },
+  {
+    "name": "Grand Frais",
+    "aliases": [],
+    "color": "#C31B26"
+  },
+  {
+    "name": "Grand Optical",
+    "aliases": [
+      "Grand Optical Opticien"
+    ],
+    "color": "#252525"
+  },
+  {
+    "name": "Häagen-Dazs",
+    "aliases": [],
+    "color": "#6C172F"
+  },
+  {
+    "name": "Hema",
+    "aliases": [],
+    "color": "#E3191C"
+  },
+  {
+    "name": "Hertz",
+    "aliases": [],
+    "color": "#FFD100"
+  },
+  {
+    "name": "Hilton",
+    "aliases": [
+      "Hilton Honors"
+    ],
+    "color": "#002F61"
   },
   {
     "name": "Hippopotamus",
@@ -418,14 +664,45 @@
     "color": "#11448F"
   },
   {
+    "name": "Intimissimi",
+    "aliases": [],
+    "color": "#000000"
+  },
+  {
+    "name": "Jack & Jones",
+    "aliases": [
+      "Jack and Jones"
+    ],
+    "color": "#00268A"
+  },
+  {
     "name": "Jardiland",
     "aliases": [],
     "color": "#FF3D00"
   },
   {
+    "name": "JD Sports",
+    "aliases": [
+      "JD"
+    ],
+    "color": "#000000"
+  },
+  {
+    "name": "Jean Louis David",
+    "aliases": [
+      "JLD"
+    ],
+    "color": "#222221"
+  },
+  {
     "name": "Jeff de Bruges",
     "aliases": [],
     "color": "#2D190D"
+  },
+  {
+    "name": "Jennyfer",
+    "aliases": [],
+    "color": "#1D1D1B"
   },
   {
     "name": "JouéClub",
@@ -474,6 +751,23 @@
     "color": "#1B64D7"
   },
   {
+    "name": "Kusmi Tea",
+    "aliases": [
+      "Kusmi"
+    ],
+    "color": "#B60205"
+  },
+  {
+    "name": "Lacoste",
+    "aliases": [],
+    "color": "#10562E"
+  },
+  {
+    "name": "Ladurée",
+    "aliases": [],
+    "color": "#A58D5F"
+  },
+  {
     "name": "La Foir'Fouille",
     "aliases": [
       "Foir'Fouille"
@@ -496,9 +790,28 @@
     "color": "#000000"
   },
   {
+    "name": "La Mie Câline",
+    "aliases": [
+      "Mie Câline"
+    ],
+    "color": "#FED243"
+  },
+  {
     "name": "La Vie Claire",
     "aliases": [],
     "color": "#378472"
+  },
+  {
+    "name": "Leader Price",
+    "aliases": [],
+    "color": "#00489A"
+  },
+  {
+    "name": "Lego Store",
+    "aliases": [
+      "LEGO"
+    ],
+    "color": "#E3000A"
   },
   {
     "name": "Leroy Merlin",
@@ -535,6 +848,11 @@
     "color": "#EA5839"
   },
   {
+    "name": "Lush",
+    "aliases": [],
+    "color": "#000000"
+  },
+  {
     "name": "Maisons du Monde",
     "aliases": [],
     "color": "#2B2B2B"
@@ -545,9 +863,28 @@
     "color": "#000000"
   },
   {
+    "name": "Marie Blachère",
+    "aliases": [],
+    "color": "#000000"
+  },
+  {
     "name": "Marionnaud",
     "aliases": [],
     "color": "#631B4B"
+  },
+  {
+    "name": "Match",
+    "aliases": [
+      "Supermarché Match",
+      "Supermarchés Match",
+      "Smatch"
+    ],
+    "color": "#D92128"
+  },
+  {
+    "name": "Maty",
+    "aliases": [],
+    "color": "#FF352F"
   },
   {
     "name": "Maxi Zoo",
@@ -609,11 +946,26 @@
     "color": "#E20D13"
   },
   {
+    "name": "Mollat",
+    "aliases": [
+      "Librairie Mollat"
+    ],
+    "color": "#001689"
+  },
+  {
     "name": "Monoprix",
     "aliases": [
-      "Monop'"
+      "Monop'",
+      "Daily Monop",
+      "Monop Daily",
+      "Monoprix Gourmet"
     ],
     "color": "#E30613"
+  },
+  {
+    "name": "Morgan",
+    "aliases": [],
+    "color": "#E10B17"
   },
   {
     "name": "Mr.Bricolage",
@@ -622,6 +974,11 @@
       "Mister Bricolage"
     ],
     "color": "#EB0029"
+  },
+  {
+    "name": "Naf Naf",
+    "aliases": [],
+    "color": "#000000"
   },
   {
     "name": "Naturalia",
@@ -636,6 +993,13 @@
     "color": "#215331"
   },
   {
+    "name": "Nespresso",
+    "aliases": [
+      "Nespresso Club"
+    ],
+    "color": "#000000"
+  },
+  {
     "name": "Netto",
     "aliases": [],
     "color": "#E00018"
@@ -644,6 +1008,13 @@
     "name": "Nicolas",
     "aliases": [],
     "color": "#962F34"
+  },
+  {
+    "name": "Nike",
+    "aliases": [
+      "Nike Member"
+    ],
+    "color": "#111111"
   },
   {
     "name": "Nocibé",
@@ -656,6 +1027,11 @@
     "color": "#002B6F"
   },
   {
+    "name": "Noz",
+    "aliases": [],
+    "color": "#2A3188"
+  },
+  {
     "name": "Okaïdi",
     "aliases": [
       "Obaïbi",
@@ -666,7 +1042,10 @@
   },
   {
     "name": "Optic 2000",
-    "aliases": [],
+    "aliases": [
+      "Optic2000 Audio",
+      "Optic 2000 Audition"
+    ],
     "color": "#9CA3D6"
   },
   {
@@ -675,12 +1054,42 @@
     "color": "#DA2621"
   },
   {
+    "name": "Optical Discount",
+    "aliases": [],
+    "color": "#EC008C"
+  },
+  {
+    "name": "Orchestra",
+    "aliases": [
+      "Orchestra Prémaman"
+    ],
+    "color": "#E32638"
+  },
+  {
+    "name": "O'Tacos",
+    "aliases": [],
+    "color": "#FF6600"
+  },
+  {
+    "name": "Ouigo",
+    "aliases": [],
+    "color": "#E3006A"
+  },
+  {
+    "name": "Pandora",
+    "aliases": [],
+    "color": "#000000"
+  },
+  {
     "name": "Pathé",
     "aliases": [
       "Gaumont",
       "Pathé Gaumont",
       "Pathé Cinémas",
-      "Cinépass"
+      "Cinépass",
+      "Gaumont Pathé",
+      "Les Cinémas Gaumont Pathé",
+      "Cinémas Gaumont Pathé"
     ],
     "color": "#FBBC09"
   },
@@ -699,6 +1108,18 @@
     "color": "#74CFA3"
   },
   {
+    "name": "Pharmactiv",
+    "aliases": [
+      "Pharmactiv Pharmacie"
+    ],
+    "color": "#004E1E"
+  },
+  {
+    "name": "Pharmavie",
+    "aliases": [],
+    "color": "#006536"
+  },
+  {
     "name": "Picard",
     "aliases": [
       "Picard Surgelés"
@@ -706,9 +1127,24 @@
     "color": "#000BF7"
   },
   {
+    "name": "Pierre & Vacances",
+    "aliases": [
+      "Pierre et Vacances",
+      "Pierre and Vacances"
+    ],
+    "color": "#014A97"
+  },
+  {
     "name": "Pimkie",
     "aliases": [],
     "color": "#000000"
+  },
+  {
+    "name": "Pitaya",
+    "aliases": [
+      "Pitaya Thaï Street Food"
+    ],
+    "color": "#231F20"
   },
   {
     "name": "Pizza Hut",
@@ -716,9 +1152,19 @@
     "color": "#EA1C24"
   },
   {
+    "name": "Pizza Paï",
+    "aliases": [],
+    "color": "#E94F24"
+  },
+  {
     "name": "Point S",
     "aliases": [],
     "color": "#2566AF"
+  },
+  {
+    "name": "Pomme de Pain",
+    "aliases": [],
+    "color": "#761E47"
   },
   {
     "name": "Printemps",
@@ -733,9 +1179,29 @@
     "color": "#CC0066"
   },
   {
+    "name": "Pull&Bear",
+    "aliases": [
+      "Pull and Bear"
+    ],
+    "color": "#000000"
+  },
+  {
     "name": "Quick",
     "aliases": [],
     "color": "#D2082A"
+  },
+  {
+    "name": "Relay",
+    "aliases": [
+      "Relay Presse",
+      "Relay Librairie"
+    ],
+    "color": "#CA0437"
+  },
+  {
+    "name": "Rent A Car",
+    "aliases": [],
+    "color": "#0072BC"
   },
   {
     "name": "Rituals",
@@ -746,14 +1212,41 @@
     "color": "#796F63"
   },
   {
+    "name": "Roady",
+    "aliases": [],
+    "color": "#AD1319"
+  },
+  {
+    "name": "San Marina",
+    "aliases": [],
+    "color": "#000000"
+  },
+  {
+    "name": "Satoriz",
+    "aliases": [],
+    "color": "#009641"
+  },
+  {
     "name": "Sephora",
     "aliases": [],
     "color": "#000000"
   },
   {
+    "name": "Sergent Major",
+    "aliases": [],
+    "color": "#211D3E"
+  },
+  {
     "name": "Shell",
     "aliases": [],
     "color": "#DD1D21"
+  },
+  {
+    "name": "Smyths Toys",
+    "aliases": [
+      "Smyths"
+    ],
+    "color": "#ED1C23"
   },
   {
     "name": "SNCF",
@@ -768,6 +1261,11 @@
       "Max Actif"
     ],
     "color": "#A42B8F"
+  },
+  {
+    "name": "Snipes",
+    "aliases": [],
+    "color": "#1E1E1E"
   },
   {
     "name": "Spar",
@@ -792,6 +1290,16 @@
     "color": "#006241"
   },
   {
+    "name": "Stokomani",
+    "aliases": [],
+    "color": "#F0E518"
+  },
+  {
+    "name": "Stradivarius",
+    "aliases": [],
+    "color": "#000000"
+  },
+  {
     "name": "Subway",
     "aliases": [],
     "color": "#008938"
@@ -812,12 +1320,29 @@
     "color": "#007AB0"
   },
   {
+    "name": "Sushi Shop",
+    "aliases": [],
+    "color": "#000000"
+  },
+  {
     "name": "Tape à l'œil",
     "aliases": [
       "TAO",
       "TAO Kids"
     ],
     "color": "#FF4040"
+  },
+  {
+    "name": "Tati",
+    "aliases": [],
+    "color": "#ED008C"
+  },
+  {
+    "name": "The Body Shop",
+    "aliases": [
+      "Body Shop"
+    ],
+    "color": "#004236"
   },
   {
     "name": "Thiriet",
@@ -853,11 +1378,38 @@
     "color": "#00ADFF"
   },
   {
+    "name": "Undiz",
+    "aliases": [],
+    "color": "#000000"
+  },
+  {
+    "name": "Uniqlo",
+    "aliases": [],
+    "color": "#ED1D24"
+  },
+  {
+    "name": "Univers Pharmacie",
+    "aliases": [
+      "Univers Pharmacies"
+    ],
+    "color": "#1B355E"
+  },
+  {
     "name": "V and B",
     "aliases": [
       "V&B"
     ],
     "color": "#E96029"
+  },
+  {
+    "name": "Vertbaudet",
+    "aliases": [],
+    "color": "#7DBC8E"
+  },
+  {
+    "name": "Villaverde",
+    "aliases": [],
+    "color": "#0D6E22"
   },
   {
     "name": "Weldom",
@@ -868,5 +1420,10 @@
     "name": "Yves Rocher",
     "aliases": [],
     "color": "#8A9738"
+  },
+  {
+    "name": "Zara",
+    "aliases": [],
+    "color": "#221E1F"
   }
 ]
