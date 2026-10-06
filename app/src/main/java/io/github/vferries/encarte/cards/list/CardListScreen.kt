@@ -65,6 +65,7 @@ import io.github.vferries.encarte.core.ui.CardTile
 import io.github.vferries.encarte.core.ui.EncarteAlertDialog
 import io.github.vferries.encarte.core.ui.EncarteDropdownMenu
 import io.github.vferries.encarte.groups.GroupNameDialog
+import io.github.vferries.encarte.importing.ImportFailure
 
 @Composable
 fun CardListRoute(
@@ -76,6 +77,8 @@ fun CardListRoute(
     onOpenSettings: () -> Unit,
     onImport: () -> Unit,
     onChooseCards: (Long) -> Unit,
+    importFailure: ImportFailure?,
+    onImportFailureShown: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     CardListScreen(
@@ -94,6 +97,8 @@ fun CardListRoute(
         onRenameGroup = viewModel::renameGroup,
         onDeleteGroup = viewModel::deleteGroup,
         onChooseCards = onChooseCards,
+        importFailure = importFailure,
+        onImportFailureShown = onImportFailureShown,
     )
 }
 
@@ -115,6 +120,9 @@ fun CardListScreen(
     onRenameGroup: suspend (Long, String) -> GroupNameResult,
     onDeleteGroup: (Long) -> Unit,
     onChooseCards: (Long) -> Unit,
+    /** Why a file sent by another app gave no card. */
+    importFailure: ImportFailure? = null,
+    onImportFailureShown: () -> Unit = {},
 ) {
     val snackbar = remember { SnackbarHostState() }
     val archivedMessage = stringResource(R.string.card_archived)
@@ -129,6 +137,17 @@ fun CardListScreen(
             onArchivedNoticeShown()
         }
     }
+    val importMessage = importFailure?.let { stringResource(it.message) }
+    LaunchedEffect(importFailure) {
+        val message = importMessage ?: return@LaunchedEffect
+        try {
+            snackbar.showSnackbar(message)
+        } finally {
+            // Also when the list leaves the screen mid-message: coming back must not repeat it.
+            onImportFailureShown()
+        }
+    }
+
     // Ids, not groups: they are saveable, and a group deleted meanwhile simply closes its dialog.
     var creatingGroup by rememberSaveable { mutableStateOf(false) }
     var renamingGroup by rememberSaveable { mutableStateOf<Long?>(null) }

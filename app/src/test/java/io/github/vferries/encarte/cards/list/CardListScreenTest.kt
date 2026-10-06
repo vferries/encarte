@@ -20,6 +20,7 @@ import io.github.vferries.encarte.core.data.CardGroup
 import io.github.vferries.encarte.core.data.ExpiryStatus
 import io.github.vferries.encarte.core.data.GroupNameResult
 import io.github.vferries.encarte.core.prefs.SortOrder
+import io.github.vferries.encarte.importing.ImportFailure
 import io.github.vferries.encarte.testing.testCard
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -47,6 +48,7 @@ class CardListScreenTest {
         onRenameGroup: suspend (Long, String) -> GroupNameResult = { id, _ -> GroupNameResult.Saved(id) },
         onDeleteGroup: (Long) -> Unit = {},
         onChooseCards: (Long) -> Unit = {},
+        importFailure: ImportFailure? = null,
     ) = composeRule.setContent {
         CardListScreen(
             state = state,
@@ -64,6 +66,7 @@ class CardListScreenTest {
             onRenameGroup = onRenameGroup,
             onDeleteGroup = onDeleteGroup,
             onChooseCards = onChooseCards,
+            importFailure = importFailure,
         )
     }
 
@@ -207,6 +210,13 @@ class CardListScreenTest {
 
         assertEquals(7L, undone)
         assertTrue(shown)
+    }
+
+    @Test
+    fun aFileThatGaveNoCardSaysWhy() {
+        setScreen(CardListUiState(isLoading = false, hasCards = false), importFailure = ImportFailure.NO_CODE_IN_PDF)
+
+        composeRule.onNodeWithText("No barcode found in this PDF.").assertIsDisplayed()
     }
 
     @Test

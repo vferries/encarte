@@ -25,6 +25,10 @@ import io.github.vferries.encarte.cards.list.cardCollator
 import io.github.vferries.encarte.groups.GroupCardsRoute
 import io.github.vferries.encarte.groups.GroupCardsViewModel
 import io.github.vferries.encarte.importing.ImportChoiceScreen
+import io.github.vferries.encarte.importing.ImportFailure
+import io.github.vferries.encarte.importing.ImportRoute
+import io.github.vferries.encarte.importing.ImportViewModel
+import io.github.vferries.encarte.importing.failure
 import io.github.vferries.encarte.importing.toDraft
 import io.github.vferries.encarte.scan.ScannerRoute
 import io.github.vferries.encarte.scan.ScannerViewModel
@@ -41,6 +45,8 @@ fun EncarteNavHost(container: AppContainer, initialBackStack: List<NavKey> = lis
     val pop: () -> Unit = { if (backStack.size > 1) backStack.removeLastOrNull() }
     // Set when the card display archives a card; the list then offers to undo it.
     var archivedNotice by rememberSaveable { mutableStateOf<Long?>(null) }
+    // Set when a file sent by another app gives no card; the list then says why.
+    var importFailure by rememberSaveable { mutableStateOf<ImportFailure?>(null) }
     // Idempotent: a repeated callback (double tap, late result) must not replace another screen.
     fun replaceTopIf(expected: KClass<out NavKey>, key: NavKey) {
         if (expected.isInstance(backStack.lastOrNull())) backStack[backStack.lastIndex] = key
@@ -65,6 +71,8 @@ fun EncarteNavHost(container: AppContainer, initialBackStack: List<NavKey> = lis
                     },
                     archivedNotice = archivedNotice,
                     onArchivedNoticeShown = { archivedNotice = null },
+                    importFailure = importFailure,
+                    onImportFailureShown = { importFailure = null },
                     onOpenCard = { id -> backStack.add(CardDisplayKey(id)) },
                     onAddCard = { groupId -> backStack.add(ScannerKey(groupId)) },
                     onOpenSettings = { backStack.add(SettingsKey) },
@@ -127,6 +135,23 @@ fun EncarteNavHost(container: AppContainer, initialBackStack: List<NavKey> = lis
                         }
                     },
                     onClose = pop,
+                )
+            }
+            entry<ImportKey> { key ->
+                ImportRoute(
+                    viewModel = viewModel { ImportViewModel(key.fileName, container.fileImport::importReceived) },
+                    onRead = { outcome ->
+                        // Idempotent: only the import screen still on top moves on.
+                        if (backStack.lastOrNull() == key) {
+                            val next = outcome.destination(groupId = null)
+                            if (next != null) {
+                                replaceTopIf(ImportKey::class, next)
+                            } else {
+                                importFailure = outcome.failure
+                                pop()
+                            }
+                        }
+                    },
                 )
             }
             entry<ImportChoiceKey> { key ->

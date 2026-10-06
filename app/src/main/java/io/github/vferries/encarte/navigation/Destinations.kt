@@ -29,6 +29,10 @@ data class CardEditKey(
     val draft: CardDraft? = null,
 ) : NavKey
 
+/** "Reading the file…": a file another app sent, which ImportActivity copied under [fileName]. */
+@Serializable
+data class ImportKey(val fileName: String) : NavKey
+
 /**
  * "Choose a code" among the codes found in a PDF. The key carries the codes, not the file: the screen survives
  * process death. [groupId] comes from the scanner, like [ScannerKey.groupId].

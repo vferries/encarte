@@ -12,6 +12,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.shadows.ShadowLog
+import java.util.UUID
 
 @RunWith(AndroidJUnit4::class)
 class LaunchRequestsTest {
@@ -62,6 +63,32 @@ class LaunchRequestsTest {
         assertEquals(ComponentName(context, MainActivity::class.java), intent.component)
         assertTrue(intent.flags and Intent.FLAG_ACTIVITY_NEW_TASK != 0)
         assertTrue(intent.flags and Intent.FLAG_ACTIVITY_CLEAR_TASK != 0)
+    }
+
+    @Test
+    fun aReceivedFileOpensTheImportScreenAboveTheList() {
+        val name = UUID.randomUUID().toString()
+
+        assertEquals(listOf(CardListKey, ImportKey(name)), LaunchRequests.backStackFor(LaunchRequests.importFile(context, name)))
+    }
+
+    @Test
+    fun anImportRequestForAnyOtherFileOpensTheListAndIsLogged() {
+        val names = listOf("../x", "/data/data/io.github.vferries.encarte/databases/encarte.db", "", "x".repeat(36))
+
+        for (name in names) {
+            assertEquals(name, listOf(CardListKey), LaunchRequests.backStackFor(LaunchRequests.importFile(context, name)))
+        }
+        assertEquals(listOf(CardListKey), LaunchRequests.backStackFor(LaunchRequests.launch(context, LaunchRequests.ACTION_IMPORT_FILE)))
+        assertEquals(names.size + 1, warnings().size)
+    }
+
+    @Test
+    fun anImportReopenedFromRecentsOpensTheListOnly() {
+        val intent = LaunchRequests.importFile(context, UUID.randomUUID().toString())
+            .addFlags(Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY)
+
+        assertEquals(listOf(CardListKey), LaunchRequests.backStackFor(intent))
     }
 
     @Test
