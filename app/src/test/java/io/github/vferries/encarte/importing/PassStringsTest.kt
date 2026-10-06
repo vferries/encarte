@@ -1,8 +1,12 @@
 package io.github.vferries.encarte.importing
 
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.shadows.ShadowLog
 
+@RunWith(AndroidJUnit4::class)
 class PassStringsTest {
     @Test
     fun readsEntriesBetweenCommentsWithTheirEscapes() {
@@ -24,6 +28,15 @@ class PassStringsTest {
         val text = "\"a\" = \"1\";\n\"broken\" \"2\";\n\"c\" = \"3\"\n\"d\" = \"4\";\n\"unterminated = \"5\";\n\"e\" = \"6\";"
 
         assertEquals(mapOf("a" to "1", "d" to "4", "e" to "6"), PassStrings.parse(text))
+    }
+
+    @Test(timeout = 5_000)
+    fun manyMalformedLinesLogOneWarning() {
+        ShadowLog.clear()
+
+        PassStrings.parse("\"a\" = \"1\";\n" + "broken\n".repeat(50_000))
+
+        assertEquals(1, ShadowLog.getLogs().count { it.tag == "PassStrings" })
     }
 
     @Test

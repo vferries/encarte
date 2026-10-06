@@ -20,22 +20,27 @@ object PassStrings {
         }
     }
 
-    /** A malformed entry is skipped up to the end of its line and logged; the rest of the table is kept. */
+    /** A malformed entry is skipped up to the end of its line and logged once for the table; the rest of the table is kept. */
     fun parse(text: String): Map<String, String> {
         val table = mutableMapOf<String, String>()
         val cursor = Cursor(text)
+        var malformed = 0
+        var firstMalformed = 0
         while (true) {
             cursor.skipBlanksAndComments()
-            if (cursor.atEnd) return table
+            if (cursor.atEnd) break
             val start = cursor.position
             val entry = cursor.entry()
             if (entry != null) {
                 table[entry.first] = entry.second
             } else {
-                Log.w(TAG, "Malformed pass.strings entry at offset $start skipped")
+                // One log per entry would let a hostile table flood logcat.
+                if (malformed++ == 0) firstMalformed = start
                 cursor.recover(start)
             }
         }
+        if (malformed > 0) Log.w(TAG, "Skipped $malformed malformed pass.strings entries, the first at offset $firstMalformed")
+        return table
     }
 
     private class Cursor(private val text: String) {
