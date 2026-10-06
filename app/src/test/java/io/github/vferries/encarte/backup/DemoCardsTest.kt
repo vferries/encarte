@@ -18,7 +18,7 @@ class DemoCardsTest {
                 "run through Gradle: encarte.demoCards is set in app/build.gradle.kts"
             },
         ).readText(),
-    )
+    ).cards
 
     @Test
     fun holdsTheEightFictionalStores() {

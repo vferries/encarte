@@ -87,7 +87,7 @@ class BackupService(
     }
 
     private suspend fun importOrThrow(file: File, password: CharArray?): ImportResult {
-        val sources = archive.readCards(file, password)
+        val sources = archive.read(file, password).cards
         val now = clock.instant()
         val currentLabels = labels()
         val mapped = sources.map { it to CatimaMapping.toCard(it, currentLabels, clock.zone, now) }

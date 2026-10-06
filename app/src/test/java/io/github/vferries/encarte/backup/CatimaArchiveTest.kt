@@ -34,7 +34,7 @@ class CatimaArchiveTest {
     fun plainArchiveRoundTrips() {
         val file = written()
 
-        assertEquals(listOf("Shop", "Other"), archive.readCards(file, null).map { it.store })
+        assertEquals(listOf("Shop", "Other"), archive.read(file, null).cards.map { it.store })
         val images = mutableMapOf<CatimaImageRef, ByteArray>()
         archive.forEachImage(file, null) { ref, input -> images[ref] = input.readBytes() }
         assertEquals(setOf(CatimaImageRef(1, ImageSide.FRONT)), images.keys)
@@ -51,9 +51,9 @@ class CatimaArchiveTest {
     fun encryptedArchiveNeedsTheRightPassword() {
         val file = written("secret".toCharArray())
 
-        assertThrows(PasswordRequiredException::class.java) { archive.readCards(file, null) }
-        assertThrows(WrongPasswordException::class.java) { archive.readCards(file, "wrong".toCharArray()) }
-        assertEquals(2, archive.readCards(file, "secret".toCharArray()).size)
+        assertThrows(PasswordRequiredException::class.java) { archive.read(file, null).cards }
+        assertThrows(WrongPasswordException::class.java) { archive.read(file, "wrong".toCharArray()).cards }
+        assertEquals(2, archive.read(file, "secret".toCharArray()).cards.size)
         var images = 0
         archive.forEachImage(file, "secret".toCharArray()) { _, _ -> images++ }
         assertEquals(1, images)
@@ -63,7 +63,7 @@ class CatimaArchiveTest {
     fun bareCsvFileIsAccepted() {
         val file = tmp.newFile("catima.csv").apply { writeText(csv) }
 
-        assertEquals(2, archive.readCards(file, null).size)
+        assertEquals(2, archive.read(file, null).cards.size)
         archive.forEachImage(file, null) { _, _ -> error("a bare CSV has no images") }
     }
 
@@ -78,7 +78,7 @@ class CatimaArchiveTest {
         archive.forEachImage(file, null) { ref, _ -> refs += ref }
 
         assertEquals(listOf(CatimaImageRef(2, ImageSide.ICON)), refs)
-        assertEquals(2, archive.readCards(file, null).size)
+        assertEquals(2, archive.read(file, null).cards.size)
     }
 
     @Test
@@ -86,14 +86,14 @@ class CatimaArchiveTest {
         val file = File(tmp.root, "no-csv.zip")
         ZipFile(file).use { it.addStream("x".byteInputStream(), ZipParameters().apply { fileNameInZip = "notes.txt" }) }
 
-        assertThrows(CatimaFormatException::class.java) { archive.readCards(file, null) }
+        assertThrows(CatimaFormatException::class.java) { archive.read(file, null).cards }
     }
 
     @Test
     fun guardsRejectTooManyCards() {
         val file = written()
 
-        assertThrows(CatimaFormatException::class.java) { CatimaArchive(maxCards = 1).readCards(file, null) }
+        assertThrows(CatimaFormatException::class.java) { CatimaArchive(maxCards = 1).read(file, null).cards }
     }
 
     @Test
@@ -102,13 +102,13 @@ class CatimaArchiveTest {
         val file = written("secret".toCharArray(), extraImages = listOf(big))
         val small = CatimaArchive(maxEntryBytes = 500)
 
-        assertEquals(2, small.readCards(file, "secret".toCharArray()).size)
+        assertEquals(2, small.read(file, "secret".toCharArray()).cards.size)
         val e = assertThrows(CatimaFormatException::class.java) {
             small.forEachImage(file, "secret".toCharArray()) { _, input -> input.readBytes() }
         }
         assertEquals("Archive entry too large", e.message)
         assertThrows(CatimaFormatException::class.java) {
-            CatimaArchive(maxEntryBytes = 10).readCards(file, "secret".toCharArray())
+            CatimaArchive(maxEntryBytes = 10).read(file, "secret".toCharArray()).cards
         }
     }
 
@@ -118,7 +118,7 @@ class CatimaArchiveTest {
         val file = written(extraImages = entries)
         val small = CatimaArchive(maxEntryBytes = 1024)
 
-        assertEquals(2, small.readCards(file, null).size)
+        assertEquals(2, small.read(file, null).cards.size)
         val sizes = mutableListOf<Int>()
         small.forEachImage(file, null) { _, input -> sizes += input.readBytes().size }
         assertEquals(listOf(3, 600, 600, 600, 600, 600), sizes)
@@ -130,9 +130,9 @@ class CatimaArchiveTest {
         val file = tmp.newFile("catima.csv").apply { writeText(csv) }
         val csvSize = file.length()
 
-        assertEquals(2, CatimaArchive(maxCsvBytes = csvSize).readCards(file, null).size)
+        assertEquals(2, CatimaArchive(maxCsvBytes = csvSize).read(file, null).cards.size)
         assertThrows(CatimaFormatException::class.java) {
-            CatimaArchive(maxCsvBytes = csvSize - 1).readCards(file, null)
+            CatimaArchive(maxCsvBytes = csvSize - 1).read(file, null).cards
         }
     }
 

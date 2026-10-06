@@ -26,6 +26,16 @@ data class CatimaCard(
     val archived: Boolean = false,
 )
 
+/** One row of Catima's card-to-group table: Catima identifies a group by its name. */
+data class CatimaGroupLink(val cardId: Int, val group: String)
+
+/** A whole Catima export. Version 1 files have cards only. */
+data class CatimaBackup(
+    val cards: List<CatimaCard>,
+    val groups: List<String> = emptyList(),
+    val links: List<CatimaGroupLink> = emptyList(),
+)
+
 open class CatimaFormatException(message: String, cause: Throwable? = null) : Exception(message, cause)
 
 class UnsupportedCatimaVersionException(val version: Int) :
@@ -44,23 +54,33 @@ object CatimaCsv {
     /** ALL_NON_NULL makes a blank line parse as a single null value, unlike a quoted "" (an empty value). */
     private val readFormat = CSVFormat.RFC4180.builder().setQuoteMode(QuoteMode.ALL_NON_NULL).get()
 
-    fun read(text: String): List<CatimaCard> {
+    fun read(text: String): CatimaBackup {
         val content = text.removePrefix("\uFEFF")
         val version = parseVersion(content)
         if (version > MAX_SUPPORTED_VERSION) throw UnsupportedCatimaVersionException(version)
         val sections = sections(parseRecords(content))
         // v1: the whole file is the cards table. v2: version, groups, cards, card-group mappings.
         val cardsSection = if (version == 1) sections.firstOrNull() else sections.getOrNull(2)
-        return cardsSection?.let(::toCards) ?: throw CatimaFormatException("No cards section")
+        val cards = cardsSection?.let(::toCards) ?: throw CatimaFormatException("No cards section")
+        if (version == 1) return CatimaBackup(cards)
+        return CatimaBackup(
+            cards = cards,
+            groups = sections.getOrNull(1)?.let(::toGroups).orEmpty(),
+            links = sections.getOrNull(3)?.let(::toLinks).orEmpty(),
+        )
     }
 
-    fun write(cards: List<CatimaCard>): String {
+    fun write(
+        cards: List<CatimaCard>,
+        groups: List<String> = emptyList(),
+        links: List<CatimaGroupLink> = emptyList(),
+    ): String {
         val out = StringBuilder()
         CSVFormat.RFC4180.print(out).use { printer ->
             printer.printRecord("2")
             printer.println()
-            // Groups are not supported: header only.
             printer.printRecord("_id")
+            for (group in groups) printer.printRecord(group)
             printer.println()
             printer.printRecord(cardColumns)
             for (card in cards) {
@@ -84,6 +104,7 @@ object CatimaCsv {
             }
             printer.println()
             printer.printRecord("cardId", "groupId")
+            for (link in links) printer.printRecord(link.cardId, link.group)
         }
         return out.toString()
     }
@@ -121,6 +142,39 @@ object CatimaCsv {
         return section.drop(1).mapIndexed { index, values ->
             toCard(header.zip(values).toMap(), row = index + 1)
         }
+    }
+
+    /** Groups are secondary to the cards: a malformed groups table is skipped, never fatal. */
+    private fun toGroups(section: List<List<String>>): List<String> {
+        val column = section.first().indexOf("_id")
+        if (column < 0) {
+            Log.w(TAG, "Groups table without an _id column: groups skipped")
+            return emptyList()
+        }
+        return section.drop(1).mapIndexedNotNull { index, row ->
+            row.getOrNull(column)?.trim()?.takeIf { it.isNotEmpty() }
+                ?: null.also { Log.w(TAG, "Group row ${index + 1}: blank name skipped") }
+        }.distinct()
+    }
+
+    private fun toLinks(section: List<List<String>>): List<CatimaGroupLink> {
+        val header = section.first()
+        val cardColumn = header.indexOf("cardId")
+        val groupColumn = header.indexOf("groupId")
+        if (cardColumn < 0 || groupColumn < 0) {
+            Log.w(TAG, "Card-group table without cardId and groupId columns: links skipped")
+            return emptyList()
+        }
+        return section.drop(1).mapIndexedNotNull { index, row ->
+            val cardId = row.getOrNull(cardColumn)?.toIntOrNull()
+            val group = row.getOrNull(groupColumn)?.trim().orEmpty()
+            if (cardId == null || group.isEmpty()) {
+                Log.w(TAG, "Card-group row ${index + 1}: skipped")
+                null
+            } else {
+                CatimaGroupLink(cardId, group)
+            }
+        }.distinct()
     }
 
     private fun toCard(fields: Map<String, String>, row: Int): CatimaCard {

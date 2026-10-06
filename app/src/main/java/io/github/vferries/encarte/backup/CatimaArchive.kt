@@ -39,8 +39,8 @@ class CatimaArchive(
     private val maxEntryBytes: Long = 64L * 1024 * 1024,
     private val maxCsvBytes: Long = 16L * 1024 * 1024,
 ) {
-    fun readCards(file: File, password: CharArray?): List<CatimaCard> {
-        val cards = open(file, password).use { zip ->
+    fun read(file: File, password: CharArray?): CatimaBackup {
+        val backup = open(file, password).use { zip ->
             if (!zip.isValidZipFile) {
                 val bytes = file.inputStream().use { readBounded(it, maxCsvBytes, "CSV file too large") }
                 CatimaCsv.read(bytes.toString(Charsets.UTF_8))
@@ -51,8 +51,8 @@ class CatimaArchive(
                 CatimaCsv.read(readEntryBytes(zip, csvHeader).toString(Charsets.UTF_8))
             }
         }
-        if (cards.size > maxCards) throw CatimaFormatException("Too many cards: ${cards.size}")
-        return cards
+        if (backup.cards.size > maxCards) throw CatimaFormatException("Too many cards: ${backup.cards.size}")
+        return backup
     }
 
     fun forEachImage(file: File, password: CharArray?, action: (CatimaImageRef, InputStream) -> Unit) {

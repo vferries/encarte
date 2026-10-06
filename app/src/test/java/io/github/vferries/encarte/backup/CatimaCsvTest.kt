@@ -15,7 +15,7 @@ class CatimaCsvTest {
 
     @Test
     fun readsCatimaV2Fixture() {
-        val cards = CatimaCsv.read(fixture("catima_v2.csv"))
+        val cards = CatimaCsv.read(fixture("catima_v2.csv")).cards
 
         assertEquals(8, cards.size)
         assertEquals("Multiline note about grocery store\n\nwith blank line", cards.byStore("Grocery Store").note)
@@ -47,13 +47,13 @@ class CatimaCsvTest {
 
     @Test
     fun readsV1Variants() {
-        assertTrue(CatimaCsv.read(fixture("catima_v1_starred_field.csv")).single().starred)
-        assertNull(CatimaCsv.read(fixture("catima_v1_no_colors.csv")).single().headerColor)
-        assertNull(CatimaCsv.read(fixture("catima_v1_empty_colors.csv")).single().headerColor)
-        assertFalse(CatimaCsv.read(fixture("catima_v1_invalid_starred_field.csv")).single().starred)
-        assertFalse(CatimaCsv.read(fixture("catima_v1_invalid_starred_field_2.csv")).single().starred)
-        assertNull(CatimaCsv.read(fixture("catima_v1_no_barcode_type.csv")).single().barcodeType)
-        with(CatimaCsv.read(fixture("catima_v1_invalid_colors.csv")).single()) {
+        assertTrue(CatimaCsv.read(fixture("catima_v1_starred_field.csv")).cards.single().starred)
+        assertNull(CatimaCsv.read(fixture("catima_v1_no_colors.csv")).cards.single().headerColor)
+        assertNull(CatimaCsv.read(fixture("catima_v1_empty_colors.csv")).cards.single().headerColor)
+        assertFalse(CatimaCsv.read(fixture("catima_v1_invalid_starred_field.csv")).cards.single().starred)
+        assertFalse(CatimaCsv.read(fixture("catima_v1_invalid_starred_field_2.csv")).cards.single().starred)
+        assertNull(CatimaCsv.read(fixture("catima_v1_no_barcode_type.csv")).cards.single().barcodeType)
+        with(CatimaCsv.read(fixture("catima_v1_invalid_colors.csv")).cards.single()) {
             assertNull(headerColor)
             assertEquals("type", barcodeType)
             assertEquals("12345", cardId)
@@ -102,6 +102,76 @@ class CatimaCsvTest {
             CatimaCard(id = 2, store = "Käse", cardId = "Käseschnitte", barcodeType = "QR_CODE", barcodeEncoding = "UTF-8"),
         )
 
-        assertEquals(cards, CatimaCsv.read(CatimaCsv.write(cards)))
+        assertEquals(cards, CatimaCsv.read(CatimaCsv.write(cards)).cards)
+    }
+
+    @Test
+    fun readsCatimaV2GroupsAndLinks() {
+        val backup = CatimaCsv.read(fixture("catima_v2.csv"))
+
+        assertEquals(listOf("Health", "Food", "Fashion"), backup.groups)
+        assertEquals(
+            listOf(
+                CatimaGroupLink(4, "Health"), CatimaGroupLink(8, "Fashion"), CatimaGroupLink(3, "Food"),
+                CatimaGroupLink(5, "Food"), CatimaGroupLink(6, "Fashion"),
+            ),
+            backup.links,
+        )
+    }
+
+    @Test
+    fun v1FilesHaveNoGroups() {
+        val backup = CatimaCsv.read(fixture("catima_v1_starred_field.csv"))
+
+        assertEquals(emptyList<String>(), backup.groups)
+        assertEquals(emptyList<CatimaGroupLink>(), backup.links)
+    }
+
+    @Test
+    fun writeListsGroupsAndLinksInTheirSections() {
+        val text = CatimaCsv.write(
+            listOf(CatimaCard(id = 1, store = "Shop", cardId = "42")),
+            groups = listOf("Food", "Fashion"),
+            links = listOf(CatimaGroupLink(1, "Food")),
+        )
+
+        assertTrue(text.startsWith("2\r\n\r\n_id\r\nFood\r\nFashion\r\n\r\n_id,store,"))
+        assertTrue(text.endsWith("\r\n\r\ncardId,groupId\r\n1,Food\r\n"))
+    }
+
+    @Test
+    fun groupNamesThatNeedQuotingRoundTrip() {
+        val groups = listOf("Courses, vrac", "Le \"bon\" coin", "🛒", "Vide")
+        val links = listOf(
+            CatimaGroupLink(1, "Courses, vrac"), CatimaGroupLink(1, "🛒"), CatimaGroupLink(1, "Le \"bon\" coin"),
+        )
+
+        val backup = CatimaCsv.read(CatimaCsv.write(listOf(CatimaCard(id = 1, store = "Shop", cardId = "42")), groups, links))
+
+        assertEquals(groups, backup.groups)
+        assertEquals(links, backup.links)
+    }
+
+    @Test
+    fun blankGroupsAndMalformedLinksAreSkipped() {
+        val text = "2\r\n\r\n_id\r\nFood\r\n\"  \"\r\nFood\r\n\r\n" +
+            "_id,store,cardid\r\n1,Shop,42\r\n\r\n" +
+            "cardId,groupId\r\n1,Food\r\nx,Food\r\n1,\r\n1,Food\r\n"
+
+        val backup = CatimaCsv.read(text)
+
+        assertEquals(listOf("Food"), backup.groups)
+        assertEquals(listOf(CatimaGroupLink(1, "Food")), backup.links)
+        assertEquals(1, backup.cards.size)
+    }
+
+    @Test
+    fun aGroupsTableWithoutIdColumnIsSkippedNotFatal() {
+        val text = "2\r\n\r\nname\r\nFood\r\n\r\n_id,store,cardid\r\n1,Shop,42\r\n\r\ncardId,groupId\r\n"
+
+        val backup = CatimaCsv.read(text)
+
+        assertEquals(emptyList<String>(), backup.groups)
+        assertEquals(1, backup.cards.size)
     }
 }
