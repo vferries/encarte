@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
@@ -29,6 +30,7 @@ import org.junit.runner.RunWith
 import java.io.File
 import java.io.IOException
 
+@OptIn(ExperimentalCoroutinesApi::class) // testScheduler.currentTime
 @RunWith(AndroidJUnit4::class)
 class PreferencesStoresTest {
     @get:Rule
