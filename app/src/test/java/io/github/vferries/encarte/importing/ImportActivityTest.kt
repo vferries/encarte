@@ -31,6 +31,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.shadows.ShadowLog
 import org.robolectric.shadows.ShadowToast
 import java.io.File
 import java.io.InputStream
@@ -358,6 +359,41 @@ class ImportActivityTest {
 
         assertEquals(emptyList<File>(), copies())
         assertNull(shadowOf(app).nextStartedActivity)
+    }
+
+    @Test
+    fun backBeforeTheCardShowsKeepsItFromShowingLater() {
+        val gate = CountDownLatch(1)
+        serveSlow(gate, AtomicInteger())
+
+        ActivityScenario.launch<ImportActivity>(view(attachment)).use { scenario ->
+            pass(300)
+            // finish() leaves the activity RESUMED here, so only the cancelled copy can keep the card away.
+            scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
+            pass(200)
+
+            composeRule.onAllNodesWithText("Importing…").assertCountEquals(0)
+            gate.countDown()
+        }
+    }
+
+    @Test
+    fun backAfterTheHandOverIsNotACancellation() {
+        val pass = TestFiles.pass()
+        serve(attachment) { pass.inputStream() }
+
+        ActivityScenario.launch<ImportActivity>(view(attachment)).use { scenario ->
+            val deadline = System.currentTimeMillis() + 5_000
+            while (shadowOf(app).peekNextStartedActivity() == null) {
+                shadowOf(Looper.getMainLooper()).idle()
+                check(System.currentTimeMillis() < deadline) { "ImportActivity never handed the file over" }
+                Thread.sleep(10)
+            }
+            scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
+        }
+
+        assertEquals(emptyList<String>(), ShadowLog.getLogsForTag("ImportActivity").map { it.msg }.filter { "cancelled" in it })
+        assertEquals(1, copies().size)
     }
 
     @Test
