@@ -72,6 +72,13 @@ class ImportFilesTest {
     }
 
     @Test
+    fun aCancelledCopyOrNullThrowsInsteadOfReturningNull() {
+        assertThrows(CancellationException::class.java) { files.copyOrNull(shouldContinue = { false }) { "x".byteInputStream() } }
+
+        assertEquals(emptyList<String>(), leftovers())
+    }
+
+    @Test
     fun onlyUuidNamesAreAccepted() {
         assertTrue(ImportFiles.isFileName(UUID.randomUUID().toString()))
         for (name in listOf("../x", "/data/data/io.github.vferries.encarte/databases/encarte.db", "", "abc")) {
