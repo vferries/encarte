@@ -96,6 +96,7 @@ import io.github.vferries.encarte.core.ui.EncarteExposedDropdownMenu
 import io.github.vferries.encarte.core.ui.rememberImageBitmap
 import io.github.vferries.encarte.core.ui.rememberMediumDateFormatter
 import io.github.vferries.encarte.groups.GroupNameDialog
+import io.github.vferries.encarte.importing.DraftNotice
 import java.io.File
 import java.io.IOException
 import java.time.Instant
@@ -268,6 +269,13 @@ private fun Form(
         if (viewModel.showUnsupportedFormatNotice) {
             Text(
                 stringResource(R.string.unsupported_format_notice),
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
+        if (viewModel.draftNotice == DraftNotice.PASS_WITHOUT_BARCODE) {
+            Text(
+                stringResource(R.string.pass_without_barcode_notice),
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodyMedium,
             )

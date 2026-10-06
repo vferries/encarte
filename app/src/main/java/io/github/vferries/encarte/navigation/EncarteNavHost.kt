@@ -113,6 +113,7 @@ fun EncarteNavHost(container: AppContainer, initialBackStack: List<NavKey> = lis
                             savedStateHandle = createSavedStateHandle(),
                             groups = container.groupRepository,
                             initialGroupId = key.groupId,
+                            draft = key.draft,
                         )
                     },
                     onSaved = { id, isNew ->

@@ -63,6 +63,7 @@
     <string name="error_barcode_length">Longueur invalide pour ce type de code</string>
     <string name="error_barcode_check_digit">Chiffre de contrôle invalide</string>
     <string name="unsupported_format_notice">Encarté ne sait pas afficher ce type de code-barres. Seul le numéro sera affiché.</string>
+    <string name="pass_without_barcode_notice">Ce pass ne contient pas de code-barres utilisable : saisissez le numéro.</string>
     <string name="discard_title">Abandonner les modifications ?</string>
     <string name="discard_confirm">Abandonner</string>
     <string name="keep_editing">Continuer</string>

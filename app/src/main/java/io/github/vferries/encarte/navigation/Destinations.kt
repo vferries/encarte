@@ -2,6 +2,7 @@ package io.github.vferries.encarte.navigation
 
 import androidx.navigation3.runtime.NavKey
 import io.github.vferries.encarte.core.barcode.BarcodeFormat
+import io.github.vferries.encarte.importing.CardDraft
 import kotlinx.serialization.Serializable
 
 // Keys are @Serializable so the back stack survives process death (reflective NavKey serializer).
@@ -23,6 +24,8 @@ data class CardEditKey(
     val barcodeFormat: BarcodeFormat? = null,
     val unsupportedFormat: Boolean = false,
     val groupId: Long? = null,
+    /** A new card pre-filled from an imported file. */
+    val draft: CardDraft? = null,
 ) : NavKey
 
 @Serializable

@@ -64,6 +64,7 @@
     <string name="error_barcode_length">Invalid length for this barcode type</string>
     <string name="error_barcode_check_digit">Invalid check digit</string>
     <string name="unsupported_format_notice">Encarté can\'t display this type of barcode. Only the number will be shown.</string>
+    <string name="pass_without_barcode_notice">This pass has no usable barcode: enter the number.</string>
     <string name="discard_title">Discard changes?</string>
     <string name="discard_confirm">Discard</string>
     <string name="keep_editing">Keep editing</string>

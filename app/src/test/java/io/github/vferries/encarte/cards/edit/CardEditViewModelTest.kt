@@ -31,6 +31,8 @@ import io.github.vferries.encarte.core.data.CardSide
 import io.github.vferries.encarte.core.data.GroupNameResult
 import io.github.vferries.encarte.core.data.GroupRepository
 import io.github.vferries.encarte.core.data.ImageStore
+import io.github.vferries.encarte.importing.CardDraft
+import io.github.vferries.encarte.importing.DraftNotice
 import io.github.vferries.encarte.testing.MainDispatcherRule
 import io.github.vferries.encarte.testing.eventually
 import io.github.vferries.encarte.testing.inMemoryDatabase
@@ -335,10 +337,18 @@ class CardEditViewModelTest {
             lifecycleRegistry.currentState = Lifecycle.State.RESUMED
         }
 
-        fun editor(cardId: Long?, prefillValue: String? = null, prefillFormat: BarcodeFormat? = null): CardEditViewModel {
+        fun editor(
+            cardId: Long?,
+            prefillValue: String? = null,
+            prefillFormat: BarcodeFormat? = null,
+            draft: CardDraft? = null,
+        ): CardEditViewModel {
             val factory = viewModelFactory {
                 initializer {
-                    CardEditViewModel(cardId, prefillValue, prefillFormat, false, cards, brands, createSavedStateHandle(), groups)
+                    CardEditViewModel(
+                        cardId, prefillValue, prefillFormat, false, cards, brands, createSavedStateHandle(), groups,
+                        draft = draft,
+                    )
                 }
             }
             val extras = MutableCreationExtras().apply {
@@ -454,6 +464,86 @@ class CardEditViewModelTest {
         val restored = ScreenWithSavedState(before.processDeath()).editor(cardId = null, prefillValue = "42")
 
         assertEquals(setOf(courses), restored.selectedGroupIds)
+    }
+
+    private val passDraft = CardDraft(
+        storeName = "Fnac",
+        cardNumber = "A-42",
+        barcodeValue = "X-42",
+        barcodeFormat = BarcodeFormat.CODE_128,
+        color = CardPalette.swatches[3],
+        expiresOnEpochDay = LocalDate.of(2027, 3, 12).toEpochDay(),
+        note = "Gold member",
+    )
+
+    @Test
+    fun aDraftPrefillsEveryFieldWithoutUnsavedChanges() = runTest {
+        val vm = CardEditViewModel(null, null, null, false, cards, brands, SavedStateHandle(), groups, draft = passDraft)
+
+        assertEquals("Fnac", vm.storeName.text.toString())
+        assertEquals("A-42", vm.cardNumber.text.toString())
+        assertTrue(vm.differentEncodedValue)
+        assertEquals("X-42", vm.barcodeValue.text.toString())
+        assertEquals(BarcodeFormat.CODE_128, vm.barcodeFormat)
+        assertEquals(CardPalette.swatches[3], vm.color)
+        assertEquals(LocalDate.of(2027, 3, 12), vm.expiresOn)
+        assertEquals("Gold member", vm.note.text.toString())
+        assertNull(vm.draftNotice)
+        assertFalse(vm.hasChanges)
+
+        vm.save()
+        eventually { vm.savedCardId != null }
+        val saved = cards.get(vm.savedCardId!!)!!
+        assertEquals("X-42", saved.barcodeValue)
+        assertEquals(CardPalette.swatches[3], saved.color)
+        assertEquals(LocalDate.of(2027, 3, 12), saved.expiresOn)
+    }
+
+    @Test
+    fun aDraftWithoutColorFollowsTheStoreName() = runTest {
+        val draft = CardDraft(storeName = "Carrefour", cardNumber = "42")
+
+        val vm = CardEditViewModel(null, null, null, false, cards, brands, SavedStateHandle(), groups, draft = draft)
+
+        assertEquals(0xFF254F9B.toInt(), vm.color)
+        vm.storeName.setTextAndPlaceCursorAtEnd("Unknown shop")
+        assertEquals(CardPalette.defaultFor("Unknown shop"), vm.color)
+    }
+
+    @Test
+    fun aPassWithoutBarcodeOpensWithItsNoticeAndAnEmptyNumber() = runTest {
+        val draft = CardDraft(storeName = "Cinéma", note = "Séance", notice = DraftNotice.PASS_WITHOUT_BARCODE)
+
+        val vm = CardEditViewModel(null, null, null, false, cards, brands, SavedStateHandle(), groups, draft = draft)
+
+        assertEquals(DraftNotice.PASS_WITHOUT_BARCODE, vm.draftNotice)
+        assertEquals("", vm.cardNumber.text.toString())
+        assertNull(vm.barcodeFormat)
+        assertFalse(vm.canSave)
+    }
+
+    @Test
+    fun aDraftKeepsTheInitialGroup() = runTest {
+        val courses = group("Courses")
+
+        val vm = CardEditViewModel(
+            null, null, null, false, cards, brands, SavedStateHandle(), groups, initialGroupId = courses, draft = passDraft,
+        )
+
+        assertEquals(setOf(courses), vm.selectedGroupIds)
+        assertFalse(vm.hasChanges)
+    }
+
+    @Test
+    fun editsMadeOverADraftSurviveProcessDeath() = runTest {
+        val before = ScreenWithSavedState(restored = null)
+        before.editor(cardId = null, draft = passDraft).note.setTextAndPlaceCursorAtEnd("Silver member")
+
+        val restored = ScreenWithSavedState(before.processDeath()).editor(cardId = null, draft = passDraft)
+
+        assertEquals("Silver member", restored.note.text.toString())
+        assertEquals("Fnac", restored.storeName.text.toString())
+        assertTrue("still compared with the draft", restored.hasChanges)
     }
 
     private fun jpeg() = ByteArrayOutputStream().also {

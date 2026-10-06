@@ -35,6 +35,8 @@ import io.github.vferries.encarte.core.barcode.BarcodeFormat
 import io.github.vferries.encarte.core.data.CardRepository
 import io.github.vferries.encarte.core.data.GroupRepository
 import io.github.vferries.encarte.core.data.ImageStore
+import io.github.vferries.encarte.importing.CardDraft
+import io.github.vferries.encarte.importing.DraftNotice
 import io.github.vferries.encarte.lock.LocalContentCovered
 import io.github.vferries.encarte.testing.inMemoryDatabase
 import kotlinx.coroutines.runBlocking
@@ -71,7 +73,12 @@ class CardEditScreenTest {
         db.close()
     }
 
-    private fun viewModel(value: String? = null, format: BarcodeFormat? = null, unsupported: Boolean = false): CardEditViewModel {
+    private fun viewModel(
+        value: String? = null,
+        format: BarcodeFormat? = null,
+        unsupported: Boolean = false,
+        draft: CardDraft? = null,
+    ): CardEditViewModel {
         val factory = viewModelFactory {
             initializer {
                 CardEditViewModel(
@@ -83,6 +90,7 @@ class CardEditScreenTest {
                     brands = brands,
                     savedStateHandle = SavedStateHandle(),
                     groups = GroupRepository(db),
+                    draft = draft,
                 )
             }
         }
@@ -142,6 +150,25 @@ class CardEditScreenTest {
 
         composeRule.onNodeWithText("Encarté can't display this type of barcode. Only the number will be shown.")
             .assertIsDisplayed()
+    }
+
+    @Test
+    fun aPassWithoutBarcodeAsksForTheNumber() {
+        val vm = viewModel(draft = CardDraft(storeName = "Cinéma", notice = DraftNotice.PASS_WITHOUT_BARCODE))
+        composeRule.setContent { CardEditScreen(vm, onClose = {}, onPickImage = {}, onTakePhoto = {}) }
+
+        composeRule.onNodeWithText("This pass has no usable barcode: enter the number.").assertIsDisplayed()
+        composeRule.onNodeWithText("Cinéma").assertIsDisplayed()
+        composeRule.onNodeWithText("Save").assertIsNotEnabled()
+    }
+
+    @Test
+    fun aDraftOpensThePreviewOfItsCode() {
+        val vm = viewModel(draft = CardDraft(cardNumber = "4006381333931", barcodeFormat = BarcodeFormat.EAN_13))
+        composeRule.setContent { CardEditScreen(vm, onClose = {}, onPickImage = {}, onTakePhoto = {}) }
+
+        composeRule.onNodeWithTag("barcode").assertIsDisplayed()
+        composeRule.onNodeWithText("This pass has no usable barcode: enter the number.").assertDoesNotExist()
     }
 
     @Test

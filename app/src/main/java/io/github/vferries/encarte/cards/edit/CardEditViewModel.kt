@@ -23,6 +23,8 @@ import io.github.vferries.encarte.core.data.CardRepository
 import io.github.vferries.encarte.core.data.CardSide
 import io.github.vferries.encarte.core.data.GroupNameResult
 import io.github.vferries.encarte.core.data.GroupRepository
+import io.github.vferries.encarte.importing.CardDraft
+import io.github.vferries.encarte.importing.DraftNotice
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -61,6 +63,8 @@ class CardEditViewModel(
     private val groups: GroupRepository,
     /** Pre-checked on a new card: it was added while the list showed this group. */
     initialGroupId: Long? = null,
+    /** Pre-fills a new card from an imported file; ignored when editing an existing card. */
+    draft: CardDraft? = null,
 ) : ViewModel() {
 
     val storeName = TextFieldState()
@@ -109,6 +113,9 @@ class CardEditViewModel(
 
     val isNew: Boolean get() = cardId == null
 
+    /** Shown above the form: what the import could not fill in. */
+    val draftNotice: DraftNotice? = draft?.notice.takeIf { cardId == null }
+
     val color: Int
         get() = manualColor ?: storeName.text.toString().let { name ->
             brands.match(name)?.argb ?: CardPalette.defaultFor(name)
@@ -147,6 +154,8 @@ class CardEditViewModel(
         // The process can die while the camera app is in front: the form survives it.
         val restored = savedStateHandle.get<Bundle>(SAVED_STATE_KEY)?.takeIf { it.getBoolean(KEY_LOADED) }
         if (cardId == null) {
+            // The draft is the starting point, like a scanned number: leaving it untouched discards without asking.
+            draft?.let { fill(it.toForm(selectedGroupIds)) }
             initialForm = snapshot()
             restored?.let(::restore)
         } else {
@@ -341,6 +350,20 @@ class CardEditViewModel(
         frontImage = frontImage,
         backImage = backImage,
         expiresOn = expiresOn,
+        groupIds = groupIds,
+    )
+
+    private fun CardDraft.toForm(groupIds: Set<Long>) = FormSnapshot(
+        storeName = storeName,
+        cardNumber = cardNumber,
+        differentEncodedValue = barcodeValue != null,
+        barcodeValue = barcodeValue.orEmpty(),
+        barcodeFormat = barcodeFormat,
+        note = note,
+        color = color,
+        frontImage = null,
+        backImage = null,
+        expiresOn = expiresOnEpochDay?.let(LocalDate::ofEpochDay),
         groupIds = groupIds,
     )
 
