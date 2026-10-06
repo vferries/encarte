@@ -32,6 +32,25 @@ class PassStringsTest {
     }
 
     @Test
+    fun aValueWithoutItsClosingQuoteKeepsTheEarlierEntries() {
+        assertEquals(mapOf("a" to "1"), PassStrings.parse("\"a\" = \"1\";\n\"b\" = \"2;"))
+    }
+
+    // Each line opens a comment that never closes: rescanning the rest of the text per line would be quadratic.
+    @Test(timeout = 1_000)
+    fun manyUnterminatedCommentsParseInLinearTime() {
+        val hostile = "\"a\"/*\n".repeat(512 * 1024 / 6)
+
+        assertEquals(mapOf("first" to "1"), PassStrings.parse("\"first\" = \"1\";\n$hostile"))
+    }
+
+    @Test
+    fun emptyInputGivesAnEmptyTable() {
+        assertEquals("", PassStrings.decode(ByteArray(0)))
+        assertEquals(emptyMap<String, String>(), PassStrings.parse(""))
+    }
+
+    @Test
     fun decodesUtf8WithOrWithoutBom() {
         assertEquals("\"é\" = \"è\";", PassStrings.decode("\uFEFF\"é\" = \"è\";".toByteArray(Charsets.UTF_8)))
         assertEquals("\"é\" = \"è\";", PassStrings.decode("\"é\" = \"è\";".toByteArray(Charsets.UTF_8)))
