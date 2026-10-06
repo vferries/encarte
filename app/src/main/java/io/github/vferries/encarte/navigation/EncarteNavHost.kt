@@ -30,8 +30,8 @@ import io.github.vferries.encarte.settings.SettingsViewModel
 import kotlin.reflect.KClass
 
 @Composable
-fun EncarteNavHost(container: AppContainer) {
-    val backStack = rememberNavBackStack(CardListKey)
+fun EncarteNavHost(container: AppContainer, initialBackStack: List<NavKey> = listOf(CardListKey)) {
+    val backStack = rememberNavBackStack(*initialBackStack.toTypedArray())
     // NavDisplay requires a non-empty back stack: never pop the root entry.
     val pop: () -> Unit = { if (backStack.size > 1) backStack.removeLastOrNull() }
     // Set when the card display archives a card; the list then offers to undo it.
