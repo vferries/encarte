@@ -80,8 +80,9 @@ class GroupCardsScreenTest {
         val cards = CardRepository(db, ImageStore(File(tmp.root, "i"), File(tmp.root, "s")), Clock.systemUTC())
         val courses = runBlocking { (groups.create("Courses") as GroupNameResult.Saved).id }
         var closed = false
+        val viewModel = GroupCardsViewModel(courses, cards, groups, cardCollator())
         composeRule.setContent {
-            GroupCardsRoute(GroupCardsViewModel(courses, cards, groups, cardCollator()), onBack = { closed = true })
+            GroupCardsRoute(viewModel, onBack = { closed = true })
         }
         // Room delivers on its own threads, which the compose rule doesn't wait for.
         composeRule.waitUntil(5_000) { composeRule.onAllNodesWithText("Courses").fetchSemanticsNodes().isNotEmpty() }
