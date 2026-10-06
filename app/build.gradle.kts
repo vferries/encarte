@@ -108,6 +108,8 @@ dependencies {
 
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core.ktx)
+    // Backports RemoteCollectionItems to API 26: the widget grid without the deprecated setRemoteAdapter(Intent).
+    implementation(libs.androidx.core.remoteviews)
     implementation(libs.androidx.exifinterface)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)

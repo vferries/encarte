@@ -152,4 +152,7 @@
     <string name="group_options">Options du groupe</string>
     <string name="group_empty">Aucune carte dans « %1$s »</string>
     <string name="group_section">Groupes</string>
+    <string name="widget_favorites">★ Favoris</string>
+    <string name="widget_no_favorites">Aucune carte favorite</string>
+    <string name="widget_description">Vos cartes favorites ou un groupe, à portée de main.</string>
 </resources>

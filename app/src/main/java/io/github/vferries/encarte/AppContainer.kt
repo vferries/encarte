@@ -18,6 +18,7 @@ import io.github.vferries.encarte.core.nfc.NfcContactlessGuard
 import io.github.vferries.encarte.core.prefs.SettingsRepository
 import io.github.vferries.encarte.core.time.DeviceClock
 import io.github.vferries.encarte.lock.LockManager
+import io.github.vferries.encarte.widget.WidgetSourceStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.withContext
@@ -36,6 +37,10 @@ class AppContainer(context: Context) {
 
     val settingsRepository = SettingsRepository(
         PreferenceDataStoreFactory.create { appContext.preferencesDataStoreFile("settings") }
+    )
+
+    val widgetSources = WidgetSourceStore(
+        PreferenceDataStoreFactory.create { appContext.preferencesDataStoreFile("widgets") }
     )
 
     val brandCatalog = BrandCatalog {
