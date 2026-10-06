@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/widget_locked"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -8,12 +9,14 @@
     android:orientation="vertical"
     android:padding="8dp">
 
+    <!-- Inflated by RemoteViews in the launcher process: platform views, no AppCompat, so app:tint would be ignored. -->
     <ImageView
         android:layout_width="32dp"
         android:layout_height="32dp"
         android:importantForAccessibility="no"
         android:src="@drawable/ic_lock"
-        android:tint="@color/widget_on_background" />
+        android:tint="@color/widget_on_background"
+        tools:ignore="UseAppTint" />
 
     <TextView
         android:id="@+id/widget_locked_label"
