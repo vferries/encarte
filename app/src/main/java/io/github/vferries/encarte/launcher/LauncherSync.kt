@@ -11,6 +11,7 @@ import io.github.vferries.encarte.core.prefs.SortOrder
 import io.github.vferries.encarte.widget.WidgetSourceStore
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import java.text.Collator
 
 private const val TAG = "LauncherSync"
@@ -58,11 +60,15 @@ class LauncherSync(
 
     /** Placement, reboot or a new source: these widgets need drawing even if no data changed. */
     suspend fun renderWidgets(appWidgetIds: IntArray) {
-        // Read under the lock: a read made before it could be older than what the sync pushes meanwhile, and would
-        // then be drawn over it. The read only queries the database and the stores, never waits on the collector.
-        mutex.withLock {
-            val current = attempt("home screen data") { inputs.first() } ?: return@withLock
-            pushUnlocked(current, forcedWidgets = appWidgetIds.toSet())
+        // The widget configuration screen calls this from the main thread: icon bitmaps, the font and the binder
+        // calls of a push must not block it.
+        withContext(Dispatchers.Default) {
+            // Read under the lock: a read made before it could be older than what the sync pushes meanwhile, and would
+            // then be drawn over it. The read only queries the database and the stores, never waits on the collector.
+            mutex.withLock {
+                val current = attempt("home screen data") { inputs.first() } ?: return@withLock
+                pushUnlocked(current, forcedWidgets = appWidgetIds.toSet())
+            }
         }
     }
 

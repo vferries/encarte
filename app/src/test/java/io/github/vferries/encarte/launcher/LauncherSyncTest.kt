@@ -1,5 +1,6 @@
 package io.github.vferries.encarte.launcher
 
+import android.os.Looper
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
@@ -41,9 +42,12 @@ import java.util.Locale
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
 
+private fun onMainThread() = Looper.myLooper() == Looper.getMainLooper()
+
 private class FakeShortcuts : ShortcutPublisher {
     override val cardLimit = 3
     val published = CopyOnWriteArrayList<List<LauncherCard>>()
+    val publishedOnMain = CopyOnWriteArrayList<Boolean>()
     val pinnedSyncs = CopyOnWriteArrayList<Pair<List<LauncherCard>, Boolean>>()
 
     @Volatile
@@ -51,6 +55,7 @@ private class FakeShortcuts : ShortcutPublisher {
 
     override fun publish(cards: List<LauncherCard>): Boolean {
         published += cards
+        publishedOnMain += onMainThread()
         return !refuseNext.also { refuseNext = false }
     }
 
@@ -66,6 +71,7 @@ private class FakeWidgets : WidgetRenderer {
     @Volatile
     var failNext = false
     val renders = CopyOnWriteArrayList<Pair<Int, WidgetContent>>()
+    val renderedOnMain = CopyOnWriteArrayList<Boolean>()
 
     override fun widgetIds() = ids
 
@@ -75,6 +81,7 @@ private class FakeWidgets : WidgetRenderer {
             throw IllegalStateException("launcher gone")
         }
         renders += appWidgetId to content
+        renderedOnMain += onMainThread()
     }
 }
 
@@ -208,6 +215,20 @@ class LauncherSyncTest {
         sync.renderWidgets(intArrayOf(7))
 
         assertEquals(2, widgets.renders.size)
+    }
+
+    @Test
+    fun renderWidgetsPushesOffTheMainThread() = runTest {
+        widgets.ids = intArrayOf(7)
+        val sync = LauncherSync(cards, groups, settings, sources, shortcuts, widgets, cardCollator(Locale.FRANCE))
+        // Robolectric runs the test on the main thread, where the widget configuration screen calls renderWidgets.
+        assertTrue(onMainThread())
+
+        sync.renderWidgets(intArrayOf(7))
+
+        // Icon bitmaps, the font and the binder calls must not hold the main thread.
+        assertEquals(listOf(false), shortcuts.publishedOnMain)
+        assertEquals(listOf(false), widgets.renderedOnMain)
     }
 
     @Test
