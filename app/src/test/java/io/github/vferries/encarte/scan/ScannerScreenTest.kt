@@ -1,11 +1,18 @@
 package io.github.vferries.encarte.scan
 
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.github.vferries.encarte.lock.LocalContentCovered
+import kotlinx.coroutines.awaitCancellation
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -60,6 +67,60 @@ class ScannerScreenTest {
         composeRule.onNodeWithText("Enter manually").performClick()
 
         assertTrue(manual)
+    }
+
+    private var covered by mutableStateOf(true)
+    private var permissionRequests = 0
+    private var cameraStarts = 0
+    private var cameraStops = 0
+
+    // As behind the lock, which the "Add a card" shortcut can open the scanner under.
+    private fun setCameraEffects(permission: CameraPermission) = composeRule.setContent {
+        CompositionLocalProvider(LocalContentCovered provides covered) {
+            CameraEffects(
+                permission = permission,
+                requestPermission = { permissionRequests++ },
+                runCamera = {
+                    cameraStarts++
+                    try {
+                        awaitCancellation()
+                    } finally {
+                        cameraStops++
+                    }
+                },
+            )
+        }
+    }
+
+    @Test
+    fun thePermissionIsAskedOnlyOnceUnlocked() {
+        setCameraEffects(CameraPermission.NOT_GRANTED)
+        composeRule.runOnIdle { assertEquals(0, permissionRequests) }
+
+        covered = false
+        composeRule.runOnIdle { assertEquals(1, permissionRequests) }
+
+        // Without a lock, coming back to the app does not ask again: neither does an unlock.
+        covered = true
+        composeRule.waitForIdle()
+        covered = false
+        composeRule.runOnIdle { assertEquals(1, permissionRequests) }
+    }
+
+    @Test
+    fun theCameraRunsOnlyWhileUnlocked() {
+        setCameraEffects(CameraPermission.GRANTED)
+        composeRule.runOnIdle { assertEquals(0, cameraStarts) }
+
+        covered = false
+        composeRule.runOnIdle {
+            assertEquals(1, cameraStarts)
+            assertEquals(0, cameraStops)
+        }
+
+        covered = true
+        composeRule.runOnIdle { assertEquals(1, cameraStops) }
+        assertEquals(0, permissionRequests)
     }
 
     @Test

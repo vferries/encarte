@@ -51,10 +51,12 @@ import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.vferries.encarte.R
+import io.github.vferries.encarte.lock.LocalContentCovered
 import java.io.IOException
 
 private const val TAG = "ScannerScreen"
@@ -73,7 +75,6 @@ fun ScannerRoute(
 ) {
     val context = LocalContext.current
     val activity = LocalActivity.current
-    val lifecycleOwner = LocalLifecycleOwner.current
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var permission by remember { mutableStateOf(if (context.hasCameraPermission()) CameraPermission.GRANTED else CameraPermission.NOT_GRANTED) }
 
@@ -93,15 +94,14 @@ fun ScannerRoute(
         }
     }
 
-    LaunchedEffect(Unit) {
-        if (permission != CameraPermission.GRANTED) requestPermission.launch(Manifest.permission.CAMERA)
-    }
+    CameraEffects(
+        permission = permission,
+        requestPermission = { requestPermission.launch(Manifest.permission.CAMERA) },
+        runCamera = { owner -> viewModel.bindToCamera(context.applicationContext, owner) },
+    )
     // The user may grant the permission from the system settings and come back.
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         if (context.hasCameraPermission()) permission = CameraPermission.GRANTED
-    }
-    if (permission == CameraPermission.GRANTED) {
-        LaunchedEffect(lifecycleOwner) { viewModel.bindToCamera(context.applicationContext, lifecycleOwner) }
     }
     LaunchedEffect(state.result) {
         state.result?.let(onScanned)
@@ -123,6 +123,31 @@ fun ScannerRoute(
             }
         },
     )
+}
+
+/**
+ * Asks for the camera and runs it only while the screen shows. Behind the lock (the "Add a card" shortcut can open the
+ * scanner there), the camera would film under the lock screen and the permission dialog would stack over the prompt.
+ */
+@Composable
+internal fun CameraEffects(
+    permission: CameraPermission,
+    requestPermission: () -> Unit,
+    runCamera: suspend (LifecycleOwner) -> Unit,
+) {
+    val covered = LocalContentCovered.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    // Asked once per visit to the screen, as without a lock: an unlock is not a new visit.
+    var asked by remember { mutableStateOf(false) }
+    LaunchedEffect(covered) {
+        if (covered || asked) return@LaunchedEffect
+        asked = true
+        if (permission != CameraPermission.GRANTED) requestPermission()
+    }
+    // Covering the screen cancels this effect, which unbinds the camera.
+    if (permission == CameraPermission.GRANTED && !covered) {
+        LaunchedEffect(lifecycleOwner) { runCamera(lifecycleOwner) }
+    }
 }
 
 private fun Context.hasCameraPermission() =
