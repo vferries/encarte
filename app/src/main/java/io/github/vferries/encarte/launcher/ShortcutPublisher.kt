@@ -51,8 +51,15 @@ class AndroidShortcutPublisher(private val context: Context) : ShortcutPublisher
         if (changes.disable.isNotEmpty()) {
             ShortcutManagerCompat.disableShortcuts(context, changes.disable, context.getString(R.string.shortcut_card_deleted))
         }
-        if (changes.update.isEmpty()) return
-        val updates = changes.update.map { card -> if (locked) lockedShortcut(card) else cardShortcut(card, rank = 0) }
+        val updates = if (locked) {
+            changes.update.map(::lockedShortcut)
+        } else {
+            // A pinned menu entry is also dynamic: publish already updated it, and rebuilding it here would reset its
+            // rank, which orders the menu.
+            val dynamic = ShortcutManagerCompat.getDynamicShortcuts(context).mapTo(mutableSetOf()) { it.id }
+            changes.update.filterNot { cardShortcutId(it.id) in dynamic }.map { cardShortcut(it, rank = 0) }
+        }
+        if (updates.isEmpty()) return
         if (!ShortcutManagerCompat.updateShortcuts(context, updates)) {
             Log.w(TAG, "Android refused the pinned shortcuts update (rate limit)")
         }

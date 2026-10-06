@@ -1,6 +1,7 @@
 package io.github.vferries.encarte.launcher
 
 import android.content.Context
+import android.content.pm.ShortcutInfo
 import android.content.pm.ShortcutManager
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
@@ -13,6 +14,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.util.ReflectionHelpers
+import org.robolectric.util.ReflectionHelpers.ClassParameter
 import org.xmlpull.v1.XmlPullParser
 
 @RunWith(AndroidJUnit4::class)
@@ -21,6 +24,8 @@ class ShortcutPublisherTest {
     private val publisher = AndroidShortcutPublisher(context)
     private val fnac = LauncherCard(1, "Fnac", 0xFF1976D2.toInt())
     private val zara = LauncherCard(2, "Zara", 0xFFD32F2F.toInt())
+    private val ikea = LauncherCard(3, "Ikea", 0xFFFBC02D.toInt())
+    private val lidl = LauncherCard(4, "Lidl", 0xFF388E3C.toInt())
 
     private val shortcutManager = context.getSystemService(ShortcutManager::class.java)
 
@@ -30,6 +35,13 @@ class ShortcutPublisherTest {
             .setIntent(LaunchRequests.viewCard(context, cardId))
             .build()
         shortcutManager.requestPinShortcut(info.toShortcutInfo(), null)
+    }
+
+    /** On Android a pinned menu entry stays dynamic too; Robolectric's requestPinShortcut would take it out of the menu. */
+    private fun pinMenuEntry(id: String) {
+        val info = shortcutManager.dynamicShortcuts.single { it.id == id }
+        val pinned = ReflectionHelpers.getStaticField<Int>(ShortcutInfo::class.java, "FLAG_PINNED")
+        ReflectionHelpers.callInstanceMethod<Unit>(info, "addFlags", ClassParameter.from(Int::class.javaPrimitiveType, pinned))
     }
 
     // One sync per test: Robolectric's shadow drops the pinned flag of a shortcut it updates.
@@ -75,6 +87,19 @@ class ShortcutPublisherTest {
         publisher.syncPinned(listOf(fnac), locked = false)
 
         assertEquals("Fnac", pinnedLabel("card:1"))
+    }
+
+    @Test
+    fun anUnlockedSyncKeepsTheMenuOrder() {
+        publisher.publish(listOf(fnac, zara, ikea))
+        pinMenuEntry("card:2")
+        pin(lidl.id, "Encarté")
+
+        publisher.syncPinned(listOf(fnac, zara, ikea, lidl), locked = false)
+
+        val ranks = ShortcutManagerCompat.getDynamicShortcuts(context).associate { it.id to it.rank }
+        assertEquals(mapOf("card:1" to 0, "card:2" to 1, "card:3" to 2), ranks)
+        assertEquals("Lidl", pinnedLabel("card:4"))
     }
 
     @Test
