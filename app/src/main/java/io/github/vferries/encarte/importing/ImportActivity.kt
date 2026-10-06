@@ -7,12 +7,20 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.compose.setContent
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.core.content.IntentCompat
 import androidx.lifecycle.lifecycleScope
 import io.github.vferries.encarte.EncarteApp
 import io.github.vferries.encarte.R
+import io.github.vferries.encarte.core.ui.theme.EncarteTheme
 import io.github.vferries.encarte.navigation.LaunchRequests
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
@@ -21,9 +29,13 @@ import java.io.FileNotFoundException
 
 private const val TAG = "ImportActivity"
 
+/** A quick import must not flash a card: it shows only when the copy is visibly slow. */
+private const val CARD_DELAY_MS = 400L
+
 /**
  * Receives a pass or a PDF from another app ("Open with", "Share"). It runs in that app's task, so it only copies
- * the file while the read grant lasts, hands the copy to MainActivity in Encarté's own task, and finishes. On
+ * the file while the read grant lasts, hands the copy to MainActivity in Encarté's own task, and finishes. The window stays transparent unless the copy takes a while: then a
+ * card with Cancel shows, or the screen would look frozen under an invisible window. On
  * MainActivity, the filters would start a second Encarté inside the mail app's task. It shows and reads no card
  * data: the app lock applies in MainActivity.
  */
@@ -36,7 +48,8 @@ class ImportActivity : ComponentActivity() {
             return
         }
         val files = (application as EncarteApp).container.importFiles
-        lifecycleScope.launch {
+        var cardShown by mutableStateOf(false)
+        val copying = lifecycleScope.launch {
             val copy = copy(files, uri)
             if (copy == null) {
                 refuse()
@@ -45,6 +58,27 @@ class ImportActivity : ComponentActivity() {
                 finish()
             }
         }
+        lifecycleScope.launch {
+            delay(CARD_DELAY_MS)
+            cardShown = true
+        }
+        val cancel = {
+            Log.i(TAG, "Import cancelled by the user")
+            cancelImport(copying)
+        }
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() = cancel()
+        })
+        setContent {
+            EncarteTheme {
+                if (cardShown) ImportProgressCard(onCancel = cancel)
+            }
+        }
+    }
+
+    private fun cancelImport(copying: Job) {
+        copying.cancel()
+        finish()
     }
 
     /** The file to read, or null (logged) for anything this activity's intent filters do not let through. */
@@ -66,7 +100,7 @@ class ImportActivity : ComponentActivity() {
     }
 
     private suspend fun copy(files: ImportFiles, uri: Uri): File? = withContext(Dispatchers.IO) {
-        val copy = files.copyOrNull { contentResolver.openInputStream(uri) ?: throw FileNotFoundException("No content") }
+        val copy = files.copyOrNull(shouldContinue = { isActive }) { contentResolver.openInputStream(uri) ?: throw FileNotFoundException("No content") }
         if (copy != null && !isActive) {
             // The activity was left during the copy: nobody will hand this file over.
             files.delete(copy)

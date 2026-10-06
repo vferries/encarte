@@ -26,15 +26,19 @@ class ImportFiles(private val dir: File, private val maxBytes: Long = MAX_IMPORT
     /** Names copied by this process: on a cold start, ImportActivity's copy can land before the startup cleanup runs. */
     private val ownNames: MutableSet<String> = ConcurrentHashMap.newKeySet()
 
-    /** Copies [open]'s content under a random UUID name. A failed or oversized copy leaves nothing. Blocking. */
-    fun copy(open: () -> InputStream): File {
+    /**
+     * Copies [open]'s content under a random UUID name. A failed, oversized or cancelled copy leaves nothing. Blocking.
+     * [shouldContinue] is asked between buffers: when false, the copy stops with a [CancellationException], so a slow
+     * provider is not read to the end for nothing.
+     */
+    fun copy(shouldContinue: () -> Boolean = { true }, open: () -> InputStream): File {
         dir.mkdirs()
         val name = UUID.randomUUID().toString()
         ownNames += name
         val file = File(dir, name)
         var complete = false
         try {
-            providerCall { open() }.use { input -> FileOutputStream(file).use { output -> copyBounded(input, output) } }
+            providerCall { open() }.use { input -> FileOutputStream(file).use { output -> copyBounded(input, output, shouldContinue) } }
             complete = true
             return file
         } finally {
@@ -43,7 +47,8 @@ class ImportFiles(private val dir: File, private val maxBytes: Long = MAX_IMPORT
     }
 
     /** [copy], or null when the provider fails or the file is too large (see [providerOrNull]). Blocking. */
-    fun copyOrNull(open: () -> InputStream): File? = providerOrNull { copy(open) }
+    fun copyOrNull(shouldContinue: () -> Boolean = { true }, open: () -> InputStream): File? =
+        providerOrNull { copy(shouldContinue, open) }
 
     /**
      * The first [size] bytes (fewer for a shorter file) of a fresh [open], which is closed; null when the provider
@@ -128,10 +133,11 @@ class ImportFiles(private val dir: File, private val maxBytes: Long = MAX_IMPORT
     }
 
     /** Bounded while copying: the announced size of a shared file can lie. */
-    private fun copyBounded(input: InputStream, output: OutputStream) {
+    private fun copyBounded(input: InputStream, output: OutputStream, shouldContinue: () -> Boolean) {
         val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
         var total = 0L
         while (true) {
+            if (!shouldContinue()) throw CancellationException("Copy cancelled")
             val read = providerCall { input.read(buffer) }
             if (read < 0) return
             total += read

@@ -4,6 +4,12 @@ import android.content.ComponentName
 import android.content.Intent
 import android.net.Uri
 import android.os.Looper
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
@@ -15,6 +21,7 @@ import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
@@ -23,9 +30,13 @@ import java.io.File
 import java.io.InputStream
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 @RunWith(AndroidJUnit4::class)
 class ImportActivityTest {
+    @get:Rule
+    val composeRule = createEmptyComposeRule()
+
     private val app = ApplicationProvider.getApplicationContext<EncarteApp>()
     private val attachment = Uri.parse("content://com.example.mail.provider/attachments/42")
     private val importDir = File(app.cacheDir, "imports")
@@ -195,5 +206,102 @@ class ImportActivityTest {
 
         assertEquals(emptyList<File>(), copies())
         assertNull(shadowOf(app).nextStartedActivity)
+    }
+
+    /** A provider that never answers until [gate] opens, then streams forever: only a cancelled copy stops reading. */
+    private fun serveSlow(gate: CountDownLatch, reads: AtomicInteger, reading: CountDownLatch = CountDownLatch(1)) =
+        serve(attachment) {
+            object : InputStream() {
+                override fun read(): Int = 'x'.code
+                override fun read(b: ByteArray, off: Int, len: Int): Int {
+                    reads.incrementAndGet()
+                    reading.countDown()
+                    gate.await(5, TimeUnit.SECONDS)
+                    b[off] = 'x'.code.toByte()
+                    return 1
+                }
+            }
+        }
+
+    /** The delay runs on the main looper, which Robolectric holds still until told how much time passes. */
+    private fun pass(millis: Long) = shadowOf(Looper.getMainLooper()).idleFor(millis, TimeUnit.MILLISECONDS)
+
+    private fun awaitNoCopy() {
+        val deadline = System.currentTimeMillis() + 5_000
+        while (copies().isNotEmpty() && System.currentTimeMillis() < deadline) Thread.sleep(10)
+    }
+
+    @Test
+    fun theProgressCardAppearsOnlyWhenTheCopyTakesMoreThanFourHundredMilliseconds() {
+        val gate = CountDownLatch(1)
+        serveSlow(gate, AtomicInteger())
+
+        ActivityScenario.launch<ImportActivity>(view(attachment)).use {
+            pass(300)
+            composeRule.onAllNodesWithText("Importing…").assertCountEquals(0)
+
+            pass(200)
+            composeRule.onNodeWithText("Importing…").assertIsDisplayed()
+            composeRule.onNodeWithText("Cancel").assertIsDisplayed()
+            gate.countDown()
+        }
+    }
+
+    @Test
+    fun cancellingStopsTheCopyDeletesItAndStartsNothing() {
+        val gate = CountDownLatch(1)
+        val reading = CountDownLatch(1)
+        val reads = AtomicInteger()
+        serveSlow(gate, reads, reading)
+
+        ActivityScenario.launch<ImportActivity>(view(attachment)).use { scenario ->
+            assertTrue(reading.await(5, TimeUnit.SECONDS))
+            pass(500)
+            composeRule.onNodeWithText("Cancel").performClick()
+            assertTrue(scenario.state == Lifecycle.State.DESTROYED || finishing(scenario))
+            gate.countDown()
+            awaitNoCopy()
+            Thread.sleep(100)
+            assertEquals("the copy stopped reading", 1, reads.get())
+        }
+
+        assertEquals(emptyList<File>(), copies())
+        assertNull(shadowOf(app).nextStartedActivity)
+        assertEquals(0, ShadowToast.shownToastCount())
+    }
+
+    @Test
+    fun backCancelsTheCopyLikeCancel() {
+        val gate = CountDownLatch(1)
+        val reading = CountDownLatch(1)
+        serveSlow(gate, AtomicInteger(), reading)
+
+        ActivityScenario.launch<ImportActivity>(view(attachment)).use { scenario ->
+            assertTrue(reading.await(5, TimeUnit.SECONDS))
+            scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
+            assertTrue(scenario.state == Lifecycle.State.DESTROYED || finishing(scenario))
+            gate.countDown()
+            awaitNoCopy()
+        }
+
+        assertEquals(emptyList<File>(), copies())
+        assertNull(shadowOf(app).nextStartedActivity)
+        assertEquals(0, ShadowToast.shownToastCount())
+    }
+
+    @Test
+    fun aFastCopyNeverShowsTheCard() {
+        serve(attachment) { TestFiles.pass().inputStream() }
+
+        runToTheEnd(view(attachment))
+
+        composeRule.onAllNodesWithText("Importing…").assertCountEquals(0)
+        assertEquals(LaunchRequests.ACTION_IMPORT_FILE, shadowOf(app).nextStartedActivity.action)
+    }
+
+    private fun finishing(scenario: ActivityScenario<ImportActivity>): Boolean {
+        var finishing = false
+        scenario.onActivity { finishing = it.isFinishing }
+        return finishing
     }
 }

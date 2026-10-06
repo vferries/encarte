@@ -85,6 +85,7 @@
     <string name="import_file_cannot_open">Impossible d\'ouvrir ce fichier.</string>
     <string name="import_file_gone">Ce fichier n\'est plus disponible.</string>
     <string name="import_reading">Lecture du fichier…</string>
+    <string name="import_in_progress">Import en cours…</string>
     <string name="import_choice_title">Choisir un code</string>
     <string name="import_choice_page">Page %1$d</string>
     <string name="import_note_valid_from">Valide à partir du : %1$s</string>

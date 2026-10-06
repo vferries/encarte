@@ -5,6 +5,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -12,6 +13,7 @@ import java.io.File
 import java.io.IOException
 import java.io.InputStream
 import java.util.UUID
+import kotlin.coroutines.cancellation.CancellationException
 
 class ImportFilesTest {
     @get:Rule
@@ -52,6 +54,20 @@ class ImportFilesTest {
 
         assertThrowsIo<IOException> { files.copy { failing } }
 
+        assertEquals(emptyList<String>(), leftovers())
+    }
+
+    @Test
+    fun aCancelledCopyStopsReadingAndLeavesNothing() {
+        var reads = 0
+        val endless = object : InputStream() {
+            override fun read(): Int = 'x'.code
+            override fun read(b: ByteArray, off: Int, len: Int): Int = 1.also { reads++; b[off] = 'x'.code.toByte() }
+        }
+
+        assertThrows(CancellationException::class.java) { files.copy(shouldContinue = { reads < 3 }) { endless } }
+
+        assertEquals(3, reads)
         assertEquals(emptyList<String>(), leftovers())
     }
 

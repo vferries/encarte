@@ -70,7 +70,7 @@ class FileImport(
         val cannotOpen = ImportOutcome.Failure(ImportFailure.CANNOT_OPEN)
         val head = files.headOrNull(SNIFF_BYTES, open) ?: return@withContext cannotOpen
         if (needsCopy(head)) {
-            val file = files.copyOrNull(open) ?: return@withContext cannotOpen
+            val file = files.copyOrNull(open = open) ?: return@withContext cannotOpen
             analyseAndDelete(file)
         } else {
             decodePicked(open)
