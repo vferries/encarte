@@ -62,6 +62,25 @@ class CatimaArchive(
         return backup
     }
 
+    /**
+     * A FidMe export: a ZIP without catima.csv that holds loyalty_programs.csv, at its root or in a folder, in any
+     * case. Entry names are readable without the password, so an encrypted export is recognised too.
+     */
+    fun isFidMeExport(file: File): Boolean = ZipFile(file).use { zip ->
+        zip.isValidZipFile && zip.fileHeaders.none { it.baseName == CatimaCsv.FILE_NAME } && fidMeHeader(zip) != null
+    }
+
+    fun readFidMe(file: File, password: CharArray?): List<FidMeRow> {
+        val rows = open(file, password).use { zip ->
+            checkReadable(zip, password)
+            val header = fidMeHeader(zip) ?: throw FidMeFormatException("No ${FidMeCsv.FILE_NAME} in archive")
+            // Decoded whole: decoding chunks, as Catima does, can split an accented character.
+            FidMeCsv.read(readEntryBytes(zip, header).toString(Charsets.UTF_8))
+        }
+        if (rows.size > maxCards) throw FidMeFormatException("Too many rows: ${rows.size}")
+        return rows
+    }
+
     fun forEachImage(file: File, password: CharArray?, action: (CatimaImageRef, InputStream) -> Unit) {
         open(file, password).use { zip ->
             if (!zip.isValidZipFile) return
@@ -126,6 +145,9 @@ class CatimaArchive(
             out.write(buffer, 0, read)
         }
     }
+
+    private fun fidMeHeader(zip: ZipFile): FileHeader? =
+        zip.fileHeaders.firstOrNull { !it.isDirectory && it.baseName.equals(FidMeCsv.FILE_NAME, ignoreCase = true) }
 
     private fun imageRef(name: String): CatimaImageRef? {
         val match = IMAGE_ENTRY.matchEntire(name) ?: return null

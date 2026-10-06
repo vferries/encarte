@@ -5,6 +5,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.vferries.encarte.backup.BackupService
 import io.github.vferries.encarte.backup.CatimaArchive
 import io.github.vferries.encarte.backup.ImportLabels
+import io.github.vferries.encarte.brands.BrandCatalog
 import io.github.vferries.encarte.core.data.ImageStore
 import io.github.vferries.encarte.core.prefs.SettingsRepository
 import io.github.vferries.encarte.testing.MainDispatcherRule
@@ -40,6 +41,7 @@ class SettingsViewModelTest {
         BackupService(
             db, ImageStore(File(tmp.root, "images"), File(tmp.root, "staging")), CatimaArchive(),
             File(tmp.root, "work"), { ImportLabels("%1\$s", "%1\$s", "%1\$s", Locale.US) }, Clock.systemUTC(),
+            BrandCatalog { "[]" },
         )
     }
 

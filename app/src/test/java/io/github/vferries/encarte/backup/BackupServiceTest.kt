@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.room3.useWriterConnection
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.github.vferries.encarte.brands.BrandCatalog
 import io.github.vferries.encarte.core.barcode.BarcodeFormat
 import io.github.vferries.encarte.core.data.Card
 import io.github.vferries.encarte.core.data.EncarteDatabase
@@ -16,6 +17,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import net.lingala.zip4j.ZipFile
+import net.lingala.zip4j.io.outputstream.ZipOutputStream
+import net.lingala.zip4j.model.ZipParameters
+import net.lingala.zip4j.model.enums.EncryptionMethod
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -50,13 +54,14 @@ class BackupServiceTest {
     private val images by lazy { ImageStore(File(tmp.root, "images"), File(tmp.root, "staging")) }
     private val service by lazy { serviceFor(db, images) }
     private val archive = CatimaArchive()
+    private val brands = BrandCatalog { """[{"name": "Fnac", "aliases": [], "color": "#E1A925"}]""" }
 
     @After
     fun tearDown() = db.close()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun serviceFor(database: EncarteDatabase, store: ImageStore) =
-        BackupService(database, store, archive, File(tmp.root, "work"), { labels }, clock, UnconfinedTestDispatcher())
+        BackupService(database, store, archive, File(tmp.root, "work"), { labels }, clock, brands, UnconfinedTestDispatcher())
 
     private fun fixtureArchive(password: CharArray? = null, csv: String = fixture("catima_v2.csv")): File {
         val file = File(tmp.root, "backup-${System.nanoTime()}.zip")
@@ -386,5 +391,122 @@ class BackupServiceTest {
         } finally {
             otherDb.close()
         }
+    }
+
+    private fun fidMeFixture() = javaClass.getResource("/fidme/${FidMeCsv.FILE_NAME}")!!.readText()
+
+    /** A FidMe export: the cards file among the files Encarté ignores. */
+    private fun fidMeExport(
+        csv: String = fidMeFixture(),
+        entryName: String = "export/Loyalty_Programs.CSV",
+        password: CharArray? = null,
+        extraEntries: Map<String, String> = mapOf("export/points.csv" to "Retailer;Points\nFnac;120\n"),
+    ): File {
+        val file = File(tmp.root, "fidme-${System.nanoTime()}.zip")
+        val output = FileOutputStream(file)
+        val zip = if (password != null) ZipOutputStream(output, password) else ZipOutputStream(output)
+        zip.use {
+            for ((name, text) in extraEntries + (entryName to csv)) {
+                it.putNextEntry(ZipParameters().apply {
+                    fileNameInZip = name
+                    if (password != null) {
+                        isEncryptFiles = true
+                        encryptionMethod = EncryptionMethod.AES
+                    }
+                })
+                it.write(text.toByteArray(Charsets.UTF_8))
+                it.closeEntry()
+            }
+        }
+        return file
+    }
+
+    @Test
+    fun aFidMeExportImportsInOneGo() = runTest {
+        val result = service.import(fidMeExport(), null)
+
+        assertEquals(
+            ImportResult.Success(imported = 3, skippedDuplicates = 0, skippedWithoutNumber = 1, source = ImportSource.FIDME),
+            result,
+        )
+        val cards = db.cardDao().getAll().associateBy { it.storeName }
+        assertEquals(setOf("Fnac", "Carrefour", "Boulangerie \"Chez Paul\"; Lyon"), cards.keys)
+        assertEquals(BarcodeFormat.EAN_13, cards.getValue("Fnac").barcodeFormat)
+        assertEquals(BarcodeFormat.CODE_128, cards.getValue("Carrefour").barcodeFormat)
+        assertEquals("Carte Fnac+\nMarie Dupont", cards.getValue("Fnac").note)
+        assertEquals(0xFFE1A925.toInt(), cards.getValue("Fnac").color)
+        assertEquals(clock.instant(), cards.getValue("Fnac").createdAt)
+    }
+
+    @Test
+    fun aSecondFidMeImportSkipsEveryDuplicate() = runTest {
+        val file = fidMeExport()
+        service.import(file, null)
+
+        assertEquals(
+            ImportResult.Success(imported = 0, skippedDuplicates = 3, skippedWithoutNumber = 1, source = ImportSource.FIDME),
+            service.import(file, null),
+        )
+        assertEquals(3, db.cardDao().getAll().size)
+    }
+
+    @Test
+    fun aFidMeCardAlreadyInTheWalletIsADuplicate() = runTest {
+        db.cardDao().insert(testCard("FNAC", cardNumber = "4006381333931"))
+
+        val result = service.import(fidMeExport(), null) as ImportResult.Success
+
+        assertEquals(2, result.imported)
+        assertEquals(1, result.skippedDuplicates)
+    }
+
+    @Test
+    fun aRootLevelFidMeFileIsFoundToo() = runTest {
+        val result = service.import(fidMeExport(entryName = FidMeCsv.FILE_NAME, extraEntries = emptyMap()), null)
+
+        assertEquals(3, (result as ImportResult.Success).imported)
+    }
+
+    @Test
+    fun aZipWithCatimaCsvStaysACatimaImport() = runTest {
+        val file = fixtureArchive()
+        ZipFile(file).addStream(fidMeFixture().byteInputStream(), ZipParameters().apply { fileNameInZip = FidMeCsv.FILE_NAME })
+
+        assertEquals(ImportResult.Success(imported = 8, skippedDuplicates = 0), service.import(file, null))
+    }
+
+    @Test
+    fun aFidMeFileWithoutItsRequiredColumnsIsInvalid() = runTest {
+        val file = fidMeExport(csv = "Retailer;Program\nFnac;Carte Fnac+\n")
+
+        assertEquals(ImportResult.Invalid, service.import(file, null))
+        assertTrue(db.cardDao().getAll().isEmpty())
+    }
+
+    @Test
+    fun aZipWithNeitherFileIsInvalid() = runTest {
+        val file = fidMeExport(entryName = "export/profile.csv")
+
+        assertEquals(ImportResult.Invalid, service.import(file, null))
+    }
+
+    @Test
+    fun anEncryptedFidMeZipAsksForThePassword() = runTest {
+        val file = fidMeExport(password = "pw".toCharArray())
+
+        assertEquals(ImportResult.PasswordRequired, service.import(file, null))
+        assertEquals(ImportSource.FIDME, (service.import(file, "pw".toCharArray()) as ImportResult.Success).source)
+    }
+
+    @Test
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun theCardCapAppliesToTheRowsRead() = runTest {
+        val capped = BackupService(
+            db, images, CatimaArchive(maxCards = 3), File(tmp.root, "work"), { labels }, clock, brands,
+            UnconfinedTestDispatcher(),
+        )
+
+        assertEquals(ImportResult.Invalid, capped.import(fidMeExport(), null))
+        assertTrue(db.cardDao().getAll().isEmpty())
     }
 }

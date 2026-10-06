@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.room3.withReadTransaction
 import androidx.room3.withWriteTransaction
 import androidx.sqlite.SQLiteException
+import io.github.vferries.encarte.brands.BrandCatalog
 import io.github.vferries.encarte.cards.list.cardCollator
 import io.github.vferries.encarte.core.data.Card
 import io.github.vferries.encarte.core.data.CardGroup
@@ -24,8 +25,16 @@ import java.util.UUID
 
 private const val TAG = "BackupService"
 
+enum class ImportSource { CATIMA, FIDME }
+
 sealed interface ImportResult {
-    data class Success(val imported: Int, val skippedDuplicates: Int) : ImportResult
+    data class Success(
+        val imported: Int,
+        val skippedDuplicates: Int,
+        /** FidMe rows without a number (FidMe blanks expired cards) or without a store name; 0 for Catima. */
+        val skippedWithoutNumber: Int = 0,
+        val source: ImportSource = ImportSource.CATIMA,
+    ) : ImportResult
     data object PasswordRequired : ImportResult
     data object WrongPassword : ImportResult
     data class UnsupportedVersion(val version: Int) : ImportResult
@@ -45,6 +54,8 @@ class BackupService(
     private val workDir: File,
     private val labels: () -> ImportLabels,
     private val clock: Clock,
+    /** FidMe exports no colors: its cards take their brand's. */
+    private val brands: BrandCatalog,
     private val io: CoroutineDispatcher = Dispatchers.IO,
 ) {
     private val dao = database.cardDao()
@@ -81,6 +92,9 @@ class BackupService(
         } catch (e: CatimaFormatException) {
             Log.w(TAG, "Invalid backup: ${e.message}")
             ImportResult.Invalid
+        } catch (e: FidMeFormatException) {
+            Log.w(TAG, "Invalid FidMe export: ${e.message}")
+            ImportResult.Invalid
         } catch (e: IOException) {
             Log.e(TAG, "Cannot read backup", e)
             ImportResult.IoError
@@ -92,7 +106,29 @@ class BackupService(
         }
     }
 
-    private suspend fun importOrThrow(file: File, password: CharArray?): ImportResult {
+    private suspend fun importOrThrow(file: File, password: CharArray?): ImportResult =
+        if (archive.isFidMeExport(file)) importFidMe(file, password) else importCatima(file, password)
+
+    /** Cards only: FidMe's points, stamps, tickets and profile files are ignored. */
+    private suspend fun importFidMe(file: File, password: CharArray?): ImportResult {
+        val rows = archive.readFidMe(file, password)
+        val now = clock.instant()
+        val cards = rows.mapNotNull { FidMeMapping.toCard(it, brands, now) }
+        val skippedWithoutNumber = rows.size - cards.size
+        if (skippedWithoutNumber > 0) Log.i(TAG, "FidMe rows without a number or a store skipped: $skippedWithoutNumber")
+
+        val knownKeys = dao.getAll().mapTo(mutableSetOf()) { it.duplicateKey() }
+        val toImport = cards.filter { knownKeys.add(it.duplicateKey()) }
+        database.withWriteTransaction<Unit> { toImport.forEach { dao.insert(it) } }
+        return ImportResult.Success(
+            imported = toImport.size,
+            skippedDuplicates = cards.size - toImport.size,
+            skippedWithoutNumber = skippedWithoutNumber,
+            source = ImportSource.FIDME,
+        )
+    }
+
+    private suspend fun importCatima(file: File, password: CharArray?): ImportResult {
         val backup = archive.read(file, password)
         val sources = backup.cards
         val now = clock.instant()

@@ -66,6 +66,7 @@ class AppContainer(context: Context) {
         workDir = File(appContext.cacheDir, "backup"),
         labels = { importLabels(appContext) },
         clock = clock,
+        brands = brandCatalog,
     )
 
     val lockManager = LockManager(MainScope(), settingsRepository.lockEnabled, SystemClock::elapsedRealtime)
