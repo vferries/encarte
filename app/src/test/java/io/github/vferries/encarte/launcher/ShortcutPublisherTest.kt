@@ -1,5 +1,6 @@
 package io.github.vferries.encarte.launcher
 
+import android.app.Application
 import android.content.Context
 import android.content.pm.ShortcutInfo
 import android.content.pm.ShortcutManager
@@ -14,10 +15,13 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.annotation.Config
 import org.robolectric.util.ReflectionHelpers
 import org.robolectric.util.ReflectionHelpers.ClassParameter
 import org.xmlpull.v1.XmlPullParser
 
+// A plain Application: EncarteApp's LauncherSync would publish to the same ShortcutManager mid-test.
+@Config(application = Application::class)
 @RunWith(AndroidJUnit4::class)
 class ShortcutPublisherTest {
     private val context = ApplicationProvider.getApplicationContext<Context>()
