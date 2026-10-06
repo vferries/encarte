@@ -33,5 +33,6 @@ class EncarteApp : Application() {
                 Log.e(TAG, "Startup cleanup failed", e)
             }
         }
+        container.launcherSync.start(container.appScope)
     }
 }

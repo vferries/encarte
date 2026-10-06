@@ -1,0 +1,129 @@
+package io.github.vferries.encarte.launcher
+
+import android.util.Log
+import io.github.vferries.encarte.cards.list.cardCollator
+import io.github.vferries.encarte.core.data.Card
+import io.github.vferries.encarte.core.data.CardGroup
+import io.github.vferries.encarte.core.data.CardRepository
+import io.github.vferries.encarte.core.data.GroupRepository
+import io.github.vferries.encarte.core.prefs.SettingsRepository
+import io.github.vferries.encarte.core.prefs.SortOrder
+import io.github.vferries.encarte.widget.WidgetSourceStore
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import java.text.Collator
+
+private const val TAG = "LauncherSync"
+
+/**
+ * Keeps the home screen in step with the cards: card shortcuts, pinned shortcuts and every widget.
+ * Each output is pushed only when it changed, which keeps clear of Android's shortcut rate limit.
+ */
+class LauncherSync(
+    private val cards: CardRepository,
+    private val groups: GroupRepository,
+    private val settings: SettingsRepository,
+    private val widgetSources: WidgetSourceStore,
+    private val shortcuts: ShortcutPublisher,
+    private val widgets: WidgetRenderer,
+    private val collator: Collator = cardCollator(),
+) {
+    private val mutex = Mutex()
+    private var lastDynamic: List<LauncherCard>? = null
+    private var lastPinned: PinnedState? = null
+    private val lastWidgets = mutableMapOf<Int, WidgetContent>()
+
+    private val inputs: Flow<LauncherInputs> = combine(
+        combine(cards.observeCards(), groups.observeGroups(collator), groups.observeMemberships()) { all, groupList, memberships ->
+            CardData(all, groupList, memberships)
+        },
+        settings.lockEnabled,
+        settings.sortOrder,
+        widgetSources.sources,
+    ) { data, locked, order, sources -> LauncherInputs(data, locked, order, sources) }
+
+    fun start(scope: CoroutineScope): Job = scope.launch {
+        inputs
+            .catch { e -> Log.e(TAG, "Home screen sync stopped", e) }
+            .collect { push(it, forcedWidgets = emptySet()) }
+    }
+
+    /** Placement, reboot or a new source: these widgets need drawing even if no data changed. */
+    suspend fun renderWidgets(appWidgetIds: IntArray) {
+        val current = attempt("home screen data") { inputs.first() } ?: return
+        push(current, forcedWidgets = appWidgetIds.toSet())
+    }
+
+    private suspend fun push(inputs: LauncherInputs, forcedWidgets: Set<Int>) = mutex.withLock {
+        pushDynamicShortcuts(inputs)
+        pushPinnedShortcuts(inputs)
+        pushWidgets(inputs, forcedWidgets)
+    }
+
+    private fun pushDynamicShortcuts(inputs: LauncherInputs) {
+        // cardLimit asks the shortcut service too, so it belongs inside the attempt.
+        attempt("card shortcuts") {
+            val wanted = if (inputs.locked) emptyList() else shortcutCards(inputs.data.cards, collator, shortcuts.cardLimit)
+            if (wanted == lastDynamic) return
+            if (shortcuts.publish(wanted)) {
+                lastDynamic = wanted
+            } else {
+                Log.w(TAG, "Android refused the card shortcuts (rate limit): retrying at the next change")
+            }
+        }
+    }
+
+    private fun pushPinnedShortcuts(inputs: LauncherInputs) {
+        val wanted = PinnedState(inputs.data.cards.map { it.toLauncherCard() }, inputs.locked)
+        if (wanted == lastPinned) return
+        attempt("pinned shortcuts") {
+            shortcuts.syncPinned(wanted.cards, wanted.locked)
+            lastPinned = wanted
+        }
+    }
+
+    private fun pushWidgets(inputs: LauncherInputs, forced: Set<Int>) {
+        val ids = attempt("widget ids") { widgets.widgetIds().toSet() }.orEmpty() + forced
+        lastWidgets.keys.retainAll(ids)
+        for (id in ids) {
+            val content = widgetContent(
+                inputs.sources[id], inputs.data.cards, inputs.data.groups, inputs.data.memberships,
+                inputs.order, collator, inputs.locked,
+            )
+            if (id !in forced && lastWidgets[id] == content) continue
+            attempt("widget $id") {
+                widgets.render(id, content)
+                lastWidgets[id] = content
+            }
+        }
+    }
+
+    /** A failed push is logged and retried at the next change: it never stops the sync. */
+    private inline fun <T> attempt(what: String, block: () -> T): T? = try {
+        block()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Log.e(TAG, "Cannot update the $what", e)
+        null
+    }
+
+    private data class CardData(val cards: List<Card>, val groups: List<CardGroup>, val memberships: Map<Long, Set<Long>>)
+
+    private data class LauncherInputs(
+        val data: CardData,
+        val locked: Boolean,
+        val order: SortOrder,
+        val sources: Map<Int, WidgetSource>,
+    )
+
+    private data class PinnedState(val cards: List<LauncherCard>, val locked: Boolean)
+}
