@@ -4,7 +4,6 @@ import android.content.Context
 import android.nfc.NfcAdapter
 import android.os.SystemClock
 import android.util.Log
-import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.preferencesDataStoreFile
 import io.github.vferries.encarte.backup.BackupService
 import io.github.vferries.encarte.backup.CatimaArchive
@@ -17,6 +16,7 @@ import io.github.vferries.encarte.core.data.ImageStore
 import io.github.vferries.encarte.core.nfc.ContactlessGuard
 import io.github.vferries.encarte.core.nfc.NfcContactlessGuard
 import io.github.vferries.encarte.core.prefs.SettingsRepository
+import io.github.vferries.encarte.core.prefs.preferencesStore
 import io.github.vferries.encarte.core.time.DeviceClock
 import io.github.vferries.encarte.importing.FileImport
 import io.github.vferries.encarte.importing.ImportFiles
@@ -50,11 +50,11 @@ class AppContainer(context: Context) {
     val groupRepository = GroupRepository(database)
 
     val settingsRepository = SettingsRepository(
-        PreferenceDataStoreFactory.create { appContext.preferencesDataStoreFile("settings") }
+        preferencesStore { appContext.preferencesDataStoreFile("settings") }
     )
 
     val widgetSources = WidgetSourceStore(
-        PreferenceDataStoreFactory.create { appContext.preferencesDataStoreFile("widgets") }
+        preferencesStore { appContext.preferencesDataStoreFile("widgets") }
     )
 
     val brandCatalog = BrandCatalog {
