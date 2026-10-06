@@ -49,6 +49,13 @@ F-Droid in `docs/release/fdroid/README.md`.
       Turn the app lock on: the widget shows only the lock.
 - [ ] Shortcuts: long-press the app icon: up to 3 cards and "Add a card". Drag a card onto the home screen, then
       turn the app lock on: the menu keeps only "Add a card", and the pinned shortcut reads "Encarté".
+- [ ] FidMe: import the FidMe test export (`app/src/test/resources/fidme/`, zipped as its README says). The dialog
+      counts imported, skipped-without-number and duplicate cards, and the cards carry guessed barcode types.
+      To verify on a real FidMe export as soon as one is available (migration spec §8).
+- [ ] Pass: from the Files app, "Open with" Encarté on a `.pkpass` (`app/src/test/resources/pass/`, zipped as its
+      README says). The editor opens pre-filled, and the saved card's code reads at a checkout scanner.
+- [ ] PDF: "Share" a two-code PDF to Encarté. "Choose a code" lists both codes. A PDF without a code shows
+      « Aucun code-barres trouvé dans ce PDF ».
 - [ ] Rotate on every screen; "Don't keep activities" round-trip on the card display and the editor.
 - [ ] Bump `versionName` (`MAJOR.MINOR.PATCH`) and `versionCode` (`MAJOR*10000 + MINOR*100 + PATCH`)
       in `app/build.gradle.kts`.
