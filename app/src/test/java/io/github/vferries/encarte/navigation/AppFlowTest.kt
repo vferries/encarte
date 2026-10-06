@@ -118,8 +118,7 @@ class AppFlowTest {
         composeRule.onNodeWithText("Courses").performClick()
         waitForText("No cards in \"Courses\"")
 
-        // Material clears the extended FAB's text from the merged tree: reach it unmerged.
-        composeRule.onNodeWithText("Add a card", useUnmergedTree = true).performClick()
+        composeRule.onNodeWithContentDescription("Add a card").performClick()
         waitForText("Enter manually")
         composeRule.onNodeWithText("Enter manually").performClick()
         waitForText("New card")

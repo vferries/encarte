@@ -44,6 +44,7 @@ class CardListScreenTest {
         query: TextFieldState = TextFieldState(),
         archivedNotice: Long? = null,
         onOpenCard: (Long) -> Unit = {},
+        onAddCard: () -> Unit = {},
         onImport: () -> Unit = {},
         onSortOrderChange: (SortOrder) -> Unit = {},
         onUndoArchive: (Long) -> Unit = {},
@@ -61,7 +62,7 @@ class CardListScreenTest {
             archivedNotice = archivedNotice,
             onSortOrderChange = onSortOrderChange,
             onOpenCard = onOpenCard,
-            onAddCard = {},
+            onAddCard = onAddCard,
             onOpenSettings = {},
             onImport = onImport,
             onUndoArchive = onUndoArchive,
@@ -89,6 +90,18 @@ class CardListScreenTest {
 
     private fun tile(name: String, id: Long, expiry: ExpiryStatus = ExpiryStatus.None) =
         CardTileModel(testCard(name, id = id), image = null, expiry = expiry)
+
+    @Test
+    fun theAddCardButtonIsLabelledForAccessibility() {
+        var added = 0
+        setScreen(withGroups(), onAddCard = { added++ })
+
+        // The merged node: Material clears the extended FAB's text, so TalkBack needs this label.
+        composeRule.onNodeWithContentDescription("Add a card")
+            .assert(SemanticsMatcher.keyIsDefined(SemanticsActions.OnClick))
+            .performClick()
+        assertEquals(1, added)
+    }
 
     @Test
     fun emptyStateOffersImport() {

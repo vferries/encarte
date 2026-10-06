@@ -51,6 +51,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
@@ -170,8 +171,11 @@ fun CardListScreen(
         },
         snackbarHost = { SnackbarHost(snackbar) },
         floatingActionButton = {
+            // Material clears the text's semantics inside an extended FAB and the icon is decorative: label the button itself.
+            val addCardLabel = stringResource(R.string.action_add_card)
             ExtendedFloatingActionButton(
                 onClick = onAddCard,
+                modifier = Modifier.semantics { contentDescription = addCardLabel },
                 icon = { Icon(painterResource(R.drawable.ic_add), contentDescription = null) },
                 text = { Text(stringResource(R.string.action_add_card)) },
             )
