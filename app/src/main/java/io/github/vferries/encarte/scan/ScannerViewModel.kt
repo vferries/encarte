@@ -47,7 +47,7 @@ data class ScannerUiState(
 )
 
 class ScannerViewModel(
-    /** Copies, reads and deletes a picked file: FileImport.importPicked. */
+    /** Reads a picked file (copying a pass or a PDF, decoding a picture from the provider): FileImport.importPicked. */
     private val readFile: suspend (open: () -> InputStream) -> ImportOutcome,
 ) : ViewModel() {
 

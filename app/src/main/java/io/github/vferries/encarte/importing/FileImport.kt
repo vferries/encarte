@@ -58,7 +58,10 @@ val ImportOutcome.failure: ImportFailure?
 /** A PDF gives no reliable store name: the user types it. */
 fun FoundCode.toDraft(): CardDraft = CardDraft(cardNumber = value, barcodeFormat = format)
 
-/** Reads a file to import, whatever its announced type, then deletes its copy. Shared by the scanner and ImportKey. */
+/**
+ * Reads a file to import, whatever its announced type. A pass or a PDF is copied first, and the copy deleted after;
+ * a picture is decoded from the provider. Shared by the scanner and ImportKey.
+ */
 class FileImport(
     private val files: ImportFiles,
     private val readPass: (InputStream) -> CardDraft?,

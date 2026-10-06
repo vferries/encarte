@@ -58,7 +58,7 @@ class LauncherSync(
     ) { data, locked, order, sources -> LauncherInputs(data, locked, order, sources) }
 
     /**
-     * An upstream failure (database, settings store) must not end the sync for the rest of the process: with the lock
+     * An upstream failure of the database flow must not end the sync for the rest of the process: with the lock
      * on, the home screen would stop hiding store names. The inputs are subscribed again after a growing delay.
      */
     fun start(scope: CoroutineScope): Job = scope.launch {
