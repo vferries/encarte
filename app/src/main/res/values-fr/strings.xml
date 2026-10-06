@@ -12,7 +12,7 @@
     <string name="action_add_card">Ajouter une carte</string>
     <string name="shortcut_card_deleted">Cette carte a été supprimée</string>
     <string name="action_import">Importer</string>
-    <string name="section_favorites">Favorites</string>
+    <string name="section_favorites">Favoris</string>
     <string name="section_all_cards">Toutes les cartes</string>
     <string name="section_archived">Archivées (%1$d)</string>
     <string name="state_expanded">Dépliée</string>
@@ -27,8 +27,8 @@
     <string name="no_search_results">Aucune carte ne correspond à votre recherche.</string>
     <string name="action_edit">Modifier</string>
     <string name="action_delete">Supprimer</string>
-    <string name="action_favorite">Ajouter aux favorites</string>
-    <string name="action_unfavorite">Retirer des favorites</string>
+    <string name="action_favorite">Ajouter aux favoris</string>
+    <string name="action_unfavorite">Retirer des favoris</string>
     <string name="delete_confirm_title">Supprimer cette carte ?</string>
     <string name="delete_confirm_body">%1$s sera supprimée de cet appareil.</string>
     <string name="cancel">Annuler</string>
