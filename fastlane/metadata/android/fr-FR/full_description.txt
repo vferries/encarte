@@ -2,10 +2,13 @@ Encarté range vos cartes de fidélité sur votre téléphone et affiche leur co
 
 • Fonctionne entièrement hors-ligne : l'application n'a pas la permission Internet.
 • Scannez une carte avec l'appareil photo, depuis une capture d'écran, ou saisissez le numéro.
+• Importez vos cartes depuis FidMe, un pass Wallet ou un PDF.
 • QR, EAN, UPC, Code 128/39/93, Codabar, ITF, Aztec, Data Matrix et PDF417.
 • Luminosité maximale pendant l'affichage d'une carte.
+• Dates d'expiration, archive, et blocage du paiement sans contact pendant l'affichage d'une carte.
 • Photos du recto et du verso de vos cartes.
-• Favorites, recherche et tri.
+• Favoris, recherche et tri.
+• Groupes, widget et raccourcis pour ouvrir une carte en un geste.
 • Sauvegardes au format Catima, chiffrées si vous le souhaitez (AES-256) : passez de Catima à Encarté, ou l'inverse, quand vous voulez.
 • Verrouillage facultatif par empreinte, visage ou code de l'appareil.
 
