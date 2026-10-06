@@ -37,6 +37,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -56,10 +57,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.vferries.encarte.R
+import io.github.vferries.encarte.core.data.CardGroup
+import io.github.vferries.encarte.core.data.GroupNameResult
 import io.github.vferries.encarte.core.prefs.SortOrder
 import io.github.vferries.encarte.core.text.normalizedForMatching
 import io.github.vferries.encarte.core.ui.CardTile
+import io.github.vferries.encarte.core.ui.EncarteAlertDialog
 import io.github.vferries.encarte.core.ui.EncarteDropdownMenu
+import io.github.vferries.encarte.groups.GroupNameDialog
 
 @Composable
 fun CardListRoute(
@@ -70,6 +75,7 @@ fun CardListRoute(
     onAddCard: () -> Unit,
     onOpenSettings: () -> Unit,
     onImport: () -> Unit,
+    onChooseCards: (Long) -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     CardListScreen(
@@ -83,6 +89,11 @@ fun CardListRoute(
         onImport = onImport,
         onUndoArchive = viewModel::unarchive,
         onArchivedNoticeShown = onArchivedNoticeShown,
+        onSelectGroup = viewModel::selectGroup,
+        onCreateGroup = viewModel::createGroup,
+        onRenameGroup = viewModel::renameGroup,
+        onDeleteGroup = viewModel::deleteGroup,
+        onChooseCards = onChooseCards,
     )
 }
 
@@ -99,6 +110,11 @@ fun CardListScreen(
     onImport: () -> Unit,
     onUndoArchive: (Long) -> Unit,
     onArchivedNoticeShown: () -> Unit,
+    onSelectGroup: (Long?) -> Unit,
+    onCreateGroup: suspend (String) -> GroupNameResult,
+    onRenameGroup: suspend (Long, String) -> GroupNameResult,
+    onDeleteGroup: (Long) -> Unit,
+    onChooseCards: (Long) -> Unit,
 ) {
     val snackbar = remember { SnackbarHostState() }
     val archivedMessage = stringResource(R.string.card_archived)
@@ -113,6 +129,10 @@ fun CardListScreen(
             onArchivedNoticeShown()
         }
     }
+    // Ids, not groups: they are saveable, and a group deleted meanwhile simply closes its dialog.
+    var creatingGroup by rememberSaveable { mutableStateOf(false) }
+    var renamingGroup by rememberSaveable { mutableStateOf<Long?>(null) }
+    var deletingGroup by rememberSaveable { mutableStateOf<Long?>(null) }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -137,8 +157,56 @@ fun CardListScreen(
         when {
             state.isLoading -> Box(Modifier.padding(padding))
             !state.hasCards -> EmptyState(onAddCard, onImport, Modifier.padding(padding))
-            else -> CardGrid(state, query, onOpenCard, PaddingValues(16.dp), Modifier.padding(padding))
+            else -> CardGrid(state, query, onOpenCard, onChooseCards, PaddingValues(16.dp), Modifier.padding(padding)) {
+                GroupChipRow(
+                    groups = state.groups,
+                    selected = state.selectedGroup,
+                    onSelect = onSelectGroup,
+                    onNewGroup = { creatingGroup = true },
+                    onChooseCards = onChooseCards,
+                    onRename = { renamingGroup = it },
+                    onDelete = { deletingGroup = it },
+                )
+            }
         }
+    }
+    if (creatingGroup) {
+        GroupNameDialog(
+            title = stringResource(R.string.group_new),
+            confirmLabel = stringResource(R.string.action_create),
+            initialName = "",
+            onConfirm = onCreateGroup,
+            // Straight to its cards: a new group is created to be filled.
+            onSaved = { id ->
+                creatingGroup = false
+                onChooseCards(id)
+            },
+            onDismiss = { creatingGroup = false },
+        )
+    }
+    state.groups.firstOrNull { it.id == renamingGroup }?.let { group ->
+        GroupNameDialog(
+            title = stringResource(R.string.group_rename_title),
+            confirmLabel = stringResource(R.string.action_rename),
+            initialName = group.name,
+            onConfirm = { name -> onRenameGroup(group.id, name) },
+            onSaved = { renamingGroup = null },
+            onDismiss = { renamingGroup = null },
+        )
+    }
+    state.groups.firstOrNull { it.id == deletingGroup }?.let { group ->
+        EncarteAlertDialog(
+            onDismissRequest = { deletingGroup = null },
+            title = { Text(stringResource(R.string.group_delete_title, group.name)) },
+            text = { Text(stringResource(R.string.group_delete_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    deletingGroup = null
+                    onDeleteGroup(group.id)
+                }) { Text(stringResource(R.string.action_delete)) }
+            },
+            dismissButton = { TextButton(onClick = { deletingGroup = null }) { Text(stringResource(R.string.cancel)) } },
+        )
     }
 }
 
@@ -173,8 +241,10 @@ private fun CardGrid(
     state: CardListUiState,
     query: TextFieldState,
     onOpenCard: (Long) -> Unit,
+    onChooseCards: (Long) -> Unit,
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
+    groupChips: @Composable () -> Unit,
 ) {
     var archivedOpen by rememberSaveable { mutableStateOf(false) }
     // Same normalization as the filter: a query of spaces or punctuation matches everything, so it is not a search.
@@ -197,9 +267,15 @@ private fun CardGrid(
                 lineLimits = TextFieldLineLimits.SingleLine,
             )
         }
+        item(span = { GridItemSpan(maxLineSpan) }, contentType = "groups") { groupChips() }
         if (state.favorites.isEmpty() && state.others.isEmpty() && state.archived.isEmpty()) {
             item(span = { GridItemSpan(maxLineSpan) }) {
-                Text(stringResource(R.string.no_search_results), Modifier.padding(vertical = 24.dp))
+                val group = state.selectedGroup
+                if (group != null && state.selectedGroupIsEmpty) {
+                    EmptyGroup(group, onChooseCards)
+                } else {
+                    Text(stringResource(R.string.no_search_results), Modifier.padding(vertical = 24.dp))
+                }
             }
         }
         section(R.string.section_favorites, state.favorites, onOpenCard)
@@ -256,6 +332,20 @@ private fun ArchivedHeader(count: Int, expanded: Boolean, toggleEnabled: Boolean
             painterResource(if (expanded) R.drawable.ic_expand_less else R.drawable.ic_expand_more),
             contentDescription = null,
         )
+    }
+}
+
+@Composable
+private fun EmptyGroup(group: CardGroup, onChooseCards: (Long) -> Unit) {
+    Column(
+        Modifier.fillMaxWidth().padding(vertical = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(stringResource(R.string.group_empty, group.name), textAlign = TextAlign.Center)
+        OutlinedButton(onClick = { onChooseCards(group.id) }, shape = MaterialTheme.shapes.small) {
+            Text(stringResource(R.string.group_choose_cards))
+        }
     }
 }
 

@@ -64,6 +64,7 @@ fun EncarteNavHost(container: AppContainer) {
                     onAddCard = { backStack.add(ScannerKey) },
                     onOpenSettings = { backStack.add(SettingsKey) },
                     onImport = { backStack.add(SettingsKey) },
+                    onChooseCards = { id -> backStack.add(GroupCardsKey(id)) },
                 )
             }
             entry<CardDisplayKey> { key ->

@@ -137,4 +137,17 @@
     <string name="action_unarchive">Désarchiver</string>
     <string name="card_archived">Carte archivée</string>
     <string name="action_undo">Annuler</string>
+    <string name="group_all">Toutes</string>
+    <string name="group_new">Nouveau groupe</string>
+    <string name="group_name_label">Nom du groupe</string>
+    <string name="action_create">Créer</string>
+    <string name="group_rename_title">Renommer le groupe</string>
+    <string name="action_rename">Renommer</string>
+    <string name="group_name_blank">Saisissez un nom</string>
+    <string name="group_name_duplicate">Ce groupe existe déjà</string>
+    <string name="group_choose_cards">Choisir les cartes</string>
+    <string name="group_delete_title">Supprimer « %1$s » ?</string>
+    <string name="group_delete_body">Les cartes ne sont pas supprimées.</string>
+    <string name="group_options">Options du groupe</string>
+    <string name="group_empty">Aucune carte dans « %1$s »</string>
 </resources>
