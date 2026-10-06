@@ -4,10 +4,13 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.vferries.encarte.core.barcode.BarcodeFormat
 import io.github.vferries.encarte.scan.ScannedCode
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -16,6 +19,7 @@ import org.robolectric.annotation.GraphicsMode
 import org.robolectric.shadows.ShadowLog
 import java.io.File
 import java.io.IOException
+import java.io.InputStream
 import java.time.Clock
 import java.util.UUID
 
@@ -113,6 +117,33 @@ class FileImportTest {
         val photo = TestFiles.png() + ByteArray((MAX_IMPORT_BYTES + 1).toInt())
 
         assertEquals(ImportOutcome.Image(imageCode), picked(photo))
+        assertEquals(emptyList<File>(), leftovers())
+    }
+
+    @Test
+    fun leavingTheScannerStopsTheCopyOfAPdf() = runTest {
+        var read = 0L
+        lateinit var importing: Job
+        // Endless PDF-looking stream: only a cancelled copy stops reading before the cap.
+        val stream = {
+            object : InputStream() {
+                private var served = 0
+                override fun read(): Int = throw UnsupportedOperationException()
+                override fun read(b: ByteArray, off: Int, len: Int): Int {
+                    val head = "%PDF-".toByteArray()
+                    for (i in 0 until len) b[off + i] = head.getOrElse(served + i) { 'x'.code.toByte() }
+                    served += len
+                    read += len
+                    if (read > 100_000) importing.cancel()
+                    return len
+                }
+            }
+        }
+
+        importing = launch { import.importPicked(stream) }
+        importing.join()
+
+        assertTrue("stopped reading long before the cap (read $read)", read < 1_000_000)
         assertEquals(emptyList<File>(), leftovers())
     }
 

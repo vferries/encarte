@@ -8,6 +8,7 @@ import io.github.vferries.encarte.core.ui.decodeSampledBitmap
 import io.github.vferries.encarte.scan.ScannedCode
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
@@ -70,7 +71,7 @@ class FileImport(
         val cannotOpen = ImportOutcome.Failure(ImportFailure.CANNOT_OPEN)
         val head = files.headOrNull(SNIFF_BYTES, open) ?: return@withContext cannotOpen
         if (needsCopy(head)) {
-            val file = files.copyOrNull(open = open) ?: return@withContext cannotOpen
+            val file = files.copyOrNull(shouldContinue = { isActive }, open = open) ?: return@withContext cannotOpen
             analyseAndDelete(file)
         } else {
             decodePicked(open)
