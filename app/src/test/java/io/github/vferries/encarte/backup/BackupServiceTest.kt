@@ -238,6 +238,21 @@ class BackupServiceTest {
     }
 
     @Test
+    fun failureAfterGroupsAreWrittenRollsBackGroupsToo() = runTest {
+        db.useWriterConnection { connection ->
+            connection.usePrepared("CREATE TRIGGER fail_link BEFORE INSERT ON card_groups BEGIN SELECT RAISE(ABORT, 'boom'); END") { it.step() }
+        }
+
+        val result = service.import(fixtureArchive(), null)
+
+        assertEquals(ImportResult.IoError, result)
+        assertTrue(db.groupDao().getAll().isEmpty())
+        assertTrue(db.groupDao().getAllMemberships().isEmpty())
+        assertTrue(db.cardDao().getAll().isEmpty())
+        assertTrue(File(tmp.root, "images").walkTopDown().none { it.isFile })
+    }
+
+    @Test
     fun importsCatimaExpiryAndArchive() = runTest {
         // The upstream fixture has no archived card: archive Department Store, which has an expiry date.
         val original = fixture("catima_v2.csv")
@@ -300,6 +315,20 @@ class BackupServiceTest {
         service.import(file, null)
 
         assertNull(membershipsByStore(db)["Pharmacy"])
+    }
+
+    @Test
+    fun aDuplicateLinkedToAnUnlistedGroupCreatesNothing() = runTest {
+        service.import(fixtureArchive(csv = CatimaCsv.write(listOf(CatimaCard(id = 1, store = "Shop", cardId = "42")), emptyList(), emptyList())), null)
+        val csv = CatimaCsv.write(
+            listOf(CatimaCard(id = 1, store = "Shop", cardId = "42")),
+            groups = emptyList(),
+            links = listOf(CatimaGroupLink(1, "Ghost")),
+        )
+
+        assertEquals(ImportResult.Success(0, 1), service.import(fixtureArchive(csv = csv), null))
+
+        assertTrue(db.groupDao().getAll().isEmpty())
     }
 
     @Test
