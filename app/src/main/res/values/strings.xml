@@ -79,6 +79,12 @@
     <string name="action_open_settings">Open app settings</string>
     <string name="camera_unavailable">No camera is available. Enter the card manually or use an image.</string>
     <string name="no_barcode_in_image">No barcode found in this image.</string>
+    <string name="import_file_unrecognized">Unrecognized file.</string>
+    <string name="import_pass_unrecognized">This file isn\'t a recognized pass.</string>
+    <string name="import_pdf_unreadable">Can\'t read this PDF (protected or damaged).</string>
+    <string name="import_pdf_no_code">No barcode found in this PDF.</string>
+    <string name="import_file_cannot_open">Can\'t open this file.</string>
+    <string name="import_file_gone">This file is no longer available.</string>
     <string name="import_note_valid_from">Valid from: %1$s</string>
     <string name="import_note_balance">Balance: %1$s</string>
     <string name="import_note_points">%1$s points</string>

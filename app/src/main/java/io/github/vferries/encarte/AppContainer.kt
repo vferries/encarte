@@ -18,9 +18,14 @@ import io.github.vferries.encarte.core.nfc.ContactlessGuard
 import io.github.vferries.encarte.core.nfc.NfcContactlessGuard
 import io.github.vferries.encarte.core.prefs.SettingsRepository
 import io.github.vferries.encarte.core.time.DeviceClock
+import io.github.vferries.encarte.importing.FileImport
+import io.github.vferries.encarte.importing.ImportFiles
+import io.github.vferries.encarte.importing.PassReader
+import io.github.vferries.encarte.importing.PdfCodeFinder
 import io.github.vferries.encarte.launcher.AndroidShortcutPublisher
 import io.github.vferries.encarte.launcher.LauncherSync
 import io.github.vferries.encarte.lock.LockManager
+import io.github.vferries.encarte.scan.BarcodeScanner
 import io.github.vferries.encarte.widget.AndroidWidgetRenderer
 import io.github.vferries.encarte.widget.WidgetSourceStore
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -69,6 +74,17 @@ class AppContainer(context: Context) {
         brands = brandCatalog,
     )
 
+    /** Files to import: picked in the scanner or sent by another app. */
+    val importFiles = ImportFiles(File(appContext.cacheDir, "imports"))
+
+    val fileImport = FileImport(
+        files = importFiles,
+        readPass = PassReader(language = { appContext.resources.configuration.locales[0].language }, clock = clock)::read,
+        findPdfCodes = PdfCodeFinder()::find,
+        // A scanner per image: zxing-cpp's reader is not documented as thread-safe.
+        decodeImage = { BarcodeScanner().scan(it) },
+    )
+
     val lockManager = LockManager(MainScope(), settingsRepository.lockEnabled, SystemClock::elapsedRealtime)
 
     /** Work that outlives any screen: the home screen sync and the widget broadcasts. */
@@ -91,6 +107,7 @@ class AppContainer(context: Context) {
         withContext(Dispatchers.IO) {
             imageStore.clearStaging()
             backupService.clearWorkDir()
+            importFiles.clearLeftovers()
         }
     }
 }
