@@ -81,6 +81,9 @@ android {
                 "--add-opens=java.desktop/java.awt.font=ALL-UNNAMED",
                 "--add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
             )
+            // The whole Robolectric suite runs in one worker and keeps ~420 MB live: Gradle's default 512 MB left
+            // little headroom on a loaded CI runner.
+            it.maxHeapSize = "1g"
             // DemoCardsTest reads the store-screenshot wallet: editing it must re-run the tests.
             val demoCards = rootProject.file("branding/demo/cards.csv")
             it.inputs.file(demoCards)
