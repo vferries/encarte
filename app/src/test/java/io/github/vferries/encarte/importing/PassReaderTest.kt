@@ -18,7 +18,8 @@ class PassReaderTest {
     private fun read(passJson: String, vararg others: Pair<String, ByteArray>): CardDraft? =
         reader.read(TestFiles.zip(mapOf("pass.json" to passJson.toByteArray()) + others).inputStream())
 
-    private fun pass(fields: String) = """{"formatVersion": 1, "organizationName": "Org", $fields}"""
+    private fun pass(fields: String) =
+        """{"formatVersion": 1, "organizationName": "Org"""" + (if (fields.isEmpty()) "" else ", $fields") + "}"
 
     private fun barcode(format: String, message: String, altText: String? = null) =
         """{"format": "$format", "message": "$message", "messageEncoding": "iso-8859-1"""" +
@@ -126,6 +127,11 @@ class PassReaderTest {
         val draft = read(pass(""""expirationDate": "2027-03-12T23:30:00-05:00""""))!!
 
         assertEquals(LocalDate.of(2027, 3, 13).toEpochDay(), draft.expiresOnEpochDay)
+        // UTC date is the 12th, the Paris date the 13th
+        assertEquals(
+            LocalDate.of(2027, 3, 13).toEpochDay(),
+            read(pass(""""expirationDate": "2027-03-12T23:30:00Z""""))!!.expiresOnEpochDay,
+        )
     }
 
     @Test
@@ -165,5 +171,136 @@ class PassReaderTest {
         val passLast = TestFiles.zip(padding + ("pass.json" to pass("").toByteArray()))
 
         assertNull(reader.read(passLast.inputStream()))
+    }
+
+    private fun longText(n: Int) = "x".repeat(n)
+
+    @Test
+    fun deeplyNestedJsonIsRefusedWithoutOverflowingTheStack() {
+        assertNull(read("[".repeat(5000)))
+        assertNull(read("""{"formatVersion": 1, "a": """ + "[".repeat(5000)))
+        assertNull(read("""{"a":[""".repeat(5000)))
+        assertEquals("Org", read(pass(""""x": [[{"y": "[[["}]]"""))!!.storeName)
+    }
+
+    @Test
+    fun aNonUtf8EntryNameDoesNotMakeThePassUnreadable() {
+        val out = java.io.ByteArrayOutputStream()
+        java.util.zip.ZipOutputStream(out, Charsets.ISO_8859_1).use { zip ->
+            zip.putNextEntry(java.util.zip.ZipEntry("images/caf\u00e9.png")); zip.write(1); zip.closeEntry()
+            zip.putNextEntry(java.util.zip.ZipEntry("pass.json")); zip.write(pass("").toByteArray()); zip.closeEntry()
+        }
+
+        assertEquals("Org", reader.read(out.toByteArray().inputStream())!!.storeName)
+    }
+
+    @Test
+    fun anOutOfRangeExpirationDateIsIgnored() {
+        val draft = read(pass(""""expirationDate": "+999999999-12-31T23:59:59-18:00""""))!!
+
+        assertNull(draft.expiresOnEpochDay)
+        assertNull(read(pass(""""expirationDate": "+10000-01-01""""))!!.expiresOnEpochDay)
+        assertNull(read(pass(""""expirationDate": "1850-01-01""""))!!.expiresOnEpochDay)
+    }
+
+    @Test
+    fun longTextsAreTruncatedAndALongAltTextIsIgnored() {
+        val draft = read(pass(""""logoText": "${longText(500)}", "description": "${longText(5000)}", "barcodes": [${barcode("PKBarcodeFormatQR", "MSG-1", altText = longText(101))}]"""))!!
+
+        assertEquals(100, draft.storeName.length)
+        assertEquals(2000, draft.note.length)
+        assertEquals("MSG-1", draft.cardNumber)
+        assertNull(draft.barcodeValue)
+        assertEquals(longText(100), read(pass(""""barcodes": [${barcode("PKBarcodeFormatQR", "MSG-1", altText = longText(100))}]"""))!!.cardNumber)
+    }
+
+    @Test
+    fun aBlankMessageIsUnusableAndAPaddedOneIsTrimmed() {
+        val draft = read(pass(""""barcodes": [${barcode("PKBarcodeFormatQR", "  ")}, ${barcode("PKBarcodeFormatQR", " AB-1 ")}]"""))!!
+        assertEquals("AB-1", draft.cardNumber)
+
+        assertEquals(
+            DraftNotice.PASS_WITHOUT_BARCODE,
+            read(pass(""""barcodes": [${barcode("PKBarcodeFormatQR", "  ")}]"""))!!.notice,
+        )
+    }
+
+    @Test
+    fun aZipBombInASkippedEntryIsRefusedQuickly() {
+        val zeros = "images/big.png" to ByteArray(80 * 1024 * 1024)
+
+        assertNull(read(pass(""""logoText": "x""""), zeros))
+    }
+
+    @Test
+    fun aTableForAnotherLanguageIsNotUsedButDrained() {
+        language = "fr"
+        val german = "de.lproj/pass.strings" to "\"store\" = \"Laden\";".toByteArray()
+
+        assertEquals("store", read(pass(""""logoText": "store""""), german)!!.storeName)
+    }
+
+    @Test
+    fun aDuplicatePassJsonKeepsTheFirst() {
+        // ZipOutputStream refuses a duplicate name: the second is renamed in the bytes, with the same length.
+        val zip = TestFiles.zip(
+            linkedMapOf(
+                "pass.json" to """{"formatVersion": 1, "organizationName": "First"}""".toByteArray(),
+                "pass.jsoX" to """{"formatVersion": 1, "organizationName": "Second"}""".toByteArray(),
+            )
+        )
+        val renamed = String(zip, Charsets.ISO_8859_1).replace("pass.jsoX", "pass.json").toByteArray(Charsets.ISO_8859_1)
+
+        assertEquals("First", reader.read(renamed.inputStream())!!.storeName)
+    }
+
+    @Test
+    fun malformedBarcodeFieldsAreSkipped() {
+        assertEquals("Org", read(pass(""""barcodes": 5, "barcode": [1]"""))!!.storeName)
+        val draft = read(pass(""""barcodes": [7, ${barcode("PKBarcodeFormatQR", "OK-1")}]"""))!!
+        assertEquals("OK-1", draft.cardNumber)
+    }
+
+    @Test
+    fun aPassWithoutBarcodeKeepsItsColorAndExpiry() {
+        val draft = read(pass(""""backgroundColor": "#ff8800", "expirationDate": "2027-03-12""""))!!
+
+        assertEquals(0xFFFF8800.toInt(), draft.color)
+        assertEquals(LocalDate.of(2027, 3, 12).toEpochDay(), draft.expiresOnEpochDay)
+        assertEquals(DraftNotice.PASS_WITHOUT_BARCODE, draft.notice)
+    }
+
+    @Test
+    fun aRegionalFolderComesBeforeEnglish() {
+        val regional = "fr-CA.lproj/pass.strings" to "\"store\" = \"Magasin CA\";".toByteArray()
+        val english = "en.lproj/pass.strings" to "\"store\" = \"Store\";".toByteArray()
+
+        assertEquals("Magasin CA", read(pass(""""logoText": "store""""), english, regional)!!.storeName)
+    }
+
+    @Test
+    fun aByteOrderMarkBeforePassJsonIsAccepted() {
+        val bom = byteArrayOf(0xEF.toByte(), 0xBB.toByte(), 0xBF.toByte())
+        val zip = TestFiles.zip(mapOf("pass.json" to bom + pass("").toByteArray()))
+
+        assertEquals("Org", reader.read(zip.inputStream())!!.storeName)
+    }
+
+    @Test
+    fun aTruncatedZipIsNotAPass() {
+        val zip = TestFiles.zip(mapOf("pass.json" to pass("").toByteArray(), "other" to ByteArray(2000) { it.toByte() }))
+
+        assertNull(reader.read(zip.copyOf(zip.size / 2).inputStream()))
+    }
+
+    @Test
+    fun entrySizeAndCountBoundaries() {
+        val exact = "en.lproj/pass.strings" to ByteArray(512 * 1024) { 'a'.code.toByte() }
+        assertEquals("Org", read(pass(""), exact)!!.storeName)
+
+        fun withPaddingBefore(count: Int) =
+            TestFiles.zip((1..count).associate { "images/$it.png" to byteArrayOf(1) } + ("pass.json" to pass("").toByteArray()))
+        assertEquals("Org", reader.read(withPaddingBefore(63).inputStream())!!.storeName)
+        assertNull(reader.read(withPaddingBefore(64).inputStream()))
     }
 }
