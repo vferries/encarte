@@ -44,15 +44,16 @@ class ImportFiles(private val dir: File, private val maxBytes: Long = MAX_IMPORT
     /** The copy named [name], or null when [name] is not a name [copy] makes (logged). */
     fun resolve(name: String): File? {
         if (!isFileName(name)) {
-            Log.w(TAG, "Refusing import file name \"$name\"")
+            Log.w(TAG, "Refusing an import file name of ${name.length} characters")
             return null
         }
         return File(dir, name)
     }
 
     fun delete(file: File) {
-        ownNames -= file.name
+        // Forget the name only once the file is gone, or clearLeftovers could race the deletion.
         if (!file.delete() && file.exists()) Log.w(TAG, "Cannot delete import file ${file.name}")
+        ownNames -= file.name
     }
 
     /** Deletes the copies left by an earlier process: nothing will read them any more. Blocking. */

@@ -13,6 +13,7 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.annotation.GraphicsMode
+import org.robolectric.shadows.ShadowLog
 import java.io.File
 import java.io.IOException
 import java.time.Clock
@@ -107,6 +108,23 @@ class FileImportTest {
             import.importPicked { ByteArray((MAX_IMPORT_BYTES + 1).toInt()).inputStream() },
         )
         assertEquals(emptyList<File>(), leftovers())
+    }
+
+    @Test
+    fun aProviderThrowingARuntimeExceptionCannotBeOpened() = runTest {
+        val cannotOpen = ImportOutcome.Failure(ImportFailure.CANNOT_OPEN)
+
+        assertEquals(cannotOpen, import.importPicked { throw IllegalArgumentException("bad uri") })
+        assertEquals(cannotOpen, import.importPicked { throw IllegalStateException("died") })
+        assertEquals(cannotOpen, import.importPicked { throw UnsupportedOperationException("no") })
+        assertEquals(emptyList<File>(), leftovers())
+    }
+
+    @Test
+    fun aRefusedNameIsNotLogged() = runTest {
+        import.importReceived("../secret-hostile-name")
+
+        assertEquals(emptyList<String>(), ShadowLog.getLogs().filter { it.msg.contains("secret-hostile-name") }.map { it.msg })
     }
 
     @Test

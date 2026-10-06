@@ -70,8 +70,20 @@ class FileImport(
         } catch (e: SecurityException) {
             Log.w(TAG, "The picked file is no longer readable", e)
             return@withContext ImportOutcome.Failure(ImportFailure.CANNOT_OPEN)
+        } catch (e: IllegalArgumentException) {
+            return@withContext providerFailed(e)
+        } catch (e: IllegalStateException) {
+            return@withContext providerFailed(e)
+        } catch (e: UnsupportedOperationException) {
+            return@withContext providerFailed(e)
         }
         analyseAndDelete(file)
+    }
+
+    /** A provider reached over binder can throw these; the partial copy is already deleted by [ImportFiles.copy]. */
+    private fun providerFailed(e: RuntimeException): ImportOutcome {
+        Log.w(TAG, "The content provider failed: ${e.javaClass.simpleName}")
+        return ImportOutcome.Failure(ImportFailure.CANNOT_OPEN)
     }
 
     /** A file another app sent, which ImportActivity copied under [fileName]. */
@@ -79,7 +91,7 @@ class FileImport(
         val file = files.resolve(fileName)
         if (file == null || !file.isFile) {
             // The startup cleanup deletes it when the process died before this screen read it.
-            Log.w(TAG, "Import file $fileName is no longer available")
+            Log.w(TAG, "Import file is no longer available or its name was refused (${fileName.length} characters)")
             return@withContext ImportOutcome.Failure(ImportFailure.FILE_GONE)
         }
         analyseAndDelete(file)
