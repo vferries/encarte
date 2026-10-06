@@ -1,0 +1,22 @@
+{
+  "formatVersion": 1,
+  "passTypeIdentifier": "pass.fr.encarte.sample",
+  "serialNumber": "E-0001",
+  "teamIdentifier": "ENCARTE00",
+  "organizationName": "Encarté Sample",
+  "description": "card_description",
+  "logoText": "store_name",
+  "backgroundColor": "rgb(37, 79, 155)",
+  "expirationDate": "2027-03-12T12:00:00+01:00",
+  "barcodes": [
+    {
+      "format": "PKBarcodeFormatQR",
+      "message": "ENC-0001-2049",
+      "messageEncoding": "iso-8859-1",
+      "altText": "0001 2049"
+    }
+  ],
+  "storeCard": {
+    "primaryFields": [{ "key": "points", "label": "Points", "value": 120 }]
+  }
+}
