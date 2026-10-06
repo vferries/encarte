@@ -24,6 +24,7 @@ import io.github.vferries.encarte.MainActivity
 import io.github.vferries.encarte.navigation.LaunchRequests
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -231,6 +232,14 @@ class ImportActivityTest {
     /** The delay runs on the main looper, which Robolectric holds still until told how much time passes. */
     private fun pass(millis: Long) = shadowOf(Looper.getMainLooper()).idleFor(millis, TimeUnit.MILLISECONDS)
 
+    /** The IO side posts its result to the paused main looper, which holds it until the test idles it. */
+    private fun awaitTheCopyResultOnTheMainLooper() {
+        val looper = shadowOf(Looper.getMainLooper())
+        val deadline = System.currentTimeMillis() + 5_000
+        while (looper.isIdle && System.currentTimeMillis() < deadline) Thread.sleep(5)
+        assertFalse("the copy's result never reached the main looper", looper.isIdle)
+    }
+
     private fun awaitNoCopy() {
         val deadline = System.currentTimeMillis() + 5_000
         while (copies().isNotEmpty() && System.currentTimeMillis() < deadline) Thread.sleep(10)
@@ -313,7 +322,7 @@ class ImportActivityTest {
             pass(300)
             gate.countDown()
             assertTrue(closed.await(5, TimeUnit.SECONDS))
-            Thread.sleep(200) // lets the IO block hand its result back to the main looper
+            awaitTheCopyResultOnTheMainLooper()
             pass(500)
 
             composeRule.onAllNodesWithText("Importing…").assertCountEquals(0)
@@ -341,7 +350,7 @@ class ImportActivityTest {
             scenario.onActivity { activity = it }
             gate.countDown()
             assertTrue(closed.await(5, TimeUnit.SECONDS))
-            Thread.sleep(200) // the copy is complete and its result waits for the main looper
+            awaitTheCopyResultOnTheMainLooper()
             activity!!.onBackPressedDispatcher.onBackPressed() // before the looper runs the hand-over
             shadowOf(Looper.getMainLooper()).idle()
             awaitNoCopy()
