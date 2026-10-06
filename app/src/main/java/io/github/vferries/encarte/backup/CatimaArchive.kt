@@ -36,6 +36,8 @@ class WrongPasswordException(cause: Throwable) : Exception("Wrong password", cau
  */
 class CatimaArchive(
     private val maxCards: Int = 10_000,
+    private val maxGroups: Int = 1_000,
+    private val maxGroupLinks: Int = 100_000,
     private val maxEntryBytes: Long = 64L * 1024 * 1024,
     private val maxCsvBytes: Long = 16L * 1024 * 1024,
 ) {
@@ -52,6 +54,11 @@ class CatimaArchive(
             }
         }
         if (backup.cards.size > maxCards) throw CatimaFormatException("Too many cards: ${backup.cards.size}")
+        // Far above any real wallet: the list and the editor show every group as a chip, and each link is a row written
+        // in the import's transaction. A link to a group missing from the groups table creates that group too.
+        if (backup.links.size > maxGroupLinks) throw CatimaFormatException("Too many group links: ${backup.links.size}")
+        val groupCount = (backup.groups + backup.links.map { it.group }).toSet().size
+        if (groupCount > maxGroups) throw CatimaFormatException("Too many groups: $groupCount")
         return backup
     }
 

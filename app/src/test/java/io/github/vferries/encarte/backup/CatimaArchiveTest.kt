@@ -96,6 +96,37 @@ class CatimaArchiveTest {
         assertThrows(CatimaFormatException::class.java) { CatimaArchive(maxCards = 1).read(file, null).cards }
     }
 
+    private fun bareCsv(groups: List<String>, links: List<CatimaGroupLink> = emptyList()): File =
+        tmp.newFile().apply { writeText(CatimaCsv.write(listOf(CatimaCard(id = 1, store = "Shop", cardId = "42")), groups, links)) }
+
+    @Test
+    fun guardsRejectTooManyGroups() {
+        val names = (1..1_000).map { "Group $it" }
+
+        assertEquals(1_000, archive.read(bareCsv(names, listOf(CatimaGroupLink(1, "Group 1"))), null).groups.size)
+        assertThrows(CatimaFormatException::class.java) { archive.read(bareCsv(names + "Group 1001"), null) }
+    }
+
+    @Test
+    fun groupsNamedOnlyByLinksCountTowardsTheGroupLimit() {
+        val names = (1..1_000).map { "Group $it" }
+
+        // A link to a group missing from the groups table creates that group too.
+        assertThrows(CatimaFormatException::class.java) {
+            archive.read(bareCsv(names, listOf(CatimaGroupLink(1, "Group 1001"))), null)
+        }
+    }
+
+    @Test
+    fun guardsRejectTooManyGroupLinks() {
+        val links = (1..100_000).map { CatimaGroupLink(it, "Courses") }
+
+        assertEquals(100_000, archive.read(bareCsv(listOf("Courses"), links), null).links.size)
+        assertThrows(CatimaFormatException::class.java) {
+            archive.read(bareCsv(listOf("Courses"), links + CatimaGroupLink(100_001, "Courses")), null)
+        }
+    }
+
     @Test
     fun entryOverTheLimitIsRejected() {
         val big = ArchiveImage(CatimaImageRef(2, ImageSide.BACK)) { it.write(ByteArray(600)) }
