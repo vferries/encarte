@@ -89,8 +89,8 @@ class FileImport(
     /** A file another app sent, which ImportActivity copied under [fileName]. */
     suspend fun importReceived(fileName: String): ImportOutcome = withContext(io) {
         val file = files.resolve(fileName)
-        if (file == null || !file.isFile) {
-            // The startup cleanup deletes it when the process died before this screen read it.
+        // A copy of an earlier process is going to be deleted by the startup cleanup: don't race it.
+        if (file == null || !files.isOwnCopy(fileName) || !file.isFile) {
             Log.w(TAG, "Import file is no longer available or its name was refused (${fileName.length} characters)")
             return@withContext ImportOutcome.Failure(ImportFailure.FILE_GONE)
         }

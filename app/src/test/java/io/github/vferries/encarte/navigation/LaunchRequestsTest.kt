@@ -84,6 +84,14 @@ class LaunchRequestsTest {
     }
 
     @Test
+    fun anImportRequestWithANonStringFileNameOpensTheListAndIsLogged() {
+        val intent = LaunchRequests.launch(context, LaunchRequests.ACTION_IMPORT_FILE).putExtra(LaunchRequests.EXTRA_FILE_NAME, 42)
+
+        assertEquals(listOf(CardListKey), LaunchRequests.backStackFor(intent))
+        assertEquals(1, warnings().size)
+    }
+
+    @Test
     fun anImportReopenedFromRecentsOpensTheListOnly() {
         val intent = LaunchRequests.importFile(context, UUID.randomUUID().toString())
             .addFlags(Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY)

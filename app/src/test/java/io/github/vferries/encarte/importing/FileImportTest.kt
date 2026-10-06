@@ -136,6 +136,15 @@ class FileImportTest {
     }
 
     @Test
+    fun aFileOfAnEarlierProcessIsGoneWithoutBeingRead() = runTest {
+        dir.mkdirs()
+        val earlier = File(dir, UUID.randomUUID().toString()).apply { writeBytes(TestFiles.pass()) }
+
+        assertEquals(ImportOutcome.Failure(ImportFailure.FILE_GONE), import.importReceived(earlier.name))
+        assertEquals("the startup cleanup owns it", listOf(earlier), leftovers())
+    }
+
+    @Test
     fun aReceivedFileThatIsGoneOrBadlyNamedIsNoLongerAvailable() = runTest {
         val gone = ImportOutcome.Failure(ImportFailure.FILE_GONE)
 

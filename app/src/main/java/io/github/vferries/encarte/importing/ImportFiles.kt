@@ -50,6 +50,9 @@ class ImportFiles(private val dir: File, private val maxBytes: Long = MAX_IMPORT
         return File(dir, name)
     }
 
+    /** Whether this process copied [name]: a restored request may name a copy of an earlier, dead process. */
+    fun isOwnCopy(name: String): Boolean = name in ownNames
+
     fun delete(file: File) {
         // Forget the name only once the file is gone, or clearLeftovers could race the deletion.
         if (!file.delete() && file.exists()) Log.w(TAG, "Cannot delete import file ${file.name}")

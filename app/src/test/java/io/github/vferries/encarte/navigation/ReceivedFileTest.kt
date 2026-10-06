@@ -1,6 +1,8 @@
 package io.github.vferries.encarte.navigation
 
+import android.os.Bundle
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
@@ -20,6 +22,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.Robolectric
 import org.robolectric.annotation.GraphicsMode
 import java.io.File
 import java.util.UUID
@@ -73,7 +76,32 @@ class ReceivedFileTest {
 
             waitFor(hasText("New card"))
             waitFor(hasText("TICKET-42"))
+
+            // ImportKey was replaced, not kept under the editor: Back lands on the list, with no second read.
+            scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
+            waitFor(hasText("No cards yet"))
+            composeRule.onAllNodes(hasText("This file is no longer available.")).assertCountEquals(0)
         }
+    }
+
+    @Test
+    fun theEditorSurvivesTheLossOfItsViewModelsWithoutReadingTheFileAgain() {
+        val file = received(ticket)
+        val first = Robolectric.buildActivity(MainActivity::class.java, LaunchRequests.importFile(app, file.name)).setup()
+        waitFor(hasText("Cinéma Lumière"))
+        val state = Bundle()
+        first.saveInstanceState(state)
+        first.pause().stop().destroy()
+
+        // A new controller has no retained ViewModel, as after process death.
+        val second = Robolectric.buildActivity(MainActivity::class.java, LaunchRequests.importFile(app, file.name)).setup(state)
+        waitFor(hasText("New card"))
+        waitFor(hasText("TICKET-42"))
+
+        second.get().onBackPressedDispatcher.onBackPressed()
+        waitFor(hasText("No cards yet"))
+        composeRule.onAllNodes(hasText("This file is no longer available.")).assertCountEquals(0)
+        second.pause().stop().destroy()
     }
 
     @Test

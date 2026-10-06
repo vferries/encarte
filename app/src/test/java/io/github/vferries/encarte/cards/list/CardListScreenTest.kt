@@ -1,6 +1,10 @@
 package io.github.vferries.encarte.cards.list
 
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
@@ -21,6 +25,7 @@ import io.github.vferries.encarte.core.data.ExpiryStatus
 import io.github.vferries.encarte.core.data.GroupNameResult
 import io.github.vferries.encarte.core.prefs.SortOrder
 import io.github.vferries.encarte.importing.ImportFailure
+import io.github.vferries.encarte.lock.LocalContentCovered
 import io.github.vferries.encarte.testing.testCard
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -217,6 +222,43 @@ class CardListScreenTest {
         setScreen(CardListUiState(isLoading = false, hasCards = false), importFailure = ImportFailure.NO_CODE_IN_PDF)
 
         composeRule.onNodeWithText("No barcode found in this PDF.").assertIsDisplayed()
+    }
+
+    @Test
+    fun anImportFailureWaitsForTheAppLockToOpen() {
+        var covered by mutableStateOf(true)
+        var shown = 0
+        composeRule.setContent {
+            CompositionLocalProvider(LocalContentCovered provides covered) {
+                CardListScreen(
+                    state = CardListUiState(isLoading = false, hasCards = false),
+                    query = TextFieldState(),
+                    archivedNotice = null,
+                    onSortOrderChange = {},
+                    onOpenCard = {},
+                    onAddCard = {},
+                    onOpenSettings = {},
+                    onImport = {},
+                    onUndoArchive = {},
+                    onArchivedNoticeShown = {},
+                    onSelectGroup = {},
+                    onCreateGroup = { GroupNameResult.Saved(1) },
+                    onRenameGroup = { id, _ -> GroupNameResult.Saved(id) },
+                    onDeleteGroup = {},
+                    onChooseCards = {},
+                    importFailure = ImportFailure.NO_CODE_IN_PDF,
+                    onImportFailureShown = { shown++ },
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("No barcode found in this PDF.").assertDoesNotExist()
+        assertEquals(0, shown)
+
+        covered = false
+
+        composeRule.onNodeWithText("No barcode found in this PDF.").assertIsDisplayed()
+        composeRule.waitUntil(15_000) { shown == 1 }
     }
 
     @Test

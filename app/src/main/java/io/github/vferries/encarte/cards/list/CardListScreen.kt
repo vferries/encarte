@@ -66,6 +66,7 @@ import io.github.vferries.encarte.core.ui.EncarteAlertDialog
 import io.github.vferries.encarte.core.ui.EncarteDropdownMenu
 import io.github.vferries.encarte.groups.GroupNameDialog
 import io.github.vferries.encarte.importing.ImportFailure
+import io.github.vferries.encarte.lock.LocalContentCovered
 
 @Composable
 fun CardListRoute(
@@ -138,8 +139,11 @@ fun CardListScreen(
         }
     }
     val importMessage = importFailure?.let { stringResource(it.message) }
-    LaunchedEffect(importFailure) {
+    val covered = LocalContentCovered.current
+    LaunchedEffect(importFailure, covered) {
+        // Behind the app lock the message would time out unseen: wait for the list to be visible.
         val message = importMessage ?: return@LaunchedEffect
+        if (covered) return@LaunchedEffect
         try {
             snackbar.showSnackbar(message)
         } finally {
