@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.vferries.encarte.R
 import io.github.vferries.encarte.core.ui.BarcodeImage
@@ -62,7 +63,7 @@ private fun CodeRow(code: FoundCode, onClick: () -> Unit) {
         val format = code.format
         // A code Encarté cannot draw shows its value alone.
         if (format != null) BarcodeImage(code.value, format, Modifier.widthIn(max = 280.dp).fillMaxWidth())
-        Text(code.value, style = MaterialTheme.typography.bodyLarge)
+        Text(code.value, style = MaterialTheme.typography.bodyLarge, maxLines = 3, overflow = TextOverflow.Ellipsis)
         Text(
             listOfNotNull(stringResource(R.string.import_choice_page, code.page), format?.label).joinToString(" · "),
             style = MaterialTheme.typography.bodySmall,

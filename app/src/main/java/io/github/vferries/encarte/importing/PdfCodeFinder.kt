@@ -24,6 +24,9 @@ private const val LONG_SIDE_PX = 2_400f
 /** About 64 MB of ARGB pixels: only a poster-sized page comes near it. */
 private const val MAX_PAGE_PIXELS = 4_096.0 * 4_096.0
 
+/** The largest value Encarté can draw (a QR code); longer ones would also bloat the back stack's saved state. */
+private const val MAX_VALUE_LENGTH = 300
+
 /** A code found in a file; [page] is 1-based. The "Choose a code" key carries a list of them. */
 @Serializable
 data class FoundCode(val value: String, val format: BarcodeFormat?, val page: Int)
@@ -36,10 +39,13 @@ sealed interface PdfScan {
     data object Unreadable : PdfScan
 }
 
-/** The codes of [pages] (the first page first), each format and value kept once, where it first appears. */
-internal fun foundCodes(pages: List<List<ScannedCode>>): List<FoundCode> =
-    pages.flatMapIndexed { index, codes -> codes.map { FoundCode(it.value, it.format, page = index + 1) } }
-        .distinctBy { it.format to it.value }
+/** The codes of [pages] (the first page first), without the codes too long to keep, each format and value kept once, where it first appears. */
+internal fun foundCodes(pages: List<List<ScannedCode>>): List<FoundCode> {
+    val all = pages.flatMapIndexed { index, codes -> codes.map { FoundCode(it.value, it.format, page = index + 1) } }
+    val (kept, tooLong) = all.partition { it.value.length <= MAX_VALUE_LENGTH }
+    if (tooLong.isNotEmpty()) Log.w(TAG, "Dropped ${tooLong.size} code(s) longer than $MAX_VALUE_LENGTH characters")
+    return kept.distinctBy { it.format to it.value }
+}
 
 /**
  * Long side at 2 400 px, the scale kept between 1 and 4: an A4 page gets about 2.85×, where 1× misses small 2D codes.

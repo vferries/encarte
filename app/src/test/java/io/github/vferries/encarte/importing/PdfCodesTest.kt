@@ -26,6 +26,14 @@ class PdfCodesTest {
     }
 
     @Test
+    fun aValueLongerThanTheLargestDrawableCodeIsDropped() {
+        val kept = ScannedCode("1".repeat(300), BarcodeFormat.QR_CODE)
+        val dropped = ScannedCode("2".repeat(301), null)
+
+        assertEquals(listOf(FoundCode(kept.value, BarcodeFormat.QR_CODE, page = 1)), foundCodes(listOf(listOf(dropped, kept))))
+    }
+
+    @Test
     fun aPageLongSideIsRenderedAt2400PixelsWithinOneToFourTimes() {
         assertEquals(2400f / 842, renderScale(595, 842), 0.001f)
         assertEquals(4f, renderScale(243, 153), 0.001f)
