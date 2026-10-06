@@ -11,6 +11,7 @@ import io.github.vferries.encarte.backup.importLabels
 import io.github.vferries.encarte.brands.BrandCatalog
 import io.github.vferries.encarte.core.data.CardRepository
 import io.github.vferries.encarte.core.data.EncarteDatabase
+import io.github.vferries.encarte.core.data.GroupRepository
 import io.github.vferries.encarte.core.data.ImageStore
 import io.github.vferries.encarte.core.nfc.ContactlessGuard
 import io.github.vferries.encarte.core.nfc.NfcContactlessGuard
@@ -31,6 +32,7 @@ class AppContainer(context: Context) {
     private val imageStore = ImageStore(File(appContext.filesDir, "images"), File(appContext.cacheDir, "staging"))
 
     val cardRepository = CardRepository(database.cardDao(), imageStore, clock)
+    val groupRepository = GroupRepository(database)
 
     val settingsRepository = SettingsRepository(
         PreferenceDataStoreFactory.create { appContext.preferencesDataStoreFile("settings") }

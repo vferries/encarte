@@ -8,14 +8,16 @@ import androidx.room3.Room
 import androidx.room3.RoomDatabase
 
 @Database(
-    entities = [Card::class],
-    version = 2,
+    entities = [Card::class, CardGroup::class, CardGroupCrossRef::class],
+    version = 3,
     exportSchema = true,
-    autoMigrations = [AutoMigration(from = 1, to = 2)],
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
 )
 @ColumnTypeConverters(Converters::class)
 abstract class EncarteDatabase : RoomDatabase() {
     abstract fun cardDao(): CardDao
+
+    abstract fun groupDao(): GroupDao
 
     companion object {
         const val FILE_NAME = "encarte.db"
