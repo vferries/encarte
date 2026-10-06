@@ -4,14 +4,12 @@ import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
+import io.github.vferries.encarte.core.prefs.dataOrDefaults
 import io.github.vferries.encarte.launcher.WidgetSource
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
-import java.io.IOException
 
 private const val TAG = "WidgetSourceStore"
 private const val FAVORITES = "favorites"
@@ -20,12 +18,7 @@ private const val GROUP_PREFIX = "group:"
 /** Each widget's source, keyed by appWidgetId. A widget without an entry shows the favorites. */
 class WidgetSourceStore(private val dataStore: DataStore<Preferences>) {
 
-    val sources: Flow<Map<Int, WidgetSource>> = dataStore.data
-        .catch { e ->
-            if (e !is IOException) throw e
-            Log.e(TAG, "Cannot read the widget sources, showing the favorites", e)
-            emit(emptyPreferences())
-        }
+    val sources: Flow<Map<Int, WidgetSource>> = dataStore.dataOrDefaults(TAG, what = "the widget sources")
         .map { prefs ->
             prefs.asMap().entries.mapNotNull { (key, value) ->
                 val appWidgetId = key.name.toIntOrNull()

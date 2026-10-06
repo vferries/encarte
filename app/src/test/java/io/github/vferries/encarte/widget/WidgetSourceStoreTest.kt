@@ -5,16 +5,25 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.vferries.encarte.launcher.WidgetSource
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.junit.runner.RunWith
 import java.io.File
+import java.io.IOException
 
+@RunWith(AndroidJUnit4::class)
 class WidgetSourceStoreTest {
     @get:Rule
     val tmp = TemporaryFolder()
@@ -64,5 +73,26 @@ class WidgetSourceStoreTest {
         }
 
         assertEquals(emptyMap<Int, WidgetSource>(), WidgetSourceStore(dataStore).sources.first())
+    }
+
+    @Test
+    fun theSourcesComeBackOnceTheStoreCanBeReadAgain() = runTest {
+        val dataStore = dataStore()
+        WidgetSourceStore(dataStore).set(1, WidgetSource.Group(5))
+        var failed = false
+        val flaky = object : DataStore<Preferences> by dataStore {
+            override val data: Flow<Preferences> = flow {
+                if (!failed) {
+                    failed = true
+                    throw IOException("disk")
+                }
+                emitAll(dataStore.data)
+            }
+        }
+
+        assertEquals(
+            listOf(emptyMap(), mapOf(1 to WidgetSource.Group(5))),
+            WidgetSourceStore(flaky).sources.take(2).toList(),
+        )
     }
 }

@@ -9,9 +9,18 @@ import androidx.datastore.preferences.core.emptyPreferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.retryWhen
 import java.io.File
+import java.io.IOException
 
 private const val TAG = "PreferencesStores"
+private const val FIRST_RETRY_DELAY_MS = 1_000L
+private const val MAX_RETRY_DELAY_MS = 60_000L
 
 /**
  * Opens a Preferences store that starts over from the defaults when its file is corrupted: without a handler every
@@ -28,3 +37,24 @@ fun preferencesStore(
     scope = scope,
     produceFile = file,
 )
+
+/**
+ * The store's values, or the defaults while it cannot be read. A read error ends DataStore's flow, so the store is
+ * read again after a growing delay: without that, the app lock and the home screen would keep the defaults until the
+ * process restarts. A value read starts the delays over.
+ */
+fun DataStore<Preferences>.dataOrDefaults(tag: String, what: String): Flow<Preferences> = flow {
+    var retryDelayMs = FIRST_RETRY_DELAY_MS
+    emitAll(
+        data
+            .onEach { retryDelayMs = FIRST_RETRY_DELAY_MS }
+            .retryWhen { e, _ ->
+                if (e !is IOException) return@retryWhen false
+                Log.e(tag, "Cannot read $what, using the defaults and reading again in $retryDelayMs ms", e)
+                emit(emptyPreferences())
+                delay(retryDelayMs)
+                retryDelayMs = (retryDelayMs * 2).coerceAtMost(MAX_RETRY_DELAY_MS)
+                true
+            },
+    )
+}

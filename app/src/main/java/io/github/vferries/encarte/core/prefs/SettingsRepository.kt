@@ -1,27 +1,19 @@
 package io.github.vferries.encarte.core.prefs
 
-import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
-import java.io.IOException
 
 private const val TAG = "SettingsRepository"
 
 class SettingsRepository(private val dataStore: DataStore<Preferences>) {
 
-    private val preferences: Flow<Preferences> = dataStore.data.catch { e ->
-        if (e !is IOException) throw e
-        Log.e(TAG, "Cannot read settings, using defaults", e)
-        emit(emptyPreferences())
-    }
+    private val preferences: Flow<Preferences> = dataStore.dataOrDefaults(TAG, what = "the settings")
 
     val sortOrder: Flow<SortOrder> = preferences
         .map { prefs -> prefs[SORT_ORDER]?.let { name -> SortOrder.entries.firstOrNull { it.name == name } } ?: SortOrder.NAME }
