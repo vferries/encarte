@@ -119,6 +119,20 @@ class WidgetConfigActivityTest {
     }
 
     @Test
+    fun backWhileLockedCancelsTheWidget() {
+        shadowOf(app.getSystemService(KeyguardManager::class.java)).setIsDeviceSecure(true)
+        lockTheApp()
+        val scenario = ActivityScenario.launchActivityForResult<WidgetConfigActivity>(configure(boundWidget()))
+        waitForText("Encarté is locked")
+
+        // The activity runs in the launcher's task: sending that task back would leave the placement pending.
+        scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
+        waitUntilFinished(scenario)
+
+        assertEquals(Activity.RESULT_CANCELED, scenario.result.resultCode)
+    }
+
+    @Test
     fun theChoiceStaysBehindTheAppLock() {
         runBlocking { app.container.groupRepository.create("Courses") }
         shadowOf(app.getSystemService(KeyguardManager::class.java)).setIsDeviceSecure(true)

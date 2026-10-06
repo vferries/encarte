@@ -27,6 +27,7 @@ fun AppLockGate(
     lockManager: LockManager,
     settings: SettingsRepository,
     authenticate: (title: String, onSuccess: () -> Unit) -> Unit,
+    onBackWhileCovered: () -> Unit = moveTaskToBackAction(),
     content: @Composable () -> Unit,
 ) {
     val context = LocalContext.current
@@ -54,6 +55,7 @@ fun AppLockGate(
             }
             Toast.makeText(context, R.string.lock_disabled_no_credential, Toast.LENGTH_LONG).show()
         },
+        onBackWhileCovered = onBackWhileCovered,
         content = content,
     )
 }

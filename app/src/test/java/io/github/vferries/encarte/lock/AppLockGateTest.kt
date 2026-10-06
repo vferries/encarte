@@ -18,6 +18,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -77,6 +79,19 @@ class AppLockGateTest {
         setGate(deviceSecure = true, unlockOnPrompt = true)
 
         composeRule.onNodeWithText("Secret content").assertIsDisplayed()
+    }
+
+    @Test
+    fun backWhileLockedSendsTheAppToTheBackground() {
+        setGate(deviceSecure = true)
+        composeRule.onNodeWithText("Encarté is locked").assertIsDisplayed()
+
+        composeRule.runOnUiThread { composeRule.activity.onBackPressedDispatcher.onBackPressed() }
+
+        composeRule.runOnIdle {
+            assertTrue(shadowOf(composeRule.activity).isTaskMovedToBack)
+            assertFalse(composeRule.activity.isFinishing)
+        }
     }
 
     @Test

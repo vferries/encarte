@@ -31,6 +31,7 @@ fun LockGate(
     deviceSecure: Boolean,
     onUnlockRequest: () -> Unit,
     onLockUnavailable: () -> Unit,
+    onBackWhileCovered: () -> Unit = moveTaskToBackAction(),
     content: @Composable () -> Unit,
 ) {
     val covered = state != LockState.UNLOCKED
@@ -46,13 +47,17 @@ fun LockGate(
     }
     if (covered) {
         // Composed after the content's handlers, so it wins: Back must not act on the hidden screens.
-        val activity = LocalActivity.current
-        BackHandler {
-            if (activity != null) activity.moveTaskToBack(true) else Log.w(TAG, "No activity to send to back")
-        }
+        BackHandler(onBack = onBackWhileCovered)
     }
     if (state == LockState.LOCKED && !deviceSecure) {
         // The screen lock was removed after enabling ours: no credential could ever unlock the app.
         LaunchedEffect(Unit) { onLockUnavailable() }
     }
+}
+
+/** Back while locked leaves the app, as Back from its first screen would, without finishing it. */
+@Composable
+fun moveTaskToBackAction(): () -> Unit {
+    val activity = LocalActivity.current
+    return { if (activity != null) activity.moveTaskToBack(true) else Log.w(TAG, "No activity to send to back") }
 }

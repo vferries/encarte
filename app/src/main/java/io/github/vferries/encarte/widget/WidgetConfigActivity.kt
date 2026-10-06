@@ -44,7 +44,13 @@ class WidgetConfigActivity : FragmentActivity() {
         val authenticator = DeviceAuthenticator(this)
         setContent {
             EncarteTheme {
-                AppLockGate(container.lockManager, container.settingsRepository, authenticator::authenticate) {
+                // Started for a result inside the launcher's task: Back must cancel, not send that task back.
+                AppLockGate(
+                    container.lockManager,
+                    container.settingsRepository,
+                    authenticator::authenticate,
+                    onBackWhileCovered = ::finish,
+                ) {
                     val groupsFlow = remember { container.groupRepository.observeGroups(cardCollator()) }
                     val groups by groupsFlow.collectAsStateWithLifecycle(emptyList())
                     WidgetConfigScreen(groups, onChoose = { choose(container, appWidgetId, it) }, onClose = ::finish)
