@@ -28,6 +28,9 @@ interface GroupDao {
     @Query("SELECT * FROM card_groups")
     fun observeMemberships(): Flow<List<CardGroupCrossRef>>
 
+    @Query("SELECT * FROM card_groups ORDER BY cardId, groupId")
+    suspend fun getAllMemberships(): List<CardGroupCrossRef>
+
     @Query("SELECT groupId FROM card_groups WHERE cardId = :cardId")
     suspend fun groupIdsOf(cardId: Long): List<Long>
 

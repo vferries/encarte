@@ -7,6 +7,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.vferries.encarte.core.barcode.BarcodeFormat
 import io.github.vferries.encarte.core.data.Card
 import io.github.vferries.encarte.core.data.EncarteDatabase
+import io.github.vferries.encarte.core.data.GroupNameResult
+import io.github.vferries.encarte.core.data.GroupRepository
 import io.github.vferries.encarte.core.data.ImageStore
 import io.github.vferries.encarte.testing.inMemoryDatabase
 import io.github.vferries.encarte.testing.testCard
@@ -251,5 +253,109 @@ class BackupServiceTest {
         assertEquals(LocalDate.of(1970, 1, 19), store.expiresOn)
         assertTrue(store.isArchived)
         assertFalse(cards.single { it.storeName == "Pharmacy" }.isArchived)
+    }
+
+    private suspend fun membershipsByStore(database: EncarteDatabase): Map<String, Set<String>> {
+        val stores = database.cardDao().getAll().associate { it.id to it.storeName }
+        val names = database.groupDao().getAll().associate { it.id to it.name }
+        return database.groupDao().getAllMemberships()
+            .groupBy({ stores.getValue(it.cardId) }, { names.getValue(it.groupId) })
+            .mapValues { (_, groups) -> groups.toSet() }
+    }
+
+    @Test
+    fun importsCatimaGroups() = runTest {
+        service.import(fixtureArchive(), null)
+
+        assertEquals(setOf("Health", "Food", "Fashion"), db.groupDao().getAll().map { it.name }.toSet())
+        assertEquals(
+            mapOf(
+                "Pharmacy" to setOf("Health"), "Grocery Store" to setOf("Food"), "Restaurant" to setOf("Food"),
+                "Clothes Store" to setOf("Fashion"), "Shoe Store" to setOf("Fashion"),
+            ),
+            membershipsByStore(db),
+        )
+    }
+
+    @Test
+    fun importedGroupsJoinExistingGroupsOfTheSameName() = runTest {
+        val food = (GroupRepository(db).create("food") as GroupNameResult.Saved).id
+
+        service.import(fixtureArchive(), null)
+
+        val groups = db.groupDao().getAll()
+        assertEquals(3, groups.size)
+        assertEquals("food", groups.single { it.id == food }.name)
+        assertEquals(setOf("food"), membershipsByStore(db).getValue("Restaurant"))
+    }
+
+    @Test
+    fun duplicatesKeepTheirCurrentGroups() = runTest {
+        val file = fixtureArchive()
+        service.import(file, null)
+        val pharmacy = db.cardDao().getAll().single { it.storeName == "Pharmacy" }.id
+        val health = db.groupDao().getAll().single { it.name == "Health" }.id
+        GroupRepository(db).setMembership(pharmacy, health, member = false)
+
+        service.import(file, null)
+
+        assertNull(membershipsByStore(db)["Pharmacy"])
+    }
+
+    @Test
+    fun linksToUnlistedGroupsCreateThemAndLinksToUnknownCardsAreIgnored() = runTest {
+        val csv = CatimaCsv.write(
+            listOf(CatimaCard(id = 1, store = "Shop", cardId = "42")),
+            groups = emptyList(),
+            links = listOf(CatimaGroupLink(1, "Orphan"), CatimaGroupLink(99, "Ghost")),
+        )
+
+        assertEquals(ImportResult.Success(1, 0), service.import(fixtureArchive(csv = csv), null))
+
+        assertEquals(listOf("Orphan"), db.groupDao().getAll().map { it.name })
+        assertEquals(mapOf("Shop" to setOf("Orphan")), membershipsByStore(db))
+    }
+
+    @Test
+    fun namesDifferingOnlyByCaseOrAccentsBecomeOneGroup() = runTest {
+        val csv = CatimaCsv.write(
+            listOf(CatimaCard(id = 1, store = "Shop", cardId = "42"), CatimaCard(id = 2, store = "Other", cardId = "43")),
+            groups = listOf("Food", "food", "Fôod"),
+            links = listOf(CatimaGroupLink(1, "Food"), CatimaGroupLink(2, "food"), CatimaGroupLink(1, "FOOD")),
+        )
+
+        service.import(fixtureArchive(csv = csv), null)
+
+        assertEquals(listOf("Food"), db.groupDao().getAll().map { it.name })
+        assertEquals(mapOf("Shop" to setOf("Food"), "Other" to setOf("Food")), membershipsByStore(db))
+    }
+
+    @Test
+    fun groupsSurviveAnExportImportRoundTrip() = runTest {
+        val groups = GroupRepository(db)
+        val fnac = db.cardDao().insert(testCard("Fnac"))
+        val kase = db.cardDao().insert(testCard("Käse", cardNumber = "K-1"))
+        val courses = (groups.create("Courses, vrac") as GroupNameResult.Saved).id
+        val mode = (groups.create("🛒 Mode") as GroupNameResult.Saved).id
+        groups.create("Vide")
+        groups.setMembership(fnac, courses, member = true)
+        groups.setMembership(kase, courses, member = true)
+        groups.setMembership(fnac, mode, member = true)
+        val exported = ByteArrayOutputStream()
+
+        assertEquals(ExportResult.Success(2), service.export({ exported }, null))
+
+        val otherDb = inMemoryDatabase()
+        try {
+            val file = File(tmp.root, "groups.zip").apply { writeBytes(exported.toByteArray()) }
+            serviceFor(otherDb, ImageStore(File(tmp.root, "images2"), File(tmp.root, "staging2"))).import(file, null)
+            assertEquals(setOf("Courses, vrac", "🛒 Mode", "Vide"), otherDb.groupDao().getAll().map { it.name }.toSet())
+            assertEquals(
+                mapOf("Fnac" to setOf("Courses, vrac", "🛒 Mode"), "Käse" to setOf("Courses, vrac")),
+                membershipsByStore(otherDb),
+            )
+        } finally {
+            otherDb.close()
+        }
     }
 }

@@ -1,11 +1,16 @@
 package io.github.vferries.encarte.backup
 
 import android.util.Log
+import androidx.room3.withReadTransaction
 import androidx.room3.withWriteTransaction
 import androidx.sqlite.SQLiteException
+import io.github.vferries.encarte.cards.list.cardCollator
 import io.github.vferries.encarte.core.data.Card
+import io.github.vferries.encarte.core.data.CardGroup
+import io.github.vferries.encarte.core.data.CardGroupCrossRef
 import io.github.vferries.encarte.core.data.EncarteDatabase
 import io.github.vferries.encarte.core.data.ImageStore
+import io.github.vferries.encarte.core.data.groupNameKey
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -43,6 +48,7 @@ class BackupService(
     private val io: CoroutineDispatcher = Dispatchers.IO,
 ) {
     private val dao = database.cardDao()
+    private val groupDao = database.groupDao()
 
     /** A local copy allows retrying with another password without re-opening the file picker. */
     suspend fun copyToWorkFile(open: () -> InputStream): File = withContext(io) {
@@ -87,7 +93,8 @@ class BackupService(
     }
 
     private suspend fun importOrThrow(file: File, password: CharArray?): ImportResult {
-        val sources = archive.read(file, password).cards
+        val backup = archive.read(file, password)
+        val sources = backup.cards
         val now = clock.instant()
         val currentLabels = labels()
         val mapped = sources.map { it to CatimaMapping.toCard(it, currentLabels, clock.zone, now) }
@@ -111,14 +118,17 @@ class BackupService(
         val committed = images.commitStaged(staged.values)
         try {
             database.withWriteTransaction<Unit> {
+                // Catima id → id of the card this import created; duplicates are absent.
+                val importedIds = mutableMapOf<Int, Long>()
                 for ((source, card) in toImport) {
-                    dao.insert(
+                    importedIds[source.id] = dao.insert(
                         card.copy(
                             frontImage = staged[CatimaImageRef(source.id, ImageSide.FRONT)],
                             backImage = staged[CatimaImageRef(source.id, ImageSide.BACK)],
                         )
                     )
                 }
+                importGroups(backup, importedIds)
             }
         } catch (e: Exception) {
             Log.e(TAG, "Import transaction failed, removing its images", e)
@@ -128,12 +138,40 @@ class BackupService(
         return ImportResult.Success(imported = toImport.size, skippedDuplicates = mapped.size - toImport.size)
     }
 
+    /**
+     * Groups match existing ones by name key, or are created. Memberships only go to the cards this import
+     * created: a duplicate card keeps its groups, like every other field.
+     */
+    private suspend fun importGroups(backup: CatimaBackup, importedIds: Map<Int, Long>) {
+        val idsByKey = groupDao.getAll().associateTo(mutableMapOf()) { groupNameKey(it.name) to it.id }
+        suspend fun groupIdFor(name: String): Long =
+            idsByKey.getOrPut(groupNameKey(name)) { groupDao.insert(CardGroup(name = name.trim())) }
+
+        backup.groups.forEach { groupIdFor(it) }
+        val sourceIds = backup.cards.mapTo(mutableSetOf()) { it.id }
+        val memberships = backup.links.mapNotNull { link ->
+            val cardId = importedIds[link.cardId]
+            when {
+                cardId != null -> CardGroupCrossRef(cardId, groupIdFor(link.group))
+                link.cardId !in sourceIds -> null.also { Log.w(TAG, "Group link to unknown card ${link.cardId} ignored") }
+                else -> null // a duplicate: left untouched
+            }
+        }
+        groupDao.insertMemberships(memberships)
+    }
+
     suspend fun export(open: () -> OutputStream, password: CharArray?): ExportResult = withContext(io) {
         workDir.mkdirs()
         val temp = File(workDir, "export-${UUID.randomUUID()}.zip")
         try {
-            val cards = dao.getAll()
-            val csv = CatimaCsv.write(cards.map { CatimaMapping.toCatima(it, clock.zone) })
+            // One read transaction: a membership must never point at a card or group missing from the file.
+            val (cards, groups, memberships) = database.withReadTransaction {
+                Triple(dao.getAll(), groupDao.getAll(), groupDao.getAllMemberships())
+            }
+            val sortedGroups = groups.sortedWith(compareBy(cardCollator()) { it.name })
+            val names = sortedGroups.associate { it.id to it.name }
+            val links = memberships.mapNotNull { m -> names[m.groupId]?.let { CatimaGroupLink(m.cardId.toInt(), it) } }
+            val csv = CatimaCsv.write(cards.map { CatimaMapping.toCatima(it, clock.zone) }, sortedGroups.map { it.name }, links)
             archive.write(FileOutputStream(temp), csv, cards.flatMap(::archiveImages), password)
             open().use { out -> temp.inputStream().use { it.copyTo(out) } }
             ExportResult.Success(cards.size)
