@@ -1,8 +1,13 @@
 package io.github.vferries.encarte.backup
 
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.shadows.ShadowLog
 
+@RunWith(AndroidJUnit4::class)
 class FidMeCsvTest {
     private fun fixture() = javaClass.getResource("/fidme/${FidMeCsv.FILE_NAME}")!!.readText()
 
@@ -52,5 +57,19 @@ class FidMeCsvTest {
     @Test(expected = FidMeFormatException::class)
     fun anUnterminatedQuoteIsMalformed() {
         FidMeCsv.read("Retailer;Reference\n\"Fnac;42\n")
+    }
+
+    @Test
+    fun aMissingHeaderLogsNoContentOfTheFirstRow() {
+        ShadowLog.clear()
+
+        try {
+            FidMeCsv.read("Fnac;secret-card-4006381333931;Marie Dupont\n")
+        } catch (e: FidMeFormatException) {
+            // Expected: the log is what this test checks.
+        }
+
+        assertTrue(ShadowLog.getLogs().isNotEmpty())
+        assertTrue(ShadowLog.getLogs().none { it.msg.contains("secret-card") || it.msg.contains("Dupont") })
     }
 }

@@ -34,7 +34,7 @@ object FidMeCsv {
         val retailer = header.indexOf("retailer")
         val reference = header.indexOf("reference")
         if (retailer < 0 || reference < 0) {
-            Log.w(TAG, "No Retailer or Reference column in $header")
+            Log.w(TAG, "No Retailer or Reference column in a header of ${header.size} column(s)")
             throw FidMeFormatException("Not a FidMe export")
         }
         val program = header.indexOf("program")
