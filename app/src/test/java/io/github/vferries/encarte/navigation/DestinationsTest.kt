@@ -9,6 +9,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.vferries.encarte.core.barcode.BarcodeFormat
 import io.github.vferries.encarte.importing.CardDraft
 import io.github.vferries.encarte.importing.DraftNotice
+import io.github.vferries.encarte.importing.FoundCode
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -36,6 +37,16 @@ class DestinationsTest {
                 storeName = "Cinéma", cardNumber = "A-42", barcodeValue = "X-42", barcodeFormat = BarcodeFormat.QR_CODE,
                 color = -16777216, expiresOnEpochDay = 20_524, note = "Séance", notice = DraftNotice.PASS_WITHOUT_BARCODE,
             ),
+        )
+
+        assertEquals(key, afterProcessDeath(key))
+    }
+
+    @Test
+    fun theChooserKeyKeepsItsCodes() {
+        val key = ImportChoiceKey(
+            listOf(FoundCode("LOYALTY-QR-1", BarcodeFormat.QR_CODE, page = 1), FoundCode("MAXI-7", null, page = 2)),
+            groupId = 3,
         )
 
         assertEquals(key, afterProcessDeath(key))

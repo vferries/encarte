@@ -85,6 +85,8 @@
     <string name="import_pdf_no_code">No barcode found in this PDF.</string>
     <string name="import_file_cannot_open">Can\'t open this file.</string>
     <string name="import_file_gone">This file is no longer available.</string>
+    <string name="import_choice_title">Choose a code</string>
+    <string name="import_choice_page">Page %1$d</string>
     <string name="import_note_valid_from">Valid from: %1$s</string>
     <string name="import_note_balance">Balance: %1$s</string>
     <string name="import_note_points">%1$s points</string>

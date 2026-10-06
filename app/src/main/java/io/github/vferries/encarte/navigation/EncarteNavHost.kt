@@ -23,6 +23,8 @@ import io.github.vferries.encarte.cards.list.CardListViewModel
 import io.github.vferries.encarte.cards.list.cardCollator
 import io.github.vferries.encarte.groups.GroupCardsRoute
 import io.github.vferries.encarte.groups.GroupCardsViewModel
+import io.github.vferries.encarte.importing.ImportChoiceScreen
+import io.github.vferries.encarte.importing.toDraft
 import io.github.vferries.encarte.scan.ScannerRoute
 import io.github.vferries.encarte.scan.ScannerViewModel
 import io.github.vferries.encarte.settings.SettingsRoute
@@ -122,6 +124,13 @@ fun EncarteNavHost(container: AppContainer, initialBackStack: List<NavKey> = lis
                         }
                     },
                     onClose = pop,
+                )
+            }
+            entry<ImportChoiceKey> { key ->
+                ImportChoiceScreen(
+                    codes = key.codes,
+                    onBack = pop,
+                    onChoose = { code -> replaceTopIf(ImportChoiceKey::class, code.toDraft().editKey(key.groupId)) },
                 )
             }
             entry<SettingsKey> {

@@ -3,6 +3,7 @@ package io.github.vferries.encarte.navigation
 import androidx.navigation3.runtime.NavKey
 import io.github.vferries.encarte.core.barcode.BarcodeFormat
 import io.github.vferries.encarte.importing.CardDraft
+import io.github.vferries.encarte.importing.FoundCode
 import kotlinx.serialization.Serializable
 
 // Keys are @Serializable so the back stack survives process death (reflective NavKey serializer).
@@ -27,6 +28,13 @@ data class CardEditKey(
     /** A new card pre-filled from an imported file. */
     val draft: CardDraft? = null,
 ) : NavKey
+
+/**
+ * "Choose a code" among the codes found in a PDF. The key carries the codes, not the file: the screen survives
+ * process death. [groupId] comes from the scanner, like [ScannerKey.groupId].
+ */
+@Serializable
+data class ImportChoiceKey(val codes: List<FoundCode>, val groupId: Long? = null) : NavKey
 
 @Serializable
 data object SettingsKey : NavKey
