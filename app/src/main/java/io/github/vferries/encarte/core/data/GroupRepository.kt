@@ -21,6 +21,8 @@ class GroupRepository(private val database: EncarteDatabase) {
     fun observeGroups(collator: Collator): Flow<List<CardGroup>> =
         dao.observeAll().map { groups -> groups.sortedWith(compareBy(collator) { it.name }) }
 
+    fun observeGroup(id: Long): Flow<CardGroup?> = dao.observe(id)
+
     /** Card id → ids of its groups; cards in no group are absent. */
     fun observeMemberships(): Flow<Map<Long, Set<Long>>> = dao.observeMemberships().map { rows ->
         rows.groupBy({ it.cardId }, { it.groupId }).mapValues { (_, groupIds) -> groupIds.toSet() }

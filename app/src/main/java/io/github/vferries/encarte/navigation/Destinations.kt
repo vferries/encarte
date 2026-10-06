@@ -25,3 +25,6 @@ data class CardEditKey(
 
 @Serializable
 data object SettingsKey : NavKey
+
+@Serializable
+data class GroupCardsKey(val groupId: Long) : NavKey

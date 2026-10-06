@@ -16,6 +16,9 @@ interface GroupDao {
     @Query("SELECT * FROM `groups`")
     suspend fun getAll(): List<CardGroup>
 
+    @Query("SELECT * FROM `groups` WHERE id = :id")
+    fun observe(id: Long): Flow<CardGroup?>
+
     @Insert
     suspend fun insert(group: CardGroup): Long
 

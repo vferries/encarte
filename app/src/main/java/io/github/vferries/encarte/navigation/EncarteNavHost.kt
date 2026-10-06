@@ -21,6 +21,8 @@ import io.github.vferries.encarte.cards.edit.CardEditViewModel
 import io.github.vferries.encarte.cards.list.CardListRoute
 import io.github.vferries.encarte.cards.list.CardListViewModel
 import io.github.vferries.encarte.cards.list.cardCollator
+import io.github.vferries.encarte.groups.GroupCardsRoute
+import io.github.vferries.encarte.groups.GroupCardsViewModel
 import io.github.vferries.encarte.scan.ScannerRoute
 import io.github.vferries.encarte.scan.ScannerViewModel
 import io.github.vferries.encarte.settings.SettingsRoute
@@ -116,6 +118,15 @@ fun EncarteNavHost(container: AppContainer) {
                 SettingsRoute(
                     viewModel = viewModel { SettingsViewModel(container.settingsRepository, container.backupService) },
                     onBack = pop,
+                )
+            }
+            entry<GroupCardsKey> { key ->
+                GroupCardsRoute(
+                    viewModel = viewModel {
+                        GroupCardsViewModel(key.groupId, container.cardRepository, container.groupRepository, cardCollator())
+                    },
+                    // Idempotent: a deletion noticed twice must not pop another screen.
+                    onBack = { if (backStack.lastOrNull() == key) pop() },
                 )
             }
         },
