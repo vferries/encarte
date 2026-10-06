@@ -43,6 +43,28 @@
                 android:name="android.app.shortcuts"
                 android:resource="@xml/shortcuts" />
         </activity>
+        <!-- Passes and PDFs from other apps ("Open with", "Share"). It runs in the sending app's task, copies the
+             file and hands it to MainActivity in Encarté's task: it shows no card data, so it needs no lock. -->
+        <activity
+            android:name=".importing.ImportActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" />
+                <data android:mimeType="application/vnd.apple.pkpass" />
+                <data android:mimeType="application/vnd-com.apple.pkpass" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/vnd.apple.pkpass" />
+                <data android:mimeType="application/vnd-com.apple.pkpass" />
+                <data android:mimeType="application/pdf" />
+            </intent-filter>
+        </activity>
         <!-- Started by the launcher when a widget is placed or reconfigured; it checks the widget is ours. -->
         <activity
             android:name=".widget.WidgetConfigActivity"
