@@ -31,14 +31,9 @@ object PassStrings {
             val entry = cursor.entry()
             if (entry != null) {
                 table[entry.first] = entry.second
-            } else if (cursor.inUnterminatedComment) {
-                // The comment swallows the rest of the text; rewinding to skip one line would rescan it per line.
-                Log.w(TAG, "Unterminated comment in pass.strings at offset $start, rest of the table ignored")
-                return table
             } else {
                 Log.w(TAG, "Malformed pass.strings entry at offset $start skipped")
-                cursor.position = start
-                cursor.skipLine()
+                cursor.recover(start)
             }
         }
     }
@@ -46,8 +41,6 @@ object PassStrings {
     private class Cursor(private val text: String) {
         var position = 0
         val atEnd: Boolean get() = position >= text.length
-        var inUnterminatedComment = false
-            private set
 
         fun entry(): Pair<String, String>? {
             val key = quoted() ?: return null
@@ -66,12 +59,20 @@ object PassStrings {
                     text.startsWith("//", position) -> skipLine()
                     text.startsWith("/*", position) -> {
                         val end = text.indexOf("*/", position + 2)
-                        inUnterminatedComment = end < 0
                         position = if (end < 0) text.length else end + 2
                     }
                     else -> return
                 }
             }
+        }
+
+        /**
+         * Resumes after the furthest point the failed entry reached, never at its start: rewinding would rescan
+         * what the entry already read, which is quadratic when a comment or string spans many lines.
+         */
+        fun recover(entryStart: Int) {
+            val atLineStart = position > 0 && text[position - 1] == '\n'
+            if (position <= entryStart || !atLineStart) skipLine()
         }
 
         fun skipLine() {

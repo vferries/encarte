@@ -44,6 +44,21 @@ class PassStringsTest {
         assertEquals(mapOf("first" to "1"), PassStrings.parse("\"first\" = \"1\";\n$hostile"))
     }
 
+    // Recovery must never rescan text a failed entry already read, or these inputs are quadratic.
+    @Test(timeout = 1_000)
+    fun manyEntriesSpanningOneTerminatedCommentParseInLinearTime() {
+        val hostile = "\"a\"/*\n".repeat(512 * 1024 / 6) + "*/"
+
+        assertEquals(mapOf("first" to "1"), PassStrings.parse("\"first\" = \"1\";\n$hostile"))
+    }
+
+    @Test(timeout = 1_000)
+    fun manyOpeningQuotesClosedOnlyAtTheEndParseInLinearTime() {
+        val hostile = "\"a\n".repeat(512 * 1024 / 3) + "\""
+
+        assertEquals(mapOf("first" to "1"), PassStrings.parse("\"first\" = \"1\";\n$hostile"))
+    }
+
     @Test
     fun emptyInputGivesAnEmptyTable() {
         assertEquals("", PassStrings.decode(ByteArray(0)))
