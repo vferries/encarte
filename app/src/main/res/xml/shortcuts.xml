@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_add"
+        android:shortcutId="add_card"
+        android:shortcutShortLabel="@string/action_add_card">
+        <intent
+            android:action="io.github.vferries.encarte.action.ADD_CARD"
+            android:targetClass="io.github.vferries.encarte.MainActivity"
+            android:targetPackage="io.github.vferries.encarte" />
+    </shortcut>
+</shortcuts>

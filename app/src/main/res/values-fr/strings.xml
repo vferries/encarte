@@ -10,6 +10,7 @@
     <string name="sort_expiry">Échéance</string>
     <string name="action_settings">Réglages</string>
     <string name="action_add_card">Ajouter une carte</string>
+    <string name="shortcut_card_deleted">Cette carte a été supprimée</string>
     <string name="action_import">Importer</string>
     <string name="section_favorites">Favorites</string>
     <string name="section_all_cards">Toutes les cartes</string>
