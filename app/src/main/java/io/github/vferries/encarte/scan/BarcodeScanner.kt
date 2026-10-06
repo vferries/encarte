@@ -7,41 +7,47 @@ import zxingcpp.BarcodeReader
 
 private const val TAG = "BarcodeScanner"
 
+private fun readerOptions(maxSymbols: Int) = BarcodeReader.Options(
+    // Empty set = every format, so undrawable ones are still recognised and kept as numbers.
+    formats = emptySet(),
+    tryHarder = true,
+    tryRotate = true,
+    tryInvert = true,
+    tryDownscale = true,
+    maxNumberOfSymbols = maxSymbols,
+    // Plain text re-encodes; the default HRI mode adds GS1 parentheses and escapes.
+    textMode = BarcodeReader.TextMode.PLAIN,
+)
+
 /** zxing-cpp's reader is not documented as thread-safe: use one instance per thread. */
 class BarcodeScanner {
-    private val reader = BarcodeReader(
-        BarcodeReader.Options(
-            // Empty set = every format, so undrawable ones are still recognised and kept as numbers.
-            formats = emptySet(),
-            tryHarder = true,
-            tryRotate = true,
-            tryInvert = true,
-            tryDownscale = true,
-            maxNumberOfSymbols = 1,
-            // Plain text re-encodes; the default HRI mode adds GS1 parentheses and escapes.
-            textMode = BarcodeReader.TextMode.PLAIN,
-        )
-    )
+    private val reader = BarcodeReader(readerOptions(maxSymbols = 1))
 
     /** Reads one camera frame (YUV_420_888). The caller closes [image]. */
-    fun scan(image: ImageProxy): ScannedCode? = firstUsable {
+    fun scan(image: ImageProxy): ScannedCode? = usableCodes {
         reader.read(image)
+    }.firstOrNull()
+
+    fun scan(bitmap: Bitmap): ScannedCode? = usableCodes {
+        reader.read(bitmap.argb())
+    }.firstOrNull()
+
+    /** Every usable code in [bitmap], up to [maxSymbols]: a PDF page can hold several. */
+    fun scanAll(bitmap: Bitmap, maxSymbols: Int): List<ScannedCode> = usableCodes {
+        // A reader per call: it only holds options, and the native library is already loaded.
+        BarcodeReader(readerOptions(maxSymbols)).read(bitmap.argb())
     }
 
-    fun scan(bitmap: Bitmap): ScannedCode? = firstUsable {
-        val argb = if (bitmap.config == Bitmap.Config.ARGB_8888) bitmap else bitmap.copy(Bitmap.Config.ARGB_8888, false)
-        reader.read(argb)
-    }
+    private fun Bitmap.argb(): Bitmap = if (config == Bitmap.Config.ARGB_8888) this else copy(Bitmap.Config.ARGB_8888, false)
 
-    private inline fun firstUsable(read: () -> List<BarcodeReader.Result>): ScannedCode? {
+    private inline fun usableCodes(read: () -> List<BarcodeReader.Result>): List<ScannedCode> {
         val results = try {
             read()
         } catch (e: RuntimeException) {
             // zxing-cpp rethrows native failures as RuntimeException; a bad frame must not kill the scanner.
             Log.w(TAG, "zxing-cpp read failed", e)
-            return null
+            return emptyList()
         }
-        val result = results.firstOrNull { it.error == null && !it.text.isNullOrEmpty() } ?: return null
-        return ScanMapping.map(result.format, result.text!!)
+        return results.filter { it.error == null && !it.text.isNullOrEmpty() }.map { ScanMapping.map(it.format, it.text!!) }
     }
 }

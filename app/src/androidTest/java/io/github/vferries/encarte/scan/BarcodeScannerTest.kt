@@ -1,12 +1,14 @@
 package io.github.vferries.encarte.scan
 
 import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Color
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.zxing.common.BitMatrix
 import io.github.vferries.encarte.core.barcode.BarcodeEncoder
 import io.github.vferries.encarte.core.barcode.BarcodeFormat
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -43,6 +45,25 @@ class BarcodeScannerTest {
             // Same bars, even when the reported format or text differs (UPC-A as EAN-13, Codabar guards).
             assertEquals("$format bars", original, BarcodeEncoder.encode(scanned.value, scannedFormat))
         }
+    }
+
+    @Test
+    fun scanAllReadsEveryCodeOfAnImageWhileScanReadsOne() {
+        val qr = render(BarcodeEncoder.encode("LOYALTY-QR-1", BarcodeFormat.QR_CODE), BarcodeFormat.QR_CODE)
+        val ean = render(BarcodeEncoder.encode("4006381333931", BarcodeFormat.EAN_13), BarcodeFormat.EAN_13)
+        val both = Bitmap.createBitmap(qr.width + ean.width, maxOf(qr.height, ean.height), Bitmap.Config.ARGB_8888)
+        Canvas(both).apply {
+            drawColor(Color.WHITE)
+            drawBitmap(qr, 0f, 0f, null)
+            drawBitmap(ean, qr.width.toFloat(), 0f, null)
+        }
+
+        assertEquals(
+            setOf(ScannedCode("LOYALTY-QR-1", BarcodeFormat.QR_CODE), ScannedCode("4006381333931", BarcodeFormat.EAN_13)),
+            scanner.scanAll(both, maxSymbols = 8).toSet(),
+        )
+        assertEquals(1, scanner.scanAll(both, maxSymbols = 1).size)
+        assertNotNull(scanner.scan(both))
     }
 
     private fun render(matrix: BitMatrix, format: BarcodeFormat): Bitmap {
