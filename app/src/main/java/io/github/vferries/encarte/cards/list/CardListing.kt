@@ -12,12 +12,21 @@ data class CardSections(val favorites: List<Card>, val others: List<Card>, val a
 fun cardCollator(locale: Locale = Locale.getDefault()): Collator =
     Collator.getInstance(locale).apply { strength = Collator.PRIMARY }
 
-fun List<Card>.toSections(query: String, order: SortOrder, collator: Collator): CardSections {
+/** [normalizedQuery] comes from normalizedForMatching(); an empty one matches every card. */
+fun Card.matches(normalizedQuery: String): Boolean =
+    normalizedQuery.isEmpty() ||
+        storeName.normalizedForMatching().contains(normalizedQuery) ||
+        cardNumber.normalizedForMatching().contains(normalizedQuery)
+
+/** [onlyCardIds] restricts every section to a group's cards; null keeps every card. */
+fun List<Card>.toSections(
+    query: String,
+    order: SortOrder,
+    collator: Collator,
+    onlyCardIds: Set<Long>? = null,
+): CardSections {
     val normalizedQuery = query.normalizedForMatching()
-    val matching = if (normalizedQuery.isEmpty()) this else filter { card ->
-        card.storeName.normalizedForMatching().contains(normalizedQuery) ||
-            card.cardNumber.normalizedForMatching().contains(normalizedQuery)
-    }
+    val matching = filter { card -> (onlyCardIds == null || card.id in onlyCardIds) && card.matches(normalizedQuery) }
     val byName = compareBy(collator) { card: Card -> card.storeName }
     val comparator = when (order) {
         SortOrder.NAME -> byName

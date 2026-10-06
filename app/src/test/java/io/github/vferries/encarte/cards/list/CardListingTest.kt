@@ -78,4 +78,30 @@ class CardListingTest {
         assertTrue(sections.favorites.isEmpty() && sections.others.isEmpty())
         assertEquals(listOf("Darty"), sections.archived.map { it.storeName })
     }
+
+    @Test
+    fun groupFilterAppliesToEverySection() {
+        val all = listOf(
+            testCard("Fnac", isFavorite = true, id = 1),
+            testCard("Zara", id = 2),
+            testCard("Darty", isArchived = true, id = 3),
+            testCard("Auchan", id = 4),
+            testCard("Boulanger", isFavorite = true, id = 5),
+        )
+
+        val sections = all.toSections("", SortOrder.NAME, collator, onlyCardIds = setOf(1L, 2L, 3L))
+
+        assertEquals(listOf("Fnac"), sections.favorites.map { it.storeName })
+        assertEquals(listOf("Zara"), sections.others.map { it.storeName })
+        assertEquals(listOf("Darty"), sections.archived.map { it.storeName })
+    }
+
+    @Test
+    fun groupFilterCombinesWithSearch() {
+        val all = listOf(testCard("Fnac", id = 1), testCard("Fnac Darty", id = 2), testCard("Zara", id = 3))
+
+        val sections = all.toSections("fnac", SortOrder.NAME, collator, onlyCardIds = setOf(2L, 3L))
+
+        assertEquals(listOf("Fnac Darty"), sections.others.map { it.storeName })
+    }
 }

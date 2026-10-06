@@ -51,7 +51,10 @@ fun EncarteNavHost(container: AppContainer) {
             entry<CardListKey> {
                 CardListRoute(
                     viewModel = viewModel {
-                        CardListViewModel(container.cardRepository, container.settingsRepository, cardCollator(), container.clock)
+                        CardListViewModel(
+                            container.cardRepository, container.groupRepository, container.settingsRepository,
+                            cardCollator(), container.clock, createSavedStateHandle(),
+                        )
                     },
                     archivedNotice = archivedNotice,
                     onArchivedNoticeShown = { archivedNotice = null },
