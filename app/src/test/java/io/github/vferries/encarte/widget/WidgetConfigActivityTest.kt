@@ -11,6 +11,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -21,6 +22,7 @@ import io.github.vferries.encarte.lock.LockState
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.fail
 import org.junit.Rule
 import org.junit.Test
@@ -53,6 +55,8 @@ class WidgetConfigActivityTest {
 
     // Robolectric only reaches DESTROYED once scenario.result waits for it: isFinishing is the observable signal.
     private fun waitUntilFinished(scenario: ActivityScenario<*>) = composeRule.waitUntil(5_000) {
+        // Finishing inside onCreate does reach DESTROYED, and onActivity has no activity left to give.
+        if (scenario.state == Lifecycle.State.DESTROYED) return@waitUntil true
         var finishing = false
         scenario.onActivity { finishing = it.isFinishing }
         finishing
@@ -76,9 +80,14 @@ class WidgetConfigActivityTest {
 
     @Test
     fun aWidgetThatIsNotOursIsRefused() {
+        runBlocking { app.container.groupRepository.create("Courses") }
         val scenario = ActivityScenario.launchActivityForResult<WidgetConfigActivity>(configure(99))
 
+        waitUntilFinished(scenario)
+        composeRule.onNodeWithText("Courses").assertDoesNotExist()
+        composeRule.onNodeWithText("★ Favorites").assertDoesNotExist()
         assertEquals(Activity.RESULT_CANCELED, scenario.result.resultCode)
+        assertNull(runBlocking { app.container.widgetSources.sources.first()[99] })
     }
 
     @Test
