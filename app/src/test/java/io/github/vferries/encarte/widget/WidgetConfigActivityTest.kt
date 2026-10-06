@@ -66,8 +66,10 @@ class WidgetConfigActivityTest {
     private fun lockTheApp() {
         runBlocking { app.container.settingsRepository.setLockEnabled(true) }
         val lock = app.container.lockManager
-        // The manager reads the setting on the main thread, once DataStore delivers it.
-        repeat(100) {
+        // The manager reads the setting on the main thread, once DataStore delivers it. Same budget as the other waits:
+        // a loaded CI runner once took longer than the 2 s this loop used to allow.
+        val deadline = System.currentTimeMillis() + 5_000
+        while (System.currentTimeMillis() < deadline) {
             shadowOf(Looper.getMainLooper()).idle()
             lock.onBackground()
             ShadowSystemClock.advanceBy(Duration.ofMinutes(2))
@@ -75,7 +77,7 @@ class WidgetConfigActivityTest {
             if (lock.state.value == LockState.LOCKED) return
             Thread.sleep(20)
         }
-        fail("The app never locked")
+        fail("The app never locked (lock state: ${lock.state.value})")
     }
 
     @Test
