@@ -38,6 +38,11 @@ object LaunchRequests {
             }
         }
         ACTION_ADD_CARD -> listOf(CardListKey, ScannerKey())
-        else -> listOf(CardListKey)
+        null, Intent.ACTION_MAIN -> listOf(CardListKey)
+        else -> {
+            // MainActivity is exported: an unknown action can only come from another app.
+            Log.w(TAG, "Ignoring unknown launch action ${intent.action}: opening the list")
+            listOf(CardListKey)
+        }
     }
 }
