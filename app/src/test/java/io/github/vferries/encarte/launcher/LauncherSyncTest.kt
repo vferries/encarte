@@ -124,6 +124,29 @@ private class FailOnceDataStore(private val real: DataStore<Preferences>) : Data
     override suspend fun updateData(transform: suspend (t: Preferences) -> Preferences) = real.updateData(transform)
 }
 
+/** Fails [failuresBefore] subscriptions, then emits and fails once more after [failAfterEmit], then behaves normally. */
+private class ScriptedDataStore(
+    private val real: DataStore<Preferences>,
+    private val failuresBefore: Int,
+    private val failAfterEmit: CompletableDeferred<Unit>,
+) : DataStore<Preferences> {
+    private val subscriptions = AtomicInteger(0)
+
+    override val data: Flow<Preferences> = flow {
+        when (val n = subscriptions.getAndIncrement()) {
+            in 0 until failuresBefore -> throw IllegalStateException("store unavailable ($n)")
+            failuresBefore -> {
+                emit(real.data.first())
+                failAfterEmit.await()
+                throw IllegalStateException("store unavailable again")
+            }
+            else -> emitAll(real.data)
+        }
+    }
+
+    override suspend fun updateData(transform: suspend (t: Preferences) -> Preferences) = real.updateData(transform)
+}
+
 @RunWith(AndroidJUnit4::class)
 class LauncherSyncTest {
     @get:Rule
@@ -307,7 +330,7 @@ class LauncherSyncTest {
     }
 
     @Test
-    fun cancellingTheScopeStopsTheSyncWithoutRetrying() = runTest {
+    fun cancellingTheSyncJobDuringTheBackoffStopsTheRetry() = runTest {
         val flaky = FailOnceDataStore(PreferenceDataStoreFactory.create(scope = scope) { File(tmp.root, "f.preferences_pb") })
         val sync = LauncherSync(
             cards, groups, settings, WidgetSourceStore(flaky), shortcuts, widgets, cardCollator(Locale.FRANCE),
@@ -320,7 +343,29 @@ class LauncherSyncTest {
         // Real time: the backoff runs on Dispatchers.Default, not on the test scheduler.
         withContext(Dispatchers.Default) { delay(1_500) }
 
-        assertTrue(job.isCancelled)
         assertEquals(emptyList<List<LauncherCard>>(), shortcuts.published.toList())
+    }
+
+    @Test
+    fun theBackoffDoublesUpToItsCapAndRestartsAfterASuccessfulPush() = runTest {
+        cards.save(testCard("Fnac", isFavorite = true))
+        val failAgain = CompletableDeferred<Unit>()
+        val store = ScriptedDataStore(
+            PreferenceDataStoreFactory.create(scope = scope) { File(tmp.root, "f.preferences_pb") }, 4, failAgain,
+        )
+        val delays = CopyOnWriteArrayList<Long>()
+        val sync = LauncherSync(
+            cards, groups, settings, WidgetSourceStore(store), shortcuts, widgets, cardCollator(Locale.FRANCE),
+            firstRetryDelayMs = 1, maxRetryDelayMs = 4, retryDelay = { delays += it },
+        )
+
+        sync.start(scope)
+        eventually { shortcuts.published.isNotEmpty() }
+        // Let the push finish, and the backoff reset with it, before the source fails again.
+        withContext(Dispatchers.Default) { delay(200) }
+        failAgain.complete(Unit)
+
+        eventually { delays.size == 5 }
+        assertEquals(listOf(1L, 2L, 4L, 4L, 1L), delays.toList())
     }
 }

@@ -40,6 +40,8 @@ class LauncherSync(
     private val collator: Collator = cardCollator(),
     private val firstRetryDelayMs: Long = 1_000,
     private val maxRetryDelayMs: Long = 60_000,
+    // Test seam: lets the tests record the backoff schedule instead of waiting through it.
+    private val retryDelay: suspend (Long) -> Unit = { delay(it) },
 ) {
     private val mutex = Mutex()
     private var lastDynamic: List<LauncherCard>? = null
@@ -63,10 +65,14 @@ class LauncherSync(
         var retryDelayMs = firstRetryDelayMs
         inputs
             .retryWhen { e, _ ->
-                // Cancellation is the scope stopping the sync: never resubscribe after it.
-                if (e is CancellationException) return@retryWhen false
+                // The collector's own cancellation never gets here; a CancellationException from upstream does (a
+                // cancelled inner job, say). Retrying it could resubscribe in a scope that is going away.
+                if (e is CancellationException) {
+                    Log.w(TAG, "Home screen sync stopped by an upstream ${e.javaClass.simpleName}")
+                    return@retryWhen false
+                }
                 Log.e(TAG, "Home screen sync failed, retrying in $retryDelayMs ms", e)
-                delay(retryDelayMs)
+                retryDelay(retryDelayMs)
                 retryDelayMs = (retryDelayMs * 2).coerceAtMost(maxRetryDelayMs)
                 true
             }
