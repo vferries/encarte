@@ -253,6 +253,8 @@ fun SettingsScreen(
     if (prompt != null) {
         ImportPasswordDialog(retry = prompt == PasswordPrompt.RETRY, onSubmit = onImportPassword, onDismiss = onImportCancelled)
     }
+    val fidMeImport = state.message as? BackupMessage.FidMeImported
+    if (fidMeImport != null) FidMeImportDialog(fidMeImport, onDismiss = onMessageShown)
     if (showLicenses) {
         EncarteAlertDialog(
             onDismissRequest = { showLicenses = false },
@@ -263,8 +265,9 @@ fun SettingsScreen(
     }
 }
 
+/** Null for the messages shown in a dialog instead of a snackbar. */
 @Composable
-private fun messageText(message: BackupMessage): String = when (message) {
+private fun messageText(message: BackupMessage): String? = when (message) {
     is BackupMessage.Exported -> pluralStringResource(R.plurals.export_success, message.count, message.count)
     is BackupMessage.Imported -> buildList {
         add(pluralStringResource(R.plurals.import_success_imported, message.imported, message.imported))
@@ -274,6 +277,32 @@ private fun messageText(message: BackupMessage): String = when (message) {
     BackupMessage.ImportInvalid -> stringResource(R.string.import_error_invalid)
     is BackupMessage.ImportUnsupported -> stringResource(R.string.import_error_version, message.version)
     BackupMessage.ImportFailed -> stringResource(R.string.import_error_io)
+    is BackupMessage.FidMeImported -> null
+}
+
+@Composable
+private fun FidMeImportDialog(result: BackupMessage.FidMeImported, onDismiss: () -> Unit) {
+    EncarteAlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.fidme_import_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(pluralStringResource(R.plurals.import_success_imported, result.imported, result.imported))
+                if (result.skippedDuplicates > 0) {
+                    Text(pluralStringResource(R.plurals.import_success_skipped, result.skippedDuplicates, result.skippedDuplicates))
+                }
+                if (result.skippedWithoutNumber > 0) {
+                    Text(
+                        pluralStringResource(
+                            R.plurals.fidme_skipped_without_number, result.skippedWithoutNumber, result.skippedWithoutNumber,
+                        )
+                    )
+                }
+                Text(stringResource(R.string.fidme_check_barcode_types))
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) } },
+    )
 }
 
 @Composable

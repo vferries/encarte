@@ -27,6 +27,8 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.time.Clock
 import java.util.Locale
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 @RunWith(AndroidJUnit4::class)
 class SettingsViewModelTest {
@@ -148,5 +150,23 @@ class SettingsViewModelTest {
 
         assertFalse(settings.nfcBlockEnabled.first { !it })
         assertFalse(vm.uiState.first { !it.nfcBlockEnabled }.nfcBlockEnabled)
+    }
+
+    @Test
+    fun aFidMeImportIsReportedWithItsCounts() = runTest {
+        val (vm, _) = viewModel()
+        val export = ByteArrayOutputStream()
+        ZipOutputStream(export).use { zip ->
+            zip.putNextEntry(ZipEntry("loyalty_programs.csv"))
+            zip.write("Retailer;Reference\nFnac;42\nDécathlon;\n".toByteArray())
+            zip.closeEntry()
+        }
+
+        vm.startImport { export.toByteArray().inputStream() }
+
+        assertEquals(
+            BackupMessage.FidMeImported(imported = 1, skippedDuplicates = 0, skippedWithoutNumber = 1),
+            vm.uiState.first { it.message != null }.message,
+        )
     }
 }

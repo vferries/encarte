@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import io.github.vferries.encarte.backup.BackupService
 import io.github.vferries.encarte.backup.ExportResult
 import io.github.vferries.encarte.backup.ImportResult
+import io.github.vferries.encarte.backup.ImportSource
 import io.github.vferries.encarte.core.prefs.SettingsRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -26,6 +27,9 @@ enum class PasswordPrompt { FIRST_TRY, RETRY }
 sealed interface BackupMessage {
     data class Exported(val count: Int) : BackupMessage
     data class Imported(val imported: Int, val skipped: Int) : BackupMessage
+
+    /** Shown in a dialog: it also says that the barcode types were guessed. */
+    data class FidMeImported(val imported: Int, val skippedDuplicates: Int, val skippedWithoutNumber: Int) : BackupMessage
     data object ExportFailed : BackupMessage
     data object ImportInvalid : BackupMessage
     data class ImportUnsupported(val version: Int) : BackupMessage
@@ -162,7 +166,11 @@ class SettingsViewModel(
     }
 
     private fun messageFor(result: ImportResult): BackupMessage = when (result) {
-        is ImportResult.Success -> BackupMessage.Imported(result.imported, result.skippedDuplicates)
+        is ImportResult.Success -> when (result.source) {
+            ImportSource.CATIMA -> BackupMessage.Imported(result.imported, result.skippedDuplicates)
+            ImportSource.FIDME ->
+                BackupMessage.FidMeImported(result.imported, result.skippedDuplicates, result.skippedWithoutNumber)
+        }
         is ImportResult.UnsupportedVersion -> BackupMessage.ImportUnsupported(result.version)
         ImportResult.Invalid -> BackupMessage.ImportInvalid
         else -> BackupMessage.ImportFailed

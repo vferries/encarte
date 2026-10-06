@@ -26,6 +26,7 @@ class SettingsScreenTest {
 
     private var exported: CharArray? = charArrayOf('x')
     private var exportCalls = 0
+    private var messagesShown = 0
 
     private fun setScreen(
         state: SettingsUiState = SettingsUiState(),
@@ -44,7 +45,7 @@ class SettingsScreenTest {
             onImport = {},
             onImportPassword = {},
             onImportCancelled = {},
-            onMessageShown = {},
+            onMessageShown = { messagesShown++ },
             onOpenSource = {},
         )
     }
@@ -137,5 +138,47 @@ class SettingsScreenTest {
             val button = composeRule.onNodeWithText(label).getUnclippedBoundsInRoot()
             assertTrue("$label inside the dialog", button.left >= dialog.left && button.right <= dialog.right)
         }
+    }
+
+    @Test
+    fun theImportSubtitleNamesFidMe() {
+        setScreen()
+
+        composeRule.onNodeWithText("From an Encarté or Catima backup, or a FidMe export").assertIsDisplayed()
+    }
+
+    @Test
+    fun aFidMeImportExplainsItsCountsAndTheGuessedTypes() {
+        val result = BackupMessage.FidMeImported(imported = 12, skippedDuplicates = 2, skippedWithoutNumber = 3)
+        setScreen(SettingsUiState(message = result))
+
+        composeRule.onNodeWithText("FidMe import").assertIsDisplayed()
+        composeRule.onNodeWithText("12 cards imported").assertIsDisplayed()
+        composeRule.onNodeWithText("2 duplicates skipped").assertIsDisplayed()
+        composeRule.onNodeWithText("3 skipped without a number (expired in FidMe)").assertIsDisplayed()
+        composeRule.onNodeWithText("FidMe doesn't export barcode types: check them at checkout or rescan the card.")
+            .assertIsDisplayed()
+
+        composeRule.onNodeWithText("Close").performClick()
+        composeRule.runOnIdle { assertEquals(1, messagesShown) }
+    }
+
+    @Test
+    fun aFidMeImportWithoutSkippedRowsOnlyCountsTheImport() {
+        val result = BackupMessage.FidMeImported(imported = 1, skippedDuplicates = 0, skippedWithoutNumber = 0)
+        setScreen(SettingsUiState(message = result))
+
+        composeRule.onNodeWithText("1 card imported").assertIsDisplayed()
+        composeRule.onNodeWithText("skipped", substring = true).assertDoesNotExist()
+        composeRule.onNodeWithText("FidMe doesn't export barcode types: check them at checkout or rescan the card.")
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun aCatimaImportStaysASnackbar() {
+        setScreen(SettingsUiState(message = BackupMessage.Imported(imported = 2, skipped = 1)))
+
+        composeRule.onNodeWithText("2 cards imported, 1 duplicate skipped").assertIsDisplayed()
+        composeRule.onNodeWithText("FidMe import").assertDoesNotExist()
     }
 }

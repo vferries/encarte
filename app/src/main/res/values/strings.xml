@@ -99,7 +99,7 @@
     <string name="settings_export">Export cards</string>
     <string name="settings_export_summary">ZIP file compatible with Catima</string>
     <string name="settings_import">Import cards</string>
-    <string name="settings_import_summary">From an Encarté or Catima backup</string>
+    <string name="settings_import_summary">From an Encarté or Catima backup, or a FidMe export</string>
     <string name="settings_about">About</string>
     <string name="settings_version">Version %1$s</string>
     <string name="settings_license">License: GPL-3.0-or-later</string>
@@ -132,6 +132,12 @@
         <item quantity="one">%d duplicate skipped</item>
         <item quantity="other">%d duplicates skipped</item>
     </plurals>
+    <string name="fidme_import_title">FidMe import</string>
+    <plurals name="fidme_skipped_without_number">
+        <item quantity="one">%d skipped without a number (expired in FidMe)</item>
+        <item quantity="other">%d skipped without a number (expired in FidMe)</item>
+    </plurals>
+    <string name="fidme_check_barcode_types">FidMe doesn\'t export barcode types: check them at checkout or rescan the card.</string>
     <string name="third_party_licenses" translatable="false">AndroidX (Core, Compose, Room, CameraX, Navigation, Lifecycle, DataStore, Biometric, Fragment) — Apache-2.0\nKotlin, kotlinx.coroutines, kotlinx.serialization — Apache-2.0\nZXing — Apache-2.0\nzxing-cpp — Apache-2.0\nzip4j — Apache-2.0\nApache Commons CSV, IO, Codec — Apache-2.0\nMaterial Symbols — Apache-2.0\nNunito — SIL Open Font License 1.1</string>
     <string name="action_archive">Archive</string>
     <string name="action_more">More options</string>
