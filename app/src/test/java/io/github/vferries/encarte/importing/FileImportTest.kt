@@ -103,11 +103,53 @@ class FileImportTest {
     fun aFileThatCannotBeCopiedCannotBeOpened() = runTest {
         assertEquals(ImportOutcome.Failure(ImportFailure.CANNOT_OPEN), import.importPicked { throw SecurityException("revoked") })
         assertEquals(ImportOutcome.Failure(ImportFailure.CANNOT_OPEN), import.importPicked { throw IOException("gone") })
-        assertEquals(
-            ImportOutcome.Failure(ImportFailure.CANNOT_OPEN),
-            import.importPicked { ByteArray((MAX_IMPORT_BYTES + 1).toInt()).inputStream() },
-        )
         assertEquals(emptyList<File>(), leftovers())
+    }
+
+    @Test
+    fun aLargePhotoIsDecodedFromTheProviderWithoutACopy() = runTest {
+        imageCode = ScannedCode("4006381333931", BarcodeFormat.EAN_13)
+        // Decoders stop at IEND: the trailing bytes only make the file exceed the copy cap.
+        val photo = TestFiles.png() + ByteArray((MAX_IMPORT_BYTES + 1).toInt())
+
+        assertEquals(ImportOutcome.Image(imageCode), picked(photo))
+        assertEquals(emptyList<File>(), leftovers())
+    }
+
+    @Test
+    fun aPdfOverTheCapIsStillRefused() = runTest {
+        assertEquals(ImportOutcome.Failure(ImportFailure.CANNOT_OPEN), picked(TestFiles.pdf + ByteArray((MAX_IMPORT_BYTES + 1).toInt())))
+        assertEquals(emptyList<File>(), leftovers())
+    }
+
+    @Test
+    fun bytesThatAreNoImageAreUnrecognisedWithoutACopy() = runTest {
+        assertEquals(ImportOutcome.Failure(ImportFailure.UNRECOGNIZED_FILE), picked(ByteArray(64) { it.toByte() }))
+        assertEquals(emptyList<File>(), leftovers())
+    }
+
+    @Test
+    fun aProviderFailingWhileSniffingCannotBeOpened() = runTest {
+        val cannotOpen = ImportOutcome.Failure(ImportFailure.CANNOT_OPEN)
+        val failing = object : java.io.InputStream() {
+            override fun read(): Int = throw IOException("gone")
+        }
+
+        assertEquals(cannotOpen, import.importPicked { failing })
+        assertEquals(cannotOpen, import.importPicked { throw java.io.FileNotFoundException("null stream") })
+        assertEquals(cannotOpen, import.importPicked { throw SecurityException("revoked") })
+        assertEquals(emptyList<File>(), leftovers())
+    }
+
+    @Test
+    fun aProviderFailingWhileDecodingCannotBeOpened() = runTest {
+        var opened = 0
+        val outcome = import.importPicked {
+            // The sniff and the bounds read succeed, the pixels read fails.
+            if (++opened > 2) throw IOException("gone") else TestFiles.png().inputStream()
+        }
+
+        assertEquals(ImportOutcome.Failure(ImportFailure.CANNOT_OPEN), outcome)
     }
 
     @Test

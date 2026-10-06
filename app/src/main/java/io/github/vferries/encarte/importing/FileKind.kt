@@ -7,8 +7,8 @@ import java.io.IOException
 import java.util.zip.ZipFile
 
 private const val TAG = "FileKind"
-private val PDF_SIGNATURE = "%PDF-".toByteArray(Charsets.US_ASCII)
-private val ZIP_SIGNATURE = byteArrayOf(0x50, 0x4B, 0x03, 0x04)
+internal val PDF_SIGNATURE = "%PDF-".toByteArray(Charsets.US_ASCII)
+internal val ZIP_SIGNATURE = byteArrayOf(0x50, 0x4B, 0x03, 0x04)
 
 enum class FileKind { PDF, PASS, IMAGE, UNRECOGNIZED }
 
@@ -47,7 +47,7 @@ private fun File.head(size: Int): ByteArray = inputStream().use { input ->
     buffer.copyOf(filled)
 }
 
-private fun ByteArray.startsWith(prefix: ByteArray): Boolean =
+internal fun ByteArray.startsWith(prefix: ByteArray): Boolean =
     size >= prefix.size && prefix.indices.all { this[it] == prefix[it] }
 
 private fun isImage(file: File): Boolean {

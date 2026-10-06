@@ -16,6 +16,11 @@ import java.io.InputStream
 private const val TAG = "FileImport"
 /** Like the scanner's former gallery pick: plenty for a barcode, quick to decode. */
 private const val IMAGE_MAX_SIDE = 2048
+/** Enough for the PDF and ZIP signatures. */
+private const val SNIFF_BYTES = 5
+
+/** Tells "not an image" (null bitmap) from a provider failure (no result) in [ImportFiles.providerOrNull]. */
+private class Decoded(val bitmap: Bitmap?)
 
 /** What reading one file gives. */
 sealed interface ImportOutcome {
@@ -62,8 +67,31 @@ class FileImport(
 ) {
     /** A file picked in the scanner. */
     suspend fun importPicked(open: () -> InputStream): ImportOutcome = withContext(io) {
-        val file = files.copyOrNull(open) ?: return@withContext ImportOutcome.Failure(ImportFailure.CANNOT_OPEN)
-        analyseAndDelete(file)
+        val cannotOpen = ImportOutcome.Failure(ImportFailure.CANNOT_OPEN)
+        val head = files.headOrNull(SNIFF_BYTES, open) ?: return@withContext cannotOpen
+        if (needsCopy(head)) {
+            val file = files.copyOrNull(open) ?: return@withContext cannotOpen
+            analyseAndDelete(file)
+        } else {
+            decodePicked(open)
+        }
+    }
+
+    /**
+     * Pictures are decoded straight from the provider: a high-resolution photo can exceed the copy cap, and the
+     * sampled decode never holds it whole. Passes and PDFs are read whole, so they keep the bounded copy.
+     */
+    private fun needsCopy(head: ByteArray) = head.startsWith(PDF_SIGNATURE) || head.startsWith(ZIP_SIGNATURE)
+
+    private fun decodePicked(open: () -> InputStream): ImportOutcome {
+        val decoded = files.providerOrNull { files.providerCall { Decoded(decodeSampledBitmap(IMAGE_MAX_SIDE, open)) } }
+            ?: return ImportOutcome.Failure(ImportFailure.CANNOT_OPEN)
+        val bitmap = decoded.bitmap
+        if (bitmap == null) {
+            Log.w(TAG, "The picked file is not an image")
+            return ImportOutcome.Failure(ImportFailure.UNRECOGNIZED_FILE)
+        }
+        return ImportOutcome.Image(decodeImage(bitmap))
     }
 
     /** A file another app sent, which ImportActivity copied under [fileName]. */
