@@ -14,10 +14,10 @@ import io.github.vferries.encarte.R
 import io.github.vferries.encarte.navigation.LaunchRequests
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileNotFoundException
-import java.io.IOException
 
 private const val TAG = "ImportActivity"
 
@@ -65,29 +65,14 @@ class ImportActivity : ComponentActivity() {
         }
     }
 
-    // The exceptions are logged without the URI or the message: another app's provider chose both.
     private suspend fun copy(files: ImportFiles, uri: Uri): File? = withContext(Dispatchers.IO) {
-        try {
-            files.copy { contentResolver.openInputStream(uri) ?: throw FileNotFoundException("No content") }
-        } catch (e: IOException) {
-            // Includes FileTooLargeException.
-            Log.w(TAG, "Cannot copy the shared file: ${e.javaClass.simpleName}")
-            null
-        } catch (e: SecurityException) {
-            Log.w(TAG, "The shared file is not readable")
-            null
-        } catch (e: IllegalArgumentException) {
-            providerFailed(e)
-        } catch (e: IllegalStateException) {
-            providerFailed(e)
-        } catch (e: UnsupportedOperationException) {
-            providerFailed(e)
+        val copy = files.copyOrNull { contentResolver.openInputStream(uri) ?: throw FileNotFoundException("No content") }
+        if (copy != null && !isActive) {
+            // The activity was left during the copy: nobody will hand this file over.
+            files.delete(copy)
+            return@withContext null
         }
-    }
-
-    private fun providerFailed(e: RuntimeException): File? {
-        Log.w(TAG, "The provider failed: ${e.javaClass.simpleName}")
-        return null
+        copy
     }
 
     private fun refuse() {

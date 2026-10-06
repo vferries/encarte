@@ -44,11 +44,14 @@
                 android:resource="@xml/shortcuts" />
         </activity>
         <!-- Passes and PDFs from other apps ("Open with", "Share"). It runs in the sending app's task, copies the
-             file and hands it to MainActivity in Encarté's task: it shows no card data, so it needs no lock. -->
+             file and hands it to MainActivity in Encarté's task: it shows no card data, so it needs no lock. Its own empty
+             task affinity keeps its translucent window from showing Encarté's last screen, and a refusal returns the
+             user to the sending app. -->
         <activity
             android:name=".importing.ImportActivity"
             android:excludeFromRecents="true"
             android:exported="true"
+            android:taskAffinity=""
             android:theme="@android:style/Theme.Translucent.NoTitleBar">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />

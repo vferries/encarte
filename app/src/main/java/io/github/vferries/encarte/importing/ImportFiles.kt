@@ -7,6 +7,7 @@ import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.util.UUID
+import kotlin.coroutines.cancellation.CancellationException
 import java.util.concurrent.ConcurrentHashMap
 
 private const val TAG = "ImportFiles"
@@ -33,12 +34,51 @@ class ImportFiles(private val dir: File, private val maxBytes: Long = MAX_IMPORT
         val file = File(dir, name)
         var complete = false
         try {
-            open().use { input -> FileOutputStream(file).use { output -> copyBounded(input, output) } }
+            providerCall { open() }.use { input -> FileOutputStream(file).use { output -> copyBounded(input, output) } }
             complete = true
             return file
         } finally {
             if (!complete) delete(file)
         }
+    }
+
+    /**
+     * [copy], or null (logged, class only: the provider chose the message and the URI is private) when the provider
+     * fails or the file is too large. Blocking.
+     */
+    fun copyOrNull(open: () -> InputStream): File? = try {
+        copy(open)
+    } catch (e: IOException) {
+        // Includes FileTooLargeException and a provider's NullPointerException (see providerCall).
+        Log.w(TAG, "Cannot copy the file: ${e.javaClass.simpleName}")
+        null
+    } catch (e: SecurityException) {
+        Log.w(TAG, "The file is no longer readable")
+        null
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: IllegalArgumentException) {
+        providerFailed(e)
+    } catch (e: IllegalStateException) {
+        providerFailed(e)
+    } catch (e: UnsupportedOperationException) {
+        providerFailed(e)
+    }
+
+    /** A provider reached over binder can throw these; the partial copy is already deleted by [copy]. */
+    private fun providerFailed(e: RuntimeException): File? {
+        Log.w(TAG, "The content provider failed: ${e.javaClass.simpleName}")
+        return null
+    }
+
+    /**
+     * A provider's NullPointerException crosses binder like any other (Parcel EX_NULL_POINTER). It is caught only
+     * around the provider's own calls, never around this app's code, where it would be a bug to surface.
+     */
+    private fun <T> providerCall(call: () -> T): T = try {
+        call()
+    } catch (e: NullPointerException) {
+        throw IOException("The content provider threw a NullPointerException", e)
     }
 
     /** The copy named [name], or null when [name] is not a name [copy] makes (logged). */
@@ -72,7 +112,7 @@ class ImportFiles(private val dir: File, private val maxBytes: Long = MAX_IMPORT
         val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
         var total = 0L
         while (true) {
-            val read = input.read(buffer)
+            val read = providerCall { input.read(buffer) }
             if (read < 0) return
             total += read
             if (total > maxBytes) throw FileTooLargeException(maxBytes)

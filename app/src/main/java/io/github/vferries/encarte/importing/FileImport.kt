@@ -62,28 +62,8 @@ class FileImport(
 ) {
     /** A file picked in the scanner. */
     suspend fun importPicked(open: () -> InputStream): ImportOutcome = withContext(io) {
-        val file = try {
-            files.copy(open)
-        } catch (e: IOException) {
-            Log.w(TAG, "Cannot copy the picked file", e)
-            return@withContext ImportOutcome.Failure(ImportFailure.CANNOT_OPEN)
-        } catch (e: SecurityException) {
-            Log.w(TAG, "The picked file is no longer readable", e)
-            return@withContext ImportOutcome.Failure(ImportFailure.CANNOT_OPEN)
-        } catch (e: IllegalArgumentException) {
-            return@withContext providerFailed(e)
-        } catch (e: IllegalStateException) {
-            return@withContext providerFailed(e)
-        } catch (e: UnsupportedOperationException) {
-            return@withContext providerFailed(e)
-        }
+        val file = files.copyOrNull(open) ?: return@withContext ImportOutcome.Failure(ImportFailure.CANNOT_OPEN)
         analyseAndDelete(file)
-    }
-
-    /** A provider reached over binder can throw these; the partial copy is already deleted by [ImportFiles.copy]. */
-    private fun providerFailed(e: RuntimeException): ImportOutcome {
-        Log.w(TAG, "The content provider failed: ${e.javaClass.simpleName}")
-        return ImportOutcome.Failure(ImportFailure.CANNOT_OPEN)
     }
 
     /** A file another app sent, which ImportActivity copied under [fileName]. */

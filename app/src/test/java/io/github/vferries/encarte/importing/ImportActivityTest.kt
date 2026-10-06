@@ -21,6 +21,8 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.shadows.ShadowToast
 import java.io.File
 import java.io.InputStream
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 class ImportActivityTest {
@@ -119,11 +121,79 @@ class ImportActivityTest {
     }
 
     @Test
-    fun aFileUriOrAnotherActionIsRefused() {
-        runToTheEnd(view(Uri.fromFile(File(app.filesDir, "../databases/encarte.db"))))
+    fun aProviderFailureIsRefused() {
+        val failures = listOf<() -> Nothing>(
+            { throw IllegalArgumentException("bad") },
+            { throw IllegalStateException("bad") },
+            { throw UnsupportedOperationException("bad") },
+            { throw NullPointerException("bad") },
+        )
+        for (failure in failures) {
+            serve(attachment) { failure() }
+            runToTheEnd(view(attachment))
+            assertRefused()
+        }
+    }
+
+    @Test
+    fun aProviderStreamFailingWhileReadingIsRefused() {
+        serve(attachment) {
+            object : InputStream() {
+                override fun read(): Int = throw NullPointerException("bad")
+                override fun read(b: ByteArray, off: Int, len: Int): Int = throw NullPointerException("bad")
+            }
+        }
+
+        runToTheEnd(view(attachment))
+
         assertRefused()
+    }
+
+    @Test
+    fun aFileUriIsRefusedEvenWhenItIsAValidPass() {
+        val own = File(app.filesDir, "own.pkpass").apply { writeBytes(TestFiles.pass()) }
+
+        runToTheEnd(view(Uri.fromFile(own)))
+
+        assertRefused()
+        assertEquals(1, ShadowToast.shownToastCount())
+    }
+
+    @Test
+    fun anotherActionIsRefusedEvenForAServedPass() {
+        serve(attachment) { TestFiles.pass().inputStream() }
 
         runToTheEnd(view(attachment).setAction(Intent.ACTION_EDIT))
+
         assertRefused()
+        assertEquals(1, ShadowToast.shownToastCount())
+    }
+
+    @Test
+    fun aCopyFinishingAfterTheActivityWasLeftIsDeleted() {
+        val reading = CountDownLatch(1)
+        val gate = CountDownLatch(1)
+        serve(attachment) {
+            object : InputStream() {
+                override fun read(): Int = -1
+                override fun read(b: ByteArray, off: Int, len: Int): Int {
+                    reading.countDown()
+                    gate.await(5, TimeUnit.SECONDS)
+                    return -1
+                }
+            }
+        }
+
+        ActivityScenario.launch<ImportActivity>(view(attachment)).use { scenario ->
+            assertTrue(reading.await(5, TimeUnit.SECONDS))
+            scenario.moveToState(Lifecycle.State.DESTROYED)
+            gate.countDown()
+            val deadline = System.currentTimeMillis() + 5_000
+            while (copies().isNotEmpty() && System.currentTimeMillis() < deadline) Thread.sleep(10)
+            shadowOf(Looper.getMainLooper()).idle()
+        }
+
+        assertEquals(emptyList<File>(), copies())
+        assertNull(shadowOf(app).nextStartedActivity)
     }
 }
