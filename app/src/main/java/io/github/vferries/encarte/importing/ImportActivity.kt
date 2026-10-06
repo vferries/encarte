@@ -26,6 +26,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileNotFoundException
+import java.util.concurrent.atomic.AtomicReference
 
 private const val TAG = "ImportActivity"
 
@@ -34,10 +35,11 @@ private const val CARD_DELAY_MS = 400L
 
 /**
  * Receives a pass or a PDF from another app ("Open with", "Share"). It runs in that app's task, so it only copies
- * the file while the read grant lasts, hands the copy to MainActivity in Encarté's own task, and finishes. The window stays transparent unless the copy takes a while: then a
- * card with Cancel shows, or the screen would look frozen under an invisible window. On
- * MainActivity, the filters would start a second Encarté inside the mail app's task. It shows and reads no card
- * data: the app lock applies in MainActivity.
+ * the file while the read grant lasts, hands the copy to MainActivity in Encarté's own task, and finishes. On
+ * MainActivity, the filters would start a second Encarté inside the mail app's task.
+ *
+ * The window stays transparent unless the copy takes a while: then a card with Cancel shows, or the screen would
+ * look frozen under an invisible window. It shows and reads no card data: the app lock applies in MainActivity.
  */
 class ImportActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,22 +51,33 @@ class ImportActivity : ComponentActivity() {
         }
         val files = (application as EncarteApp).container.importFiles
         var cardShown by mutableStateOf(false)
+        // Set once the copy is complete, cleared on the hand-over: a cancel in between must not orphan the file.
+        val pending = AtomicReference<File?>(null)
         val copying = lifecycleScope.launch {
-            val copy = copy(files, uri)
+            // Inside the copy's coroutine, so the card cannot show once the copy is over.
+            val card = launch {
+                delay(CARD_DELAY_MS)
+                cardShown = true
+            }
+            val copy = copy(files, uri, pending)
+            card.cancel()
             if (copy == null) {
                 refuse()
             } else {
+                pending.set(null)
                 startActivity(LaunchRequests.importFile(this@ImportActivity, copy.name))
                 finish()
             }
         }
-        lifecycleScope.launch {
-            delay(CARD_DELAY_MS)
-            cardShown = true
+        copying.invokeOnCompletion { cause ->
+            if (cause != null) pending.getAndSet(null)?.let(files::delete)
         }
         val cancel = {
-            Log.i(TAG, "Import cancelled by the user")
-            cancelImport(copying)
+            // Past the hand-over, Back or a tap during the exit is not a cancellation.
+            if (copying.isActive) {
+                Log.i(TAG, "Import cancelled by the user")
+                cancelImport(copying)
+            }
         }
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() = cancel()
@@ -99,15 +112,20 @@ class ImportActivity : ComponentActivity() {
         }
     }
 
-    private suspend fun copy(files: ImportFiles, uri: Uri): File? = withContext(Dispatchers.IO) {
-        val copy = files.copyOrNull(shouldContinue = { isActive }) { contentResolver.openInputStream(uri) ?: throw FileNotFoundException("No content") }
-        if (copy != null && !isActive) {
-            // The activity was left during the copy: nobody will hand this file over.
-            files.delete(copy)
-            return@withContext null
+    private suspend fun copy(files: ImportFiles, uri: Uri, pending: AtomicReference<File?>): File? =
+        withContext(Dispatchers.IO) {
+            val copy = files.copyOrNull(shouldContinue = { isActive }) {
+                contentResolver.openInputStream(uri) ?: throw FileNotFoundException("No content")
+            }
+            if (copy != null && !isActive) {
+                // The activity was left during the copy: nobody will hand this file over.
+                files.delete(copy)
+                return@withContext null
+            }
+            // withContext drops a result whose job was cancelled meanwhile: the completion handler then deletes it.
+            pending.set(copy)
+            copy
         }
-        copy
-    }
 
     private fun refuse() {
         Toast.makeText(applicationContext, R.string.import_file_cannot_open, Toast.LENGTH_LONG).show()

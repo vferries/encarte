@@ -6,7 +6,12 @@ import android.net.Uri
 import android.os.Looper
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -290,13 +295,73 @@ class ImportActivityTest {
     }
 
     @Test
-    fun aFastCopyNeverShowsTheCard() {
-        serve(attachment) { TestFiles.pass().inputStream() }
+    fun aCopyEndingBeforeTheDelayNeverShowsTheCardEvenWhenTimePassesAfterwards() {
+        val gate = CountDownLatch(1)
+        val closed = CountDownLatch(1)
+        serve(attachment) {
+            object : InputStream() {
+                override fun read(): Int = -1
+                override fun read(b: ByteArray, off: Int, len: Int): Int {
+                    gate.await(5, TimeUnit.SECONDS)
+                    return -1
+                }
+                override fun close() = closed.countDown()
+            }
+        }
 
-        runToTheEnd(view(attachment))
+        ActivityScenario.launch<ImportActivity>(view(attachment)).use {
+            pass(300)
+            gate.countDown()
+            assertTrue(closed.await(5, TimeUnit.SECONDS))
+            Thread.sleep(200) // lets the IO block hand its result back to the main looper
+            pass(500)
 
-        composeRule.onAllNodesWithText("Importing…").assertCountEquals(0)
+            composeRule.onAllNodesWithText("Importing…").assertCountEquals(0)
+        }
         assertEquals(LaunchRequests.ACTION_IMPORT_FILE, shadowOf(app).nextStartedActivity.action)
+    }
+
+    @Test
+    fun cancellingAfterTheCopyEndedButBeforeTheHandOverLeavesNoFile() {
+        val gate = CountDownLatch(1)
+        val closed = CountDownLatch(1)
+        serve(attachment) {
+            object : InputStream() {
+                override fun read(): Int = -1
+                override fun read(b: ByteArray, off: Int, len: Int): Int {
+                    gate.await(5, TimeUnit.SECONDS)
+                    return -1
+                }
+                override fun close() = closed.countDown()
+            }
+        }
+
+        ActivityScenario.launch<ImportActivity>(view(attachment)).use { scenario ->
+            var activity: ImportActivity? = null
+            scenario.onActivity { activity = it }
+            gate.countDown()
+            assertTrue(closed.await(5, TimeUnit.SECONDS))
+            Thread.sleep(200) // the copy is complete and its result waits for the main looper
+            activity!!.onBackPressedDispatcher.onBackPressed() // before the looper runs the hand-over
+            shadowOf(Looper.getMainLooper()).idle()
+            awaitNoCopy()
+        }
+
+        assertEquals(emptyList<File>(), copies())
+        assertNull(shadowOf(app).nextStartedActivity)
+    }
+
+    @Test
+    fun theProgressCardTextIsAPoliteLiveRegion() {
+        val gate = CountDownLatch(1)
+        serveSlow(gate, AtomicInteger())
+
+        ActivityScenario.launch<ImportActivity>(view(attachment)).use {
+            pass(500)
+            composeRule.onNode(hasText("Importing…"))
+                .assert(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite))
+            gate.countDown()
+        }
     }
 
     private fun finishing(scenario: ActivityScenario<ImportActivity>): Boolean {
