@@ -1,6 +1,8 @@
 package io.github.vferries.encarte.launcher
 
+import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.Preferences
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.vferries.encarte.cards.list.cardCollator
 import io.github.vferries.encarte.core.data.CardRepository
@@ -12,11 +14,20 @@ import io.github.vferries.encarte.testing.eventually
 import io.github.vferries.encarte.testing.inMemoryDatabase
 import io.github.vferries.encarte.testing.testCard
 import io.github.vferries.encarte.widget.WidgetSourceStore
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -28,6 +39,7 @@ import java.io.File
 import java.time.Clock
 import java.util.Locale
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicBoolean
 
 private class FakeShortcuts : ShortcutPublisher {
     override val cardLimit = 3
@@ -66,6 +78,28 @@ private class FakeWidgets : WidgetRenderer {
     }
 }
 
+/** Can hold one read of the widget sources open, as a slow read would, while the stored sources move on. */
+private class GatedDataStore(private val real: DataStore<Preferences>) : DataStore<Preferences> {
+    private val holdNext = AtomicBoolean(false)
+    val readHeld = CompletableDeferred<Unit>()
+    val releaseRead = CompletableDeferred<Unit>()
+
+    fun holdNextRead() = holdNext.set(true)
+
+    override val data: Flow<Preferences> = flow {
+        if (holdNext.compareAndSet(true, false)) {
+            val snapshot = real.data.first()
+            readHeld.complete(Unit)
+            releaseRead.await()
+            emit(snapshot)
+        } else {
+            emitAll(real.data)
+        }
+    }
+
+    override suspend fun updateData(transform: suspend (t: Preferences) -> Preferences) = real.updateData(transform)
+}
+
 @RunWith(AndroidJUnit4::class)
 class LauncherSyncTest {
     @get:Rule
@@ -78,9 +112,10 @@ class LauncherSyncTest {
     private val settings by lazy {
         SettingsRepository(PreferenceDataStoreFactory.create(scope = scope) { File(tmp.root, "s.preferences_pb") })
     }
-    private val sources by lazy {
-        WidgetSourceStore(PreferenceDataStoreFactory.create(scope = scope) { File(tmp.root, "w.preferences_pb") })
+    private val sourcesData by lazy {
+        GatedDataStore(PreferenceDataStoreFactory.create(scope = scope) { File(tmp.root, "w.preferences_pb") })
     }
+    private val sources by lazy { WidgetSourceStore(sourcesData) }
     private val shortcuts = FakeShortcuts()
     private val widgets = FakeWidgets()
 
@@ -94,6 +129,8 @@ class LauncherSyncTest {
         .also { it.start(scope) }
 
     private fun shownNames(content: WidgetContent) = (content as WidgetContent.Shown).cards.map { it.storeName }
+
+    private fun lastTitle() = (widgets.renders.lastOrNull()?.second as? WidgetContent.Shown)?.title
 
     @Test
     fun theTopCardsArePublishedAndInvisibleChangesPushNothing() = runTest {
@@ -187,5 +224,30 @@ class LauncherSyncTest {
         groups.rename(courses, "Marché")
 
         eventually { (widgets.renders.last().second as WidgetContent.Shown).title == WidgetTitle.Group("Marché") }
+    }
+
+    @Test
+    fun renderWidgetsNeverDrawsAnOlderReadOverTheSync() = runTest {
+        val fnac = cards.save(testCard("Fnac"))
+        val courses = (groups.create("Courses") as GroupNameResult.Saved).id
+        groups.setMembership(fnac, courses, member = true)
+        widgets.ids = intArrayOf(7)
+        val sync = started()
+        eventually { widgets.renders.isNotEmpty() }
+
+        // As on RESTORED: onUpdate's render reads the sources while onRestored moves them.
+        sourcesData.holdNextRead()
+        val rendering = launch(Dispatchers.Default) { sync.renderWidgets(intArrayOf(7)) }
+        sourcesData.readHeld.await()
+        sources.set(7, WidgetSource.Group(courses))
+        // A sync free to draw the group now would then see renderWidgets draw its older read over it.
+        // A sync that waits for renderWidgets never draws it here: the wait runs out.
+        withContext(Dispatchers.Default) {
+            withTimeoutOrNull(500) { while (lastTitle() != WidgetTitle.Group("Courses")) delay(10) }
+        }
+        sourcesData.releaseRead.complete(Unit)
+        rendering.join()
+
+        eventually { lastTitle() == WidgetTitle.Group("Courses") }
     }
 }

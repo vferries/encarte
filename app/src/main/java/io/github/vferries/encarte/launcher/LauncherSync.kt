@@ -58,11 +58,19 @@ class LauncherSync(
 
     /** Placement, reboot or a new source: these widgets need drawing even if no data changed. */
     suspend fun renderWidgets(appWidgetIds: IntArray) {
-        val current = attempt("home screen data") { inputs.first() } ?: return
-        push(current, forcedWidgets = appWidgetIds.toSet())
+        // Read under the lock: a read made before it could be older than what the sync pushes meanwhile, and would
+        // then be drawn over it. The read only queries the database and the stores, never waits on the collector.
+        mutex.withLock {
+            val current = attempt("home screen data") { inputs.first() } ?: return@withLock
+            pushUnlocked(current, forcedWidgets = appWidgetIds.toSet())
+        }
     }
 
     private suspend fun push(inputs: LauncherInputs, forcedWidgets: Set<Int>) = mutex.withLock {
+        pushUnlocked(inputs, forcedWidgets)
+    }
+
+    private fun pushUnlocked(inputs: LauncherInputs, forcedWidgets: Set<Int>) {
         pushDynamicShortcuts(inputs)
         pushPinnedShortcuts(inputs)
         pushWidgets(inputs, forcedWidgets)
