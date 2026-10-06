@@ -47,6 +47,15 @@ class LaunchRequestsTest {
     }
 
     @Test
+    fun aRequestReopenedFromRecentsOpensTheListOnly() {
+        val fromHistory = listOf(LaunchRequests.viewCard(context, 42), LaunchRequests.addCard(context))
+            .map { it.addFlags(Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) }
+
+        for (intent in fromHistory) assertEquals(listOf(CardListKey), LaunchRequests.backStackFor(intent))
+        assertTrue("an expected path, not a warning", warnings().isEmpty())
+    }
+
+    @Test
     fun requestsLaunchLikeAFreshStart() {
         val intent = LaunchRequests.viewCard(context, 1)
 

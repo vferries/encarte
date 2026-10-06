@@ -27,22 +27,26 @@ object LaunchRequests {
     fun addCard(context: Context): Intent = launch(context, ACTION_ADD_CARD)
 
     /** The list is always at the bottom, so Back from a requested screen lands on it. */
-    fun backStackFor(intent: Intent?): List<NavKey> = when (intent?.action) {
-        ACTION_VIEW_CARD -> {
-            val cardId = intent.getLongExtra(EXTRA_CARD_ID, 0)
-            if (cardId > 0) {
-                listOf(CardListKey, CardDisplayKey(cardId))
-            } else {
-                Log.w(TAG, "Card request without a valid card id: opening the list")
+    fun backStackFor(intent: Intent?): List<NavKey> {
+        // Recents relaunch a finished task with the intent that first started it: that request was already served.
+        if (intent != null && intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0) return listOf(CardListKey)
+        return when (intent?.action) {
+            ACTION_VIEW_CARD -> {
+                val cardId = intent.getLongExtra(EXTRA_CARD_ID, 0)
+                if (cardId > 0) {
+                    listOf(CardListKey, CardDisplayKey(cardId))
+                } else {
+                    Log.w(TAG, "Card request without a valid card id: opening the list")
+                    listOf(CardListKey)
+                }
+            }
+            ACTION_ADD_CARD -> listOf(CardListKey, ScannerKey())
+            null, Intent.ACTION_MAIN -> listOf(CardListKey)
+            else -> {
+                // MainActivity is exported: an unknown action can only come from another app.
+                Log.w(TAG, "Ignoring unknown launch action ${intent.action}: opening the list")
                 listOf(CardListKey)
             }
-        }
-        ACTION_ADD_CARD -> listOf(CardListKey, ScannerKey())
-        null, Intent.ACTION_MAIN -> listOf(CardListKey)
-        else -> {
-            // MainActivity is exported: an unknown action can only come from another app.
-            Log.w(TAG, "Ignoring unknown launch action ${intent.action}: opening the list")
-            listOf(CardListKey)
         }
     }
 }
