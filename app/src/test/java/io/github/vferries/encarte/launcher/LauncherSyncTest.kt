@@ -41,6 +41,7 @@ import java.time.Clock
 import java.util.Locale
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 
 private fun onMainThread() = Looper.myLooper() == Looper.getMainLooper()
 
@@ -102,6 +103,22 @@ private class GatedDataStore(private val real: DataStore<Preferences>) : DataSto
         } else {
             emitAll(real.data)
         }
+    }
+
+    override suspend fun updateData(transform: suspend (t: Preferences) -> Preferences) = real.updateData(transform)
+}
+
+/** Fails the first read with an error the store does not absorb itself (it turns IOException into defaults), then behaves normally. */
+private class FailOnceDataStore(private val real: DataStore<Preferences>) : DataStore<Preferences> {
+    private val failNext = AtomicBoolean(true)
+    val failures = AtomicInteger(0)
+
+    override val data: Flow<Preferences> = flow {
+        if (failNext.compareAndSet(true, false)) {
+            failures.incrementAndGet()
+            throw IllegalStateException("store unavailable")
+        }
+        emitAll(real.data)
     }
 
     override suspend fun updateData(transform: suspend (t: Preferences) -> Preferences) = real.updateData(transform)
@@ -270,5 +287,40 @@ class LauncherSyncTest {
         rendering.join()
 
         eventually { lastTitle() == WidgetTitle.Group("Courses") }
+    }
+
+    @Test
+    fun theSyncResubscribesAfterAnUpstreamError() = runTest {
+        cards.save(testCard("Fnac", isFavorite = true))
+        widgets.ids = intArrayOf(7)
+        val flaky = FailOnceDataStore(PreferenceDataStoreFactory.create(scope = scope) { File(tmp.root, "f.preferences_pb") })
+        val sync = LauncherSync(
+            cards, groups, settings, WidgetSourceStore(flaky), shortcuts, widgets, cardCollator(Locale.FRANCE),
+            firstRetryDelayMs = 10,
+        )
+
+        sync.start(scope)
+
+        eventually { shortcuts.published.isNotEmpty() && widgets.renders.isNotEmpty() }
+        assertEquals(1, flaky.failures.get())
+        assertEquals(listOf("Fnac"), shortcuts.published.last().map { it.storeName })
+    }
+
+    @Test
+    fun cancellingTheScopeStopsTheSyncWithoutRetrying() = runTest {
+        val flaky = FailOnceDataStore(PreferenceDataStoreFactory.create(scope = scope) { File(tmp.root, "f.preferences_pb") })
+        val sync = LauncherSync(
+            cards, groups, settings, WidgetSourceStore(flaky), shortcuts, widgets, cardCollator(Locale.FRANCE),
+            firstRetryDelayMs = 1_000,
+        )
+        val job = sync.start(scope)
+        eventually { flaky.failures.get() == 1 }
+
+        job.cancel()
+        // Real time: the backoff runs on Dispatchers.Default, not on the test scheduler.
+        withContext(Dispatchers.Default) { delay(1_500) }
+
+        assertTrue(job.isCancelled)
+        assertEquals(emptyList<List<LauncherCard>>(), shortcuts.published.toList())
     }
 }

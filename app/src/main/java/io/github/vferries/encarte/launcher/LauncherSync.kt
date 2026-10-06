@@ -13,10 +13,11 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -37,6 +38,8 @@ class LauncherSync(
     private val shortcuts: ShortcutPublisher,
     private val widgets: WidgetRenderer,
     private val collator: Collator = cardCollator(),
+    private val firstRetryDelayMs: Long = 1_000,
+    private val maxRetryDelayMs: Long = 60_000,
 ) {
     private val mutex = Mutex()
     private var lastDynamic: List<LauncherCard>? = null
@@ -52,10 +55,25 @@ class LauncherSync(
         widgetSources.sources,
     ) { data, locked, order, sources -> LauncherInputs(data, locked, order, sources) }
 
+    /**
+     * An upstream failure (database, settings store) must not end the sync for the rest of the process: with the lock
+     * on, the home screen would stop hiding store names. The inputs are subscribed again after a growing delay.
+     */
     fun start(scope: CoroutineScope): Job = scope.launch {
+        var retryDelayMs = firstRetryDelayMs
         inputs
-            .catch { e -> Log.e(TAG, "Home screen sync stopped", e) }
-            .collect { push(it, forcedWidgets = emptySet()) }
+            .retryWhen { e, _ ->
+                // Cancellation is the scope stopping the sync: never resubscribe after it.
+                if (e is CancellationException) return@retryWhen false
+                Log.e(TAG, "Home screen sync failed, retrying in $retryDelayMs ms", e)
+                delay(retryDelayMs)
+                retryDelayMs = (retryDelayMs * 2).coerceAtMost(maxRetryDelayMs)
+                true
+            }
+            .collect {
+                push(it, forcedWidgets = emptySet())
+                retryDelayMs = firstRetryDelayMs
+            }
     }
 
     /** Placement, reboot or a new source: these widgets need drawing even if no data changed. */
