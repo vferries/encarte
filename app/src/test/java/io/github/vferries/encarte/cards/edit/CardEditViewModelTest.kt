@@ -22,16 +22,20 @@ import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.vferries.encarte.brands.BrandCatalog
+import io.github.vferries.encarte.cards.list.cardCollator
 import io.github.vferries.encarte.core.barcode.BarcodeError
 import io.github.vferries.encarte.core.barcode.BarcodeFormat
 import io.github.vferries.encarte.core.color.CardPalette
 import io.github.vferries.encarte.core.data.CardRepository
 import io.github.vferries.encarte.core.data.CardSide
+import io.github.vferries.encarte.core.data.GroupNameResult
+import io.github.vferries.encarte.core.data.GroupRepository
 import io.github.vferries.encarte.core.data.ImageStore
 import io.github.vferries.encarte.testing.MainDispatcherRule
 import io.github.vferries.encarte.testing.eventually
 import io.github.vferries.encarte.testing.inMemoryDatabase
 import io.github.vferries.encarte.testing.testCard
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -63,7 +67,8 @@ class CardEditViewModelTest {
     private val now = Instant.parse("2026-10-04T12:00:00Z")
     private val db = inMemoryDatabase()
     private val images by lazy { ImageStore(File(tmp.root, "images"), File(tmp.root, "staging")) }
-    private val cards by lazy { CardRepository(db.cardDao(), images, Clock.fixed(now, ZoneOffset.UTC)) }
+    private val cards by lazy { CardRepository(db, images, Clock.fixed(now, ZoneOffset.UTC)) }
+    private val groups by lazy { GroupRepository(db) }
     private val brands = BrandCatalog {
         """[{"name": "Carrefour", "aliases": ["Carrefour Market"], "color": "#254F9B"},
             {"name": "Castorama", "aliases": [], "color": "#0078D7"}]"""
@@ -75,6 +80,7 @@ class CardEditViewModelTest {
     private fun newCard(value: String? = null, format: BarcodeFormat? = null) = CardEditViewModel(
         null, value, format, showUnsupportedFormatNotice = false, cards = cards, brands = brands,
         savedStateHandle = SavedStateHandle(),
+        groups = groups,
     )
 
     @Test
@@ -166,7 +172,7 @@ class CardEditViewModelTest {
     @Test
     fun editingLoadsCardAndTracksChanges() = runTest {
         val id = cards.save(testCard("Fnac", cardNumber = "42", barcodeFormat = BarcodeFormat.QR_CODE, isFavorite = true))
-        val vm = CardEditViewModel(id, null, null, false, cards, brands, SavedStateHandle())
+        val vm = CardEditViewModel(id, null, null, false, cards, brands, SavedStateHandle(), groups)
         eventually { !vm.isLoading }
 
         assertEquals("Fnac", vm.storeName.text.toString())
@@ -186,7 +192,7 @@ class CardEditViewModelTest {
 
     @Test
     fun missingCardIsNotFound() = runTest {
-        val vm = CardEditViewModel(404, null, null, false, cards, brands, SavedStateHandle())
+        val vm = CardEditViewModel(404, null, null, false, cards, brands, SavedStateHandle(), groups)
 
         eventually { !vm.isLoading }
 
@@ -332,7 +338,7 @@ class CardEditViewModelTest {
         fun editor(cardId: Long?, prefillValue: String? = null, prefillFormat: BarcodeFormat? = null): CardEditViewModel {
             val factory = viewModelFactory {
                 initializer {
-                    CardEditViewModel(cardId, prefillValue, prefillFormat, false, cards, brands, createSavedStateHandle())
+                    CardEditViewModel(cardId, prefillValue, prefillFormat, false, cards, brands, createSavedStateHandle(), groups)
                 }
             }
             val extras = MutableCreationExtras().apply {
@@ -371,7 +377,7 @@ class CardEditViewModelTest {
     @Test
     fun editingAnArchivedCardKeepsItArchivedAndTracksTheDate() = runTest {
         val id = cards.save(testCard("Fnac", isArchived = true, expiresOn = LocalDate.of(2027, 3, 12)))
-        val vm = CardEditViewModel(id, null, null, false, cards, brands, SavedStateHandle())
+        val vm = CardEditViewModel(id, null, null, false, cards, brands, SavedStateHandle(), groups)
         eventually { !vm.isLoading }
         assertEquals(LocalDate.of(2027, 3, 12), vm.expiresOn)
         assertFalse(vm.hasChanges)
@@ -384,6 +390,70 @@ class CardEditViewModelTest {
         val saved = cards.get(id)!!
         assertNull(saved.expiresOn)
         assertTrue("archived state is preserved", saved.isArchived)
+    }
+
+    private suspend fun group(name: String) = (groups.create(name) as GroupNameResult.Saved).id
+
+    @Test
+    fun aNewCardStartsInItsInitialGroupWithoutUnsavedChanges() = runTest {
+        val courses = group("Courses")
+
+        val vm = CardEditViewModel(null, "42", null, false, cards, brands, SavedStateHandle(), groups, initialGroupId = courses)
+
+        assertEquals(setOf(courses), vm.selectedGroupIds)
+        assertFalse(vm.hasChanges)
+    }
+
+    @Test
+    fun groupsAreSavedWithTheCard() = runTest {
+        val courses = group("Courses")
+        val mode = group("Mode")
+        val vm = newCard("42")
+        vm.storeName.setTextAndPlaceCursorAtEnd("Fnac")
+        vm.toggleGroup(courses)
+        vm.toggleGroup(mode)
+        vm.toggleGroup(mode)
+
+        vm.save()
+        eventually { vm.savedCardId != null }
+
+        assertEquals(setOf(courses), groups.groupIdsOf(vm.savedCardId!!))
+    }
+
+    @Test
+    fun editingLoadsTheGroupsAndTracksTheirChanges() = runTest {
+        val courses = group("Courses")
+        val id = cards.save(testCard("Fnac"), setOf(courses))
+        val vm = CardEditViewModel(id, null, null, false, cards, brands, SavedStateHandle(), groups)
+        eventually { !vm.isLoading }
+        assertEquals(setOf(courses), vm.selectedGroupIds)
+        assertFalse(vm.hasChanges)
+
+        vm.toggleGroup(courses)
+
+        assertTrue(vm.hasChanges)
+    }
+
+    @Test
+    fun aGroupCreatedInTheEditorIsCheckedAndOutlivesADiscard() = runTest {
+        val vm = newCard("42")
+
+        val created = vm.createGroup("Bricolage") as GroupNameResult.Saved
+        assertEquals(setOf(created.id), vm.selectedGroupIds)
+        vm.discard()
+
+        assertEquals(listOf("Bricolage"), groups.observeGroups(cardCollator()).first().map { it.name })
+    }
+
+    @Test
+    fun checkedGroupsSurviveProcessDeath() = runTest {
+        val courses = group("Courses")
+        val before = ScreenWithSavedState(restored = null)
+        before.editor(cardId = null, prefillValue = "42").toggleGroup(courses)
+
+        val restored = ScreenWithSavedState(before.processDeath()).editor(cardId = null, prefillValue = "42")
+
+        assertEquals(setOf(courses), restored.selectedGroupIds)
     }
 
     private fun jpeg() = ByteArrayOutputStream().also {

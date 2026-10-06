@@ -12,14 +12,21 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.vferries.encarte.brands.Brand
 import io.github.vferries.encarte.brands.BrandCatalog
+import io.github.vferries.encarte.cards.list.cardCollator
 import io.github.vferries.encarte.core.barcode.BarcodeError
 import io.github.vferries.encarte.core.barcode.BarcodeFormat
 import io.github.vferries.encarte.core.barcode.BarcodeValidator
 import io.github.vferries.encarte.core.color.CardPalette
 import io.github.vferries.encarte.core.data.Card
+import io.github.vferries.encarte.core.data.CardGroup
 import io.github.vferries.encarte.core.data.CardRepository
 import io.github.vferries.encarte.core.data.CardSide
+import io.github.vferries.encarte.core.data.GroupNameResult
+import io.github.vferries.encarte.core.data.GroupRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.IOException
@@ -40,6 +47,7 @@ private const val KEY_COLOR = "color"
 private const val KEY_FRONT_IMAGE = "front_image"
 private const val KEY_BACK_IMAGE = "back_image"
 private const val KEY_EXPIRES_ON = "expires_on"
+private const val KEY_GROUP_IDS = "group_ids"
 private const val KEY_CREATED_IMAGES = "created_images"
 
 class CardEditViewModel(
@@ -50,6 +58,9 @@ class CardEditViewModel(
     private val cards: CardRepository,
     private val brands: BrandCatalog,
     savedStateHandle: SavedStateHandle,
+    private val groups: GroupRepository,
+    /** Pre-checked on a new card: it was added while the list showed this group. */
+    initialGroupId: Long? = null,
 ) : ViewModel() {
 
     val storeName = TextFieldState()
@@ -70,6 +81,14 @@ class CardEditViewModel(
 
     /** Null: the card never expires. */
     val expiresOn: LocalDate? get() = expiresOnState
+
+    private var selectedGroupIdsState by mutableStateOf(setOfNotNull(initialGroupId))
+    val selectedGroupIds: Set<Long> get() = selectedGroupIdsState
+
+    /** Every group, for the chips. The card's own selection is part of the form. */
+    val allGroups: StateFlow<List<CardGroup>> = groups.observeGroups(cardCollator())
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
     var isLoading by mutableStateOf(cardId != null)
         private set
     var notFound by mutableStateOf(false)
@@ -145,7 +164,7 @@ class CardEditViewModel(
             initialForm = snapshot()
         } else {
             original = card
-            val loaded = card.toForm()
+            val loaded = card.toForm(groups.groupIdsOf(id))
             initialForm = loaded
             if (restored != null) restore(restored) else fill(loaded)
         }
@@ -163,6 +182,7 @@ class CardEditViewModel(
         frontImage = form.frontImage
         backImage = form.backImage
         expiresOnState = form.expiresOn
+        selectedGroupIdsState = form.groupIds
     }
 
     /** Saved only once the form is filled: an editor that died while loading simply loads the card again. */
@@ -180,6 +200,7 @@ class CardEditViewModel(
         putString(KEY_FRONT_IMAGE, form.frontImage)
         putString(KEY_BACK_IMAGE, form.backImage)
         form.expiresOn?.let { putLong(KEY_EXPIRES_ON, it.toEpochDay()) }
+        putLongArray(KEY_GROUP_IDS, form.groupIds.toLongArray())
         putStringArrayList(KEY_CREATED_IMAGES, ArrayList(createdImages))
     }
 
@@ -196,6 +217,7 @@ class CardEditViewModel(
                 frontImage = state.getString(KEY_FRONT_IMAGE)?.takeIf(::imageStillExists),
                 backImage = state.getString(KEY_BACK_IMAGE)?.takeIf(::imageStillExists),
                 expiresOn = if (state.containsKey(KEY_EXPIRES_ON)) LocalDate.ofEpochDay(state.getLong(KEY_EXPIRES_ON)) else null,
+                groupIds = state.getLongArray(KEY_GROUP_IDS)?.toSet().orEmpty(),
             )
         )
         state.getStringArrayList(KEY_CREATED_IMAGES)?.filterTo(createdImages, ::imageStillExists)
@@ -219,6 +241,15 @@ class CardEditViewModel(
 
     fun setExpiresOn(date: LocalDate?) {
         expiresOnState = date
+    }
+
+    fun toggleGroup(id: Long) {
+        selectedGroupIdsState = if (id in selectedGroupIdsState) selectedGroupIdsState - id else selectedGroupIdsState + id
+    }
+
+    /** The new group exists at once, even if this edit is discarded: an empty group is legitimate. */
+    suspend fun createGroup(name: String): GroupNameResult = groups.create(name).also { result ->
+        if (result is GroupNameResult.Saved) selectedGroupIdsState = selectedGroupIdsState + result.id
     }
 
     fun selectSuggestion(brand: Brand) {
@@ -255,7 +286,7 @@ class CardEditViewModel(
         isSaving = true
         val card = buildCard()
         viewModelScope.launch {
-            val id = cards.save(card)
+            val id = cards.save(card, selectedGroupIds)
             createdImages.clear()
             savedCardId = id
         }
@@ -299,7 +330,7 @@ class CardEditViewModel(
         )
     }
 
-    private fun Card.toForm() = FormSnapshot(
+    private fun Card.toForm(groupIds: Set<Long>) = FormSnapshot(
         storeName = storeName,
         cardNumber = cardNumber,
         differentEncodedValue = barcodeValue != null,
@@ -310,6 +341,7 @@ class CardEditViewModel(
         frontImage = frontImage,
         backImage = backImage,
         expiresOn = expiresOn,
+        groupIds = groupIds,
     )
 
     private fun snapshot() = FormSnapshot(
@@ -323,6 +355,7 @@ class CardEditViewModel(
         frontImage = frontImage,
         backImage = backImage,
         expiresOn = expiresOn,
+        groupIds = selectedGroupIds,
     )
 
     private data class FormSnapshot(
@@ -336,5 +369,6 @@ class CardEditViewModel(
         val frontImage: String?,
         val backImage: String?,
         val expiresOn: LocalDate?,
+        val groupIds: Set<Long>,
     )
 }

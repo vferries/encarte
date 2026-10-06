@@ -149,4 +149,5 @@
     <string name="group_delete_body">The cards are not deleted.</string>
     <string name="group_options">Group options</string>
     <string name="group_empty">No cards in \"%1$s\"</string>
+    <string name="group_section">Groups</string>
 </resources>

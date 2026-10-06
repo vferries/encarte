@@ -40,7 +40,7 @@ class CardDisplayViewModelTest {
     private val db = inMemoryDatabase()
     private val cards by lazy {
         CardRepository(
-            db.cardDao(),
+            db,
             ImageStore(File(tmp.root, "images"), File(tmp.root, "staging")),
             clock,
         )

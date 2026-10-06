@@ -40,7 +40,7 @@ class CardRepositoryTest {
     @Before
     fun setUp() {
         images = ImageStore(File(tmp.root, "images"), File(tmp.root, "staging"))
-        repository = CardRepository(db.cardDao(), images, Clock.fixed(now, ZoneOffset.UTC), UnconfinedTestDispatcher())
+        repository = CardRepository(db, images, Clock.fixed(now, ZoneOffset.UTC), UnconfinedTestDispatcher())
     }
 
     @After
@@ -100,6 +100,46 @@ class CardRepositoryTest {
 
         assertTrue(images.exists(referenced))
         assertFalse(images.exists(orphan))
+    }
+
+    @Test
+    fun saveWithGroupsReplacesTheCardsGroups() = runTest {
+        val groups = GroupRepository(db)
+        val courses = (groups.create("Courses") as GroupNameResult.Saved).id
+        val mode = (groups.create("Mode") as GroupNameResult.Saved).id
+        val id = repository.save(testCard("Fnac"), setOf(courses))
+
+        repository.save(repository.get(id)!!, setOf(mode))
+        assertEquals(setOf(mode), groups.groupIdsOf(id))
+
+        repository.save(repository.get(id)!!.copy(note = "no groups given"))
+        assertEquals(setOf(mode), groups.groupIdsOf(id))
+    }
+
+    @Test
+    fun savingIgnoresAGroupDeletedMeanwhile() = runTest {
+        val groups = GroupRepository(db)
+        val courses = (groups.create("Courses") as GroupNameResult.Saved).id
+        val gone = (groups.create("Gone") as GroupNameResult.Saved).id
+        groups.delete(gone)
+
+        val id = repository.save(testCard("Fnac"), setOf(courses, gone))
+
+        assertEquals(setOf(courses), groups.groupIdsOf(id))
+    }
+
+    @Test
+    fun savingACardDeletedMeanwhileWritesNothing() = runTest {
+        val groups = GroupRepository(db)
+        val courses = (groups.create("Courses") as GroupNameResult.Saved).id
+        val id = repository.save(testCard("Fnac"))
+        val edited = repository.get(id)!!.copy(note = "late edit")
+        repository.delete(id)
+
+        assertEquals(id, repository.save(edited, setOf(courses)))
+
+        assertNull(repository.get(id))
+        assertEquals(emptySet<Long>(), groups.groupIdsOf(id))
     }
 
     private fun jpeg() = ByteArrayOutputStream().also {

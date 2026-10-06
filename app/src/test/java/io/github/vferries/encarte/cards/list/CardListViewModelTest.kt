@@ -45,7 +45,7 @@ class CardListViewModelTest {
     private val clock = Clock.fixed(Instant.parse("2026-10-05T10:00:00Z"), ZoneOffset.UTC)
     private val db = inMemoryDatabase()
     private val cards by lazy {
-        CardRepository(db.cardDao(), ImageStore(File(tmp.root, "images"), File(tmp.root, "staging")), Clock.systemUTC())
+        CardRepository(db, ImageStore(File(tmp.root, "images"), File(tmp.root, "staging")), Clock.systemUTC())
     }
 
     private val groups by lazy { GroupRepository(db) }

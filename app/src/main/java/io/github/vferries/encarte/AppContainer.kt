@@ -31,7 +31,7 @@ class AppContainer(context: Context) {
     private val database = EncarteDatabase.create(appContext)
     private val imageStore = ImageStore(File(appContext.filesDir, "images"), File(appContext.cacheDir, "staging"))
 
-    val cardRepository = CardRepository(database.cardDao(), imageStore, clock)
+    val cardRepository = CardRepository(database, imageStore, clock)
     val groupRepository = GroupRepository(database)
 
     val settingsRepository = SettingsRepository(

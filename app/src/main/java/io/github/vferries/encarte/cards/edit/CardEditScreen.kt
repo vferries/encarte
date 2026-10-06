@@ -20,6 +20,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -37,12 +38,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -75,9 +78,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.vferries.encarte.R
 import io.github.vferries.encarte.core.barcode.BarcodeError
 import io.github.vferries.encarte.core.barcode.BarcodeFormat
@@ -90,6 +95,7 @@ import io.github.vferries.encarte.core.ui.EncarteDatePickerDialog
 import io.github.vferries.encarte.core.ui.EncarteExposedDropdownMenu
 import io.github.vferries.encarte.core.ui.rememberImageBitmap
 import io.github.vferries.encarte.core.ui.rememberMediumDateFormatter
+import io.github.vferries.encarte.groups.GroupNameDialog
 import java.io.File
 import java.io.IOException
 import java.time.Instant
@@ -319,6 +325,7 @@ private fun Form(
         }
         Text(stringResource(R.string.field_color), style = MaterialTheme.typography.titleSmall)
         ColorSwatches(viewModel.color, viewModel::selectColor)
+        GroupsSection(viewModel)
         OutlinedTextField(
             state = viewModel.note,
             modifier = Modifier.fillMaxWidth(),
@@ -332,6 +339,37 @@ private fun Form(
         }
         PhotoSlot(R.string.photo_front, viewModel.frontImage?.let(viewModel::imageFile), CardSide.FRONT, viewModel, onPickImage, onTakePhoto)
         PhotoSlot(R.string.photo_back, viewModel.backImage?.let(viewModel::imageFile), CardSide.BACK, viewModel, onPickImage, onTakePhoto)
+    }
+}
+
+@Composable
+private fun GroupsSection(viewModel: CardEditViewModel) {
+    val groups by viewModel.allGroups.collectAsStateWithLifecycle()
+    var creating by rememberSaveable { mutableStateOf(false) }
+    Text(stringResource(R.string.group_section), style = MaterialTheme.typography.titleSmall)
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        for (group in groups) {
+            FilterChip(
+                selected = group.id in viewModel.selectedGroupIds,
+                onClick = { viewModel.toggleGroup(group.id) },
+                label = { Text(group.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+            )
+        }
+        AssistChip(
+            onClick = { creating = true },
+            label = { Text(stringResource(R.string.group_new)) },
+            leadingIcon = { Icon(painterResource(R.drawable.ic_add), contentDescription = null) },
+        )
+    }
+    if (creating) {
+        GroupNameDialog(
+            title = stringResource(R.string.group_new),
+            confirmLabel = stringResource(R.string.action_create),
+            initialName = "",
+            onConfirm = viewModel::createGroup,
+            onSaved = { creating = false },
+            onDismiss = { creating = false },
+        )
     }
 }
 

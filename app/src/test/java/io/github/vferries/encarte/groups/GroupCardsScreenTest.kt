@@ -77,7 +77,7 @@ class GroupCardsScreenTest {
     @Test
     fun theScreenClosesWhenItsGroupIsDeleted() {
         val groups = GroupRepository(db)
-        val cards = CardRepository(db.cardDao(), ImageStore(File(tmp.root, "i"), File(tmp.root, "s")), Clock.systemUTC())
+        val cards = CardRepository(db, ImageStore(File(tmp.root, "i"), File(tmp.root, "s")), Clock.systemUTC())
         val courses = runBlocking { (groups.create("Courses") as GroupNameResult.Saved).id }
         var closed = false
         composeRule.setContent {

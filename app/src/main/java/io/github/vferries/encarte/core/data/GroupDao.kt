@@ -43,4 +43,7 @@ interface GroupDao {
 
     @Query("DELETE FROM card_groups WHERE cardId = :cardId AND groupId = :groupId")
     suspend fun deleteMembership(cardId: Long, groupId: Long)
+
+    @Query("DELETE FROM card_groups WHERE cardId = :cardId")
+    suspend fun deleteMembershipsOf(cardId: Long)
 }

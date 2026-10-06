@@ -61,7 +61,7 @@ fun EncarteNavHost(container: AppContainer) {
                     archivedNotice = archivedNotice,
                     onArchivedNoticeShown = { archivedNotice = null },
                     onOpenCard = { id -> backStack.add(CardDisplayKey(id)) },
-                    onAddCard = { backStack.add(ScannerKey) },
+                    onAddCard = { groupId -> backStack.add(ScannerKey(groupId)) },
                     onOpenSettings = { backStack.add(SettingsKey) },
                     onImport = { backStack.add(SettingsKey) },
                     onChooseCards = { id -> backStack.add(GroupCardsKey(id)) },
@@ -84,14 +84,20 @@ fun EncarteNavHost(container: AppContainer) {
                     },
                 )
             }
-            entry<ScannerKey> {
+            entry<ScannerKey> { key ->
                 ScannerRoute(
                     viewModel = viewModel { ScannerViewModel() },
                     onBack = pop,
                     onScanned = { code ->
-                        replaceTopIf(ScannerKey::class, CardEditKey(barcodeValue = code.value, barcodeFormat = code.format, unsupportedFormat = code.format == null))
+                        replaceTopIf(
+                            ScannerKey::class,
+                            CardEditKey(
+                                barcodeValue = code.value, barcodeFormat = code.format,
+                                unsupportedFormat = code.format == null, groupId = key.groupId,
+                            ),
+                        )
                     },
-                    onManualEntry = { replaceTopIf(ScannerKey::class, CardEditKey()) },
+                    onManualEntry = { replaceTopIf(ScannerKey::class, CardEditKey(groupId = key.groupId)) },
                 )
             }
             entry<CardEditKey> { key ->
@@ -105,6 +111,8 @@ fun EncarteNavHost(container: AppContainer) {
                             cards = container.cardRepository,
                             brands = container.brandCatalog,
                             savedStateHandle = createSavedStateHandle(),
+                            groups = container.groupRepository,
+                            initialGroupId = key.groupId,
                         )
                     },
                     onSaved = { id, isNew ->

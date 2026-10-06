@@ -12,8 +12,9 @@ data object CardListKey : NavKey
 @Serializable
 data class CardDisplayKey(val cardId: Long) : NavKey
 
+/** [groupId]: the list showed this group when "Add a card" was tapped; the new card joins it. */
 @Serializable
-data object ScannerKey : NavKey
+data class ScannerKey(val groupId: Long? = null) : NavKey
 
 @Serializable
 data class CardEditKey(
@@ -21,6 +22,7 @@ data class CardEditKey(
     val barcodeValue: String? = null,
     val barcodeFormat: BarcodeFormat? = null,
     val unsupportedFormat: Boolean = false,
+    val groupId: Long? = null,
 ) : NavKey
 
 @Serializable

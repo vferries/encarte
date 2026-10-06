@@ -34,7 +34,7 @@ class GroupCardsViewModelTest {
 
     private val db = inMemoryDatabase()
     private val cards by lazy {
-        CardRepository(db.cardDao(), ImageStore(File(tmp.root, "images"), File(tmp.root, "staging")), Clock.systemUTC())
+        CardRepository(db, ImageStore(File(tmp.root, "images"), File(tmp.root, "staging")), Clock.systemUTC())
     }
     private val groups = GroupRepository(db)
 

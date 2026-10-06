@@ -11,8 +11,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -20,6 +22,10 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.ui.NavDisplay
 import androidx.test.espresso.Espresso
@@ -27,9 +33,11 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.vferries.encarte.brands.BrandCatalog
 import io.github.vferries.encarte.core.barcode.BarcodeFormat
 import io.github.vferries.encarte.core.data.CardRepository
+import io.github.vferries.encarte.core.data.GroupRepository
 import io.github.vferries.encarte.core.data.ImageStore
 import io.github.vferries.encarte.lock.LocalContentCovered
 import io.github.vferries.encarte.testing.inMemoryDatabase
+import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -54,19 +62,32 @@ class CardEditScreenTest {
     private val db = inMemoryDatabase()
     private val brands = BrandCatalog { """[{"name": "Carrefour", "aliases": [], "color": "#254F9B"}]""" }
 
-    @After
-    fun tearDown() = db.close()
+    /** Clearing it stops the editors' group queries, as leaving the screen does, before the database closes. */
+    private val viewModels = ViewModelStore()
 
-    private fun viewModel(value: String? = null, format: BarcodeFormat? = null, unsupported: Boolean = false) =
-        CardEditViewModel(
-            cardId = null,
-            prefillValue = value,
-            prefillFormat = format,
-            showUnsupportedFormatNotice = unsupported,
-            cards = CardRepository(db.cardDao(), ImageStore(File(tmp.root, "i"), File(tmp.root, "s")), Clock.systemUTC()),
-            brands = brands,
-            savedStateHandle = SavedStateHandle(),
-        )
+    @After
+    fun tearDown() {
+        viewModels.clear()
+        db.close()
+    }
+
+    private fun viewModel(value: String? = null, format: BarcodeFormat? = null, unsupported: Boolean = false): CardEditViewModel {
+        val factory = viewModelFactory {
+            initializer {
+                CardEditViewModel(
+                    cardId = null,
+                    prefillValue = value,
+                    prefillFormat = format,
+                    showUnsupportedFormatNotice = unsupported,
+                    cards = CardRepository(db, ImageStore(File(tmp.root, "i"), File(tmp.root, "s")), Clock.systemUTC()),
+                    brands = brands,
+                    savedStateHandle = SavedStateHandle(),
+                    groups = GroupRepository(db),
+                )
+            }
+        }
+        return ViewModelProvider.create(viewModels, factory)[CardEditViewModel::class]
+    }
 
     @Test
     fun saveEnablesOnceStoreNameIsTypedAndPreviewShows() {
@@ -191,5 +212,26 @@ class CardEditScreenTest {
 
         covered = false
         composeRule.onNodeWithText("OK").assertIsDisplayed()
+    }
+
+    @Test
+    fun groupChipsToggleAndANewGroupIsChecked() {
+        runBlocking { GroupRepository(db).create("Courses") }
+        val vm = viewModel("42")
+        composeRule.setContent { CardEditScreen(vm, onClose = {}, onPickImage = {}, onTakePhoto = {}) }
+        composeRule.waitUntil(5_000) { composeRule.onAllNodesWithText("Courses").fetchSemanticsNodes().isNotEmpty() }
+
+        composeRule.onNodeWithText("Courses").performScrollTo().performClick()
+        composeRule.onNodeWithText("Courses").assertIsSelected()
+
+        composeRule.onNodeWithText("New group").performScrollTo().performClick()
+        composeRule.onNodeWithText("Group name").performTextInput("Bricolage")
+        composeRule.onNodeWithText("Create").performClick()
+        composeRule.waitUntil(5_000) {
+            composeRule.onAllNodesWithText("Group name").fetchSemanticsNodes().isEmpty() &&
+                composeRule.onAllNodesWithText("Bricolage").fetchSemanticsNodes().isNotEmpty()
+        }
+
+        composeRule.onNodeWithText("Bricolage").performScrollTo().assertIsSelected()
     }
 }

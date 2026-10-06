@@ -12,7 +12,10 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.github.vferries.encarte.EncarteApp
 import io.github.vferries.encarte.MainActivity
+import io.github.vferries.encarte.testing.testCard
+import kotlinx.coroutines.runBlocking
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -102,5 +105,32 @@ class AppFlowTest {
 
         waitForText("Fnac")
         composeRule.onNodeWithText("Archived (1)").assertDoesNotExist()
+    }
+
+    @Test
+    fun aCardAddedWhileAGroupIsSelectedJoinsThatGroup() {
+        val container = (composeRule.activity.application as EncarteApp).container
+        runBlocking {
+            container.cardRepository.save(testCard("Auchan"))
+            container.groupRepository.create("Courses")
+        }
+        waitForText("Courses")
+        composeRule.onNodeWithText("Courses").performClick()
+        waitForText("No cards in \"Courses\"")
+
+        // Material clears the extended FAB's text from the merged tree: reach it unmerged.
+        composeRule.onNodeWithText("Add a card", useUnmergedTree = true).performClick()
+        waitForText("Enter manually")
+        composeRule.onNodeWithText("Enter manually").performClick()
+        waitForText("New card")
+        composeRule.onNodeWithText("Store").performTextInput("Fnac")
+        composeRule.onNodeWithText("Card number").performTextInput("A-42")
+        composeRule.onNodeWithText("Save").performClick()
+        waitFor(hasContentDescription("Edit"))
+        composeRule.onNodeWithContentDescription("Back").performClick()
+
+        // Still filtered on "Courses": the new card is there, the other one is not.
+        waitForText("Fnac")
+        composeRule.onNodeWithText("Auchan").assertDoesNotExist()
     }
 }
