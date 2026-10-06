@@ -43,6 +43,15 @@
                 android:name="android.app.shortcuts"
                 android:resource="@xml/shortcuts" />
         </activity>
+        <!-- Started by the launcher when a widget is placed or reconfigured; it checks the widget is ours. -->
+        <activity
+            android:name=".widget.WidgetConfigActivity"
+            android:excludeFromRecents="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
         <provider
             android:name=".AppFileProvider"
             android:authorities="${applicationId}.fileprovider"

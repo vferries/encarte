@@ -152,6 +152,7 @@
     <string name="group_empty">No cards in \"%1$s\"</string>
     <string name="group_section">Groups</string>
     <string name="widget_favorites">★ Favorites</string>
+    <string name="widget_config_title">Show in the widget</string>
     <string name="widget_no_favorites">No favorite cards</string>
     <string name="widget_description">Your favorite cards or a group, one tap away.</string>
 </resources>
