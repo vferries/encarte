@@ -34,6 +34,7 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.shadows.ShadowLog
 import org.robolectric.shadows.ShadowToast
 import java.io.File
+import java.io.FilterInputStream
 import java.io.InputStream
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -380,9 +381,20 @@ class ImportActivityTest {
     @Test
     fun backAfterTheHandOverIsNotACancellation() {
         val pass = TestFiles.pass()
-        serve(attachment) { pass.inputStream() }
+        val gate = CountDownLatch(1)
+        // A copy ending before withContext suspends hands over inside onCreate, and launch then returns a destroyed
+        // activity: Back needs the copy to end once the activity is up.
+        serve(attachment) {
+            object : FilterInputStream(pass.inputStream()) {
+                override fun read(b: ByteArray, off: Int, len: Int): Int {
+                    gate.await(5, TimeUnit.SECONDS)
+                    return super.read(b, off, len)
+                }
+            }
+        }
 
         ActivityScenario.launch<ImportActivity>(view(attachment)).use { scenario ->
+            gate.countDown()
             val deadline = System.currentTimeMillis() + 5_000
             while (shadowOf(app).peekNextStartedActivity() == null) {
                 shadowOf(Looper.getMainLooper()).idle()
