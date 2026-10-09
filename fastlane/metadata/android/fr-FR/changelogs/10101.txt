@@ -1,0 +1,7 @@
+Nouveautés de la 1.1 :
+
+• Dates d'expiration et archive des cartes.
+• Blocage du paiement sans contact pendant l'affichage d'une carte (réglable).
+• Groupes de cartes (compatibles Catima), widget d'écran d'accueil et raccourcis depuis l'icône de l'app.
+• Import depuis FidMe, ainsi que des pass Wallet (.pkpass) et des PDF.
+• Plus d'enseignes reconnues et diverses améliorations.

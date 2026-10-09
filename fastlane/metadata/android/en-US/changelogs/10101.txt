@@ -1,0 +1,7 @@
+What's new in 1.1:
+
+• Card expiry dates and archive.
+• Contactless payment is blocked while a card is shown (optional).
+• Card groups (Catima compatible), a home-screen widget and shortcuts from the app icon.
+• Import from FidMe, and from Wallet passes (.pkpass) and PDFs.
+• More stores recognized, and various improvements.
