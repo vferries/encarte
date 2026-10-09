@@ -1,8 +1,15 @@
-Encarté keeps your loyalty cards on your phone and shows their barcode at checkout. Nothing else.
+Encarté keeps your loyalty cards on your phone and shows their barcode at checkout. Nothing else. It is made for France: written in French first, and tuned for French shops.
 
+Made for France
+• 224 French store brands recognized (Carrefour, E.Leclerc, Intermarché, Monoprix, Decathlon, Fnac…): type the store name and the card gets its color.
+• Search that forgives French spelling: accents, case, punctuation and spaces are ignored, so "e leclerc" finds "E.Leclerc".
+• Import your cards from FidMe, the most widely used loyalty card app in France.
+• French first, fully translated into English.
+
+Everything else
 • Works fully offline: the app has no Internet permission.
 • Scan a card with the camera, pick a screenshot, or type the number.
-• Import your cards from FidMe, a Wallet pass or a PDF.
+• Import your cards from a Wallet pass or a PDF.
 • QR, EAN, UPC, Code 128/39/93, Codabar, ITF, Aztec, Data Matrix and PDF417.
 • Full brightness while a card is shown.
 • Expiry dates, archive, and contactless payment blocked while a card is shown.

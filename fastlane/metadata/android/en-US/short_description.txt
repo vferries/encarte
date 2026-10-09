@@ -1,1 +1,1 @@
-Offline loyalty card wallet: scan, store and show your cards. No network.
+Offline loyalty card wallet made for French shops. Scan, store, show.

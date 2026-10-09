@@ -1,8 +1,15 @@
-Encarté range vos cartes de fidélité sur votre téléphone et affiche leur code-barres en caisse. Rien de plus.
+Encarté range vos cartes de fidélité sur votre téléphone et affiche leur code-barres en caisse. Rien de plus. Elle est pensée pour la France : écrite d'abord en français, et adaptée aux enseignes françaises.
 
+Pensée pour la France
+• 224 enseignes françaises reconnues (Carrefour, E.Leclerc, Intermarché, Monoprix, Decathlon, Fnac…) : tapez le nom du magasin et la carte prend sa couleur.
+• Une recherche qui pardonne l'orthographe : accents, majuscules, ponctuation et espaces sont ignorés, « e leclerc » trouve « E.Leclerc ».
+• Importez vos cartes depuis FidMe, l'application de cartes de fidélité la plus utilisée en France.
+• En français d'abord, entièrement traduite en anglais.
+
+Et aussi
 • Fonctionne entièrement hors-ligne : l'application n'a pas la permission Internet.
 • Scannez une carte avec l'appareil photo, depuis une capture d'écran, ou saisissez le numéro.
-• Importez vos cartes depuis FidMe, un pass Wallet ou un PDF.
+• Importez vos cartes depuis un pass Wallet ou un PDF.
 • QR, EAN, UPC, Code 128/39/93, Codabar, ITF, Aztec, Data Matrix et PDF417.
 • Luminosité maximale pendant l'affichage d'une carte.
 • Dates d'expiration, archive, et blocage du paiement sans contact pendant l'affichage d'une carte.
